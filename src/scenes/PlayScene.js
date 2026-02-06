@@ -5,6 +5,8 @@ import { MazeGenerator } from '../MazeGenerator.js';
 import { Minimap } from '../Minimap.js';
 import { Player } from '../Player.js';
 import { CameraController } from '../CameraController.js';
+import { ItemManager } from '../ItemManager.js';
+import { StageManager } from '../StageManager.js';
 
 /**
  * 게임 플레이 장면 클래스 (Orchestrator)
@@ -48,8 +50,18 @@ export class PlayScene extends BaseScene {
         // 6. 바닥 생성
         this._refreshFloorMesh();
 
-        // 7. 미니맵 초기화
+        // 7. 아이템 매니저 초기화
+        this.itemManager = new ItemManager(this.scene, this.mazeGen, CONFIG.ITEMS);
+        this.itemManager.spawnItems();
+
+        // 8. 미니맵 초기화
         this.minimap = new Minimap();
+
+        // 9. 스테이지 매니저 초기화
+        this.stageManager = new StageManager();
+
+        // 10. 아이템 액션 버튼 바인딩
+        this._initItemButtons();
     }
 
     _initLights() {
@@ -97,31 +109,56 @@ export class PlayScene extends BaseScene {
         this.player.mazeGen = this.mazeGen; // 주입된 미로 데이터 갱신
         this.player.reset(startPos, initialAngle);
 
+        if (this.itemManager) {
+            this.itemManager.mazeGen = this.mazeGen;
+            this.itemManager.spawnItems();
+        }
+
         console.log(`Maze reset: ${newWidth}x${newHeight}`);
     }
 
     _refreshMazeMesh() {
-        const old = this.scene.getObjectByName('maze-mesh');
-        if (old) {
-            this.scene.remove(old);
-            // Group인 경우 하위 메쉬들의 자원을 각각 해제해야 함
-            old.traverse((child) => {
-                if (child.isMesh) {
-                    child.geometry.dispose();
+        console.log("--- DEBUG: Refresing Maze Visuals (Atomic Sweep) ---");
+
+        // 1. 씬 전체를 뒤져서 'maze-'로 시작하는 모든 오브젝트(메쉬, 그룹, 마커) 강제 소탕
+        const toRemove = [];
+        this.scene.traverse(child => {
+            if (child.name && child.name.startsWith('maze-')) {
+                toRemove.push(child);
+            }
+        });
+
+        toRemove.forEach(obj => {
+            console.log(`Force Purging Ghost Object: ${obj.name} (${obj.type})`);
+            this.scene.remove(obj);
+            this._disposeObject(obj);
+        });
+
+        // 2. 새 메쉬 생성 및 추가
+        this.mazeMesh = this.mazeGen.generateThreeMesh(CONFIG.MAZE);
+        this.mazeMesh.name = 'maze-mesh';
+        this.scene.add(this.mazeMesh);
+
+        // 3. 입구/출구 시각적 표식 추가
+        this._addMazeMarkers();
+
+        console.log("Visual refresh complete. Current scene graph purged.");
+    }
+
+    _disposeObject(obj) {
+        if (!obj) return;
+        obj.traverse((child) => {
+            if (child.isMesh) {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
                     if (Array.isArray(child.material)) {
                         child.material.forEach(m => m.dispose());
                     } else {
                         child.material.dispose();
                     }
                 }
-            });
-        }
-        const mazeMesh = this.mazeGen.generateThreeMesh(CONFIG.MAZE);
-        mazeMesh.name = 'maze-mesh';
-        this.scene.add(mazeMesh);
-
-        // 입구/출구 시각적 표식 추가
-        this._addMazeMarkers();
+            }
+        });
     }
 
     _addMazeMarkers() {
@@ -252,18 +289,15 @@ export class PlayScene extends BaseScene {
             old.material.dispose();
         }
 
-        const textureLoader = new THREE.TextureLoader();
-        const floorTexture = textureLoader.load(CONFIG.MAZE.FLOOR_TEXTURE_URL);
-        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-        const floorSize = Math.max(this.mazeGen.width, this.mazeGen.height) * CONFIG.MAZE.WALL_THICKNESS + 2;
-        floorTexture.repeat.set(floorSize / 2, floorSize / 2);
-
+        // 전체 미로를 덮는 기본 베이스 바닥 (그림자 및 베이스용)
+        const floorSize = Math.max(this.mazeGen.width, this.mazeGen.height) * CONFIG.MAZE.WALL_THICKNESS + 10;
         const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(floorSize, floorSize),
-            new THREE.MeshStandardMaterial({ map: floorTexture, color: 0x444444 })
+            new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 })
         );
         floor.name = 'floor-mesh';
         floor.rotation.x = -Math.PI / 2;
+        floor.position.y = 0; // 타일들이 0.01에 있으므로 0에 배치
         floor.receiveShadow = true;
         this.scene.add(floor);
     }
@@ -289,7 +323,30 @@ export class PlayScene extends BaseScene {
             });
         }
 
-        // 2. 카메라 컨트롤러 업데이트 (점프 효과 등)
+        // 1.6 아이템 업데이트 및 충돌 체크
+        if (this.itemManager) {
+            this.itemManager.update(deltaTime);
+            this.itemManager.checkCollisions(this.player.position, CONFIG.PLAYER.PLAYER_RADIUS, (item) => {
+                // 아이템 획득 시 효과
+                if (this.game.sound) {
+                    this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
+                }
+
+                // 플레이어 상태에 반영
+                this.player.applyItemEffect(item);
+
+                // HUD 즉시 갱신
+                this._updateHUD();
+            });
+        }
+
+        // 아이콘/타이머 등 지속적인 HUD 상태 업데이트
+        this._updateHUD();
+
+        // 2. 스테이지 종료 체크 (출구 도달)
+        this._checkStageCompletion();
+
+        // 3. 카메라 컨트롤러 업데이트 (점프 효과 등)
         const jumpProgress = this.player.isJumping ? this.player.jumpTimer / this.player.jumpDuration : 0;
         this.cameraController.update(deltaTime, this.player.isJumping, jumpProgress);
 
@@ -320,9 +377,14 @@ export class PlayScene extends BaseScene {
         if (input.wasJustPressed('ArrowUp')) this.player.startMove(1);
         else if (input.wasJustPressed('ArrowDown')) this.player.startMove(-1);
 
-        if (input.wasJustPressed(CONFIG.PLAYER.TOGGLE_VIEW_KEY)) this.cameraController.toggleView();
-        if (input.wasJustPressed('Space')) this.player.startJump();
+        // 3. 점프 (Space 삭제 - 이제 아이템 버튼으로만 가능)
 
+        // 4. 망치 사용 (E 키 또는 HUD 버튼)
+        if (input.wasJustPressed('KeyE')) {
+            this._useHammer();
+        }
+
+        // 5. 스와이프 입력 처리
         const swipe = input.consumeSwipe();
         if (swipe) {
             switch (swipe) {
@@ -332,5 +394,263 @@ export class PlayScene extends BaseScene {
                 case 'right': this.player.startRotation(-Math.PI / 2); break;
             }
         }
+    }
+
+    /**
+     * HUD UI (인벤토리 및 상태 효과) 동기화
+     */
+    _updateHUD() {
+        if (!this.player) return;
+
+        // 1. 인벤토리 수량 업데이트
+        const stageCountEl = document.querySelector('#hud-stage .count');
+        if (stageCountEl) stageCountEl.textContent = this.stageManager.level;
+
+        // 2. 점프 아이템 개수 업데이트 (진행중인 부스트 효과 대신 개수 표시)
+        const jumpBtn = document.getElementById('use-jump-btn');
+        if (jumpBtn) {
+            const count = this.player.inventory.jumpCount;
+            jumpBtn.querySelector('.count').textContent = count;
+            if (count > 0) jumpBtn.classList.remove('locked');
+            else jumpBtn.classList.add('locked');
+        }
+
+        // 3. 손전등 상태 (원형 프로그레스)
+        const flashlightBtn = document.getElementById('use-flashlight-btn');
+        if (flashlightBtn) {
+            const circle = flashlightBtn.querySelector('.progress-ring__circle');
+            if (this.player.flashlightTimer > 0) {
+                const radius = 26;
+                const circumference = 2 * Math.PI * radius;
+                const offset = circumference - (this.player.flashlightTimer / CONFIG.ITEMS.FLASHLIGHT.DURATION) * circumference;
+                circle.style.strokeDashoffset = offset;
+
+                if (this.player.flashlightTimer < CONFIG.ITEMS.FLASHLIGHT.FLICKER_THRESHOLD) {
+                    circle.style.stroke = "#ff4444"; // 배터리 부족 시 빨간색
+                } else {
+                    circle.style.stroke = "#00ffff";
+                }
+            } else {
+                circle.style.strokeDashoffset = 163.36;
+            }
+        }
+
+        // 4. 미니맵 가시성 제어
+        if (this.minimap && this.minimap.container) {
+            this.minimap.container.style.display = this.player.inventory.hasMap ? 'block' : 'none';
+        }
+
+        // 5. 아이템 액션 버튼 상태 제어
+        this._updateItemButtons();
+
+        // 6. 플레이어 좌표 정보 업데이트 (사용자 피드백 반영)
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const offsetX = -(this.mazeGen.width * thickness) / 2;
+        const offsetZ = -(this.mazeGen.height * thickness) / 2;
+
+        // Math.round로 더 직관적인 그리드 인덱스 계산
+        const px = Math.round((this.player.group.position.x - offsetX - thickness / 2) / thickness);
+        const py = Math.round((this.player.group.position.z - offsetZ - thickness / 2) / thickness);
+
+        const posDisplay = document.getElementById('grid-pos-display');
+        if (posDisplay) {
+            posDisplay.textContent = `Pos: ${px}, ${py} (${this.mazeGen.width}x${this.mazeGen.height})`;
+        }
+    }
+
+    /**
+     * 아이템 사용 버튼 초기화
+     */
+    _initItemButtons() {
+        const jumpBtn = document.getElementById('use-jump-btn');
+        if (jumpBtn) {
+            jumpBtn.onclick = () => {
+                this.player.startJump(true); // 특수 점프 사용
+                this._updateHUD();
+            };
+        }
+
+        const hammerBtn = document.getElementById('use-hammer-btn');
+        if (hammerBtn) {
+            hammerBtn.onclick = () => {
+                this._useHammer();
+            };
+        }
+
+        const cheatBtn = document.getElementById('cheat-btn');
+        if (cheatBtn) {
+            cheatBtn.onclick = () => {
+                this.player.applyCheat();
+                this._updateHUD();
+                this._updateItemButtons();
+            };
+        }
+
+        const flashlightBtn = document.getElementById('use-flashlight-btn');
+        if (flashlightBtn) {
+            flashlightBtn.onclick = () => {
+                this.player.toggleFlashlight();
+                this._updateHUD();
+            };
+        }
+    }
+
+    /**
+     * 아이템 버튼의 활성/비활성 시각적 상태 업데이트
+     */
+    _updateItemButtons() {
+        if (!this.player) return;
+
+        const hammerBtn = document.getElementById('use-hammer-btn');
+        if (hammerBtn) {
+            const count = this.player.inventory.hammerCount;
+            hammerBtn.querySelector('.count').textContent = count;
+            if (count > 0) hammerBtn.classList.remove('locked');
+            else hammerBtn.classList.add('locked');
+        }
+
+        const flashlightBtn = document.getElementById('use-flashlight-btn');
+        if (flashlightBtn) {
+            const hasFlashlight = this.player.inventory.hasFlashlight;
+            const battery = this.player.flashlightTimer;
+
+            if (hasFlashlight && battery > 0) {
+                flashlightBtn.classList.remove('locked');
+                if (this.player.isFlashlightOn) flashlightBtn.classList.add('active');
+                else flashlightBtn.classList.remove('active');
+            } else {
+                flashlightBtn.classList.add('locked');
+                flashlightBtn.classList.remove('active');
+            }
+        }
+    }
+
+    /**
+     * 망치 사용 실질 로직
+     */
+    _useHammer() {
+        if (!this.player || this.player.inventory.hammerCount <= 0) return;
+
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const width = this.mazeGen.width;
+        const height = this.mazeGen.height;
+        const offsetX = -(width * thickness) / 2;
+        const offsetZ = -(height * thickness) / 2;
+
+        // 현재 위치 좌표 계산 (Math.round를 써야 타일의 정중앙 인덱스가 잘 잡힘)
+        const px = Math.round((this.player.group.position.x - offsetX - thickness / 2) / thickness);
+        const py = Math.round((this.player.group.position.z - offsetZ - thickness / 2) / thickness);
+
+        this.player.useHammer((dx, dy) => {
+            const tx = px + dx;
+            const ty = py + dy;
+
+            console.log(`HAMMER ACTION: Player[${px}, ${py}] -> Target[${tx}, ${ty}] (Direction: ${dx}, ${dy})`);
+
+            if (tx >= 0 && tx < width && ty >= 0 && ty < height) {
+                const targetVal = this.mazeGen.grid[ty][tx];
+                console.log(`Grid value at target: ${targetVal}`);
+
+                if (targetVal === 1) {
+                    // 1. 외곽 벽 보호
+                    if (tx === 0 || tx === width - 1 || ty === 0 || ty === height - 1) {
+                        console.warn("ACTION DENIED: Cannot break outer boundary walls!");
+                        return;
+                    }
+
+                    // 2. 1겹 벽 제약 조건 체크 (뒤쪽 칸 확인)
+                    const bx = tx + dx;
+                    const by = ty + dy;
+
+                    // 뒤쪽 칸이 그리드 범위 안이고 & 거기에도 벽이 있다면? -> 두꺼운 벽임
+                    if (bx >= 0 && bx < width && by >= 0 && by < height) {
+                        if (this.mazeGen.grid[by][bx] === 1) {
+                            console.warn(`ACTION DENIED: Wall at [${tx}, ${ty}] is too thick to break!`);
+                            if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.3); // 실패음 대용
+                            return;
+                        }
+                    }
+
+                    // 3. 미로 데이터 업데이트
+                    this.mazeGen.grid[ty][tx] = 0;
+                    this.player.inventory.hammerCount--;
+
+                    console.log(`SUCCESS: Wall at [${tx}, ${ty}] destroyed. Refreshing visuals...`);
+
+                    // 4. 시각적 메쉬 완전 갱신 (Atomic Sweep)
+                    this._refreshMazeMesh();
+
+                    // 5. UI 갱신
+                    this._updateHUD();
+                    this._updateItemButtons();
+
+                    if (this.game.sound) {
+                        this.game.sound.playSFX(CONFIG.AUDIO.ITEM_PICKUP_SFX_URL, 0.6);
+                    }
+                } else {
+                    console.warn(`ACTION FAIL: No wall found at [${tx}, ${ty}] (Value: ${targetVal})`);
+                }
+            } else {
+                console.error("ACTION FAIL: Target coordinates out of bounds!");
+            }
+        });
+    }
+
+    /**
+     * 스테이지 완료 및 다음 스테이지 준비
+     */
+    _checkStageCompletion() {
+        if (!this.player || !this.mazeGen) return;
+
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const offsetX = -(this.mazeGen.width * thickness) / 2;
+        const offsetZ = -(this.mazeGen.height * thickness) / 2;
+        const gx = Math.floor((this.player.position.x - offsetX) / thickness);
+        const gy = Math.floor((this.player.position.z - offsetZ) / thickness);
+
+        // 출구 셀에 도달하면 바로 다음 스테이지
+        if (this.mazeGen.exit && gx === this.mazeGen.exit.x && gy === this.mazeGen.exit.y) {
+            console.log("Stage Cleared!");
+            this._gotoNextStage();
+        }
+    }
+
+    _gotoNextStage() {
+        if (this._isTransitioning) return;
+        this._isTransitioning = true;
+
+        // 효과음
+        if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 1.0);
+
+        // 스테이지 매니저 업데이트
+        this.stageManager.nextStage();
+
+        // 플레이어 상태 일부 초기화 (지도 등)
+        this.stageManager.preparePlayerForNextStage(this.player);
+
+        // 새로운 미로 생성
+        const nextSize = this.stageManager.mazeSize;
+        this.mazeGen = new MazeGenerator(nextSize, nextSize);
+        this.mazeGen.generateData();
+
+        // 씬 갱신
+        this._refreshMazeMesh();
+        this._refreshFloorMesh();
+
+        // 플레이어 위치 초기화
+        const startPos = this.mazeGen.getStartPosition(CONFIG.MAZE);
+        const initialAngle = this._calculateInitialAngle();
+        this.player.mazeGen = this.mazeGen;
+        this.player.reset(startPos, initialAngle);
+
+        // 아이템 재배치
+        if (this.itemManager) {
+            this.itemManager.mazeGen = this.mazeGen;
+            this.itemManager.spawnItems();
+        }
+
+        setTimeout(() => {
+            this._isTransitioning = false;
+        }, 1000);
     }
 }

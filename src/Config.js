@@ -101,5 +101,35 @@ export const CONFIG = {
         FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3',
         JUMP_SFX_URL: 'audio/eff_jump.wav',
         DEFAULT_BGM_VOLUME: 0.4
+    },
+
+    // [6] 아이템 설정 (Item Settings)
+    ITEMS: {
+        SPAWN_COUNT: 20,
+        TYPES: {
+            JUMP: { TYPE: 'JUMP', COLOR: 0xFFFF00, SCALE: 0.12 },
+            FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1 },
+            MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15 },
+            HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 }
+        },
+        JUMP_BOOST: {
+            MULTIPLIER: 1.5
+        },
+        FLASHLIGHT: {
+            DURATION: 20.0, // 배터리 지속 시간 (초)
+            INTENSITY: 2.5,
+            DISTANCE: 12,
+            ANGLE: Math.PI / 6,
+            PENUMBRA: 0.4,
+            FLICKER_THRESHOLD: 5.0 // 남은 시간 5초부터 깜빡임
+        }
+    },
+
+    // [7] 스테이지 설정 (Stage Settings)
+    STAGE: {
+        INITIAL_LEVEL: 1,
+        INITIAL_SIZE: 11,
+        SIZE_INCREMENT: 2,
+        MAX_SIZE: 31
     }
 };

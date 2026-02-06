@@ -21,9 +21,6 @@ export class Player {
         this.model.visible = false; // 기본 1인칭이므로 숨김
         this.group.add(this.model);
 
-        // 스포트라이트 (횃불 효과)
-        this._initTorch();
-
         // 상태 변수
         this.actionState = PLAYER_ACTION_STATES.IDLE;
         this.lastActionState = null;
@@ -47,28 +44,37 @@ export class Player {
         this.jumpHeight = CONFIG.PLAYER.JUMP_HEIGHT;
         this.jumpDuration = CONFIG.PLAYER.JUMP_DURATION;
 
+        // 아이템 관련 상태
+        this.inventory = {
+            hasMap: false,
+            hasFlashlight: false,
+            hammerCount: 0,
+            jumpCount: 0
+        };
+
+        // 손전등 관련 상태
+        this.flashlightTimer = 0;
+        this.isFlashlightOn = false;
+        this.flashlight = this._initFlashlight();
+
         this.updateStateLabel();
     }
 
-    _initTorch() {
-        const lightCfg = CONFIG.ENVIRONMENT.SPOTLIGHT;
-        this.torch = new THREE.SpotLight(
-            lightCfg.COLOR,
-            lightCfg.INTENSITY,
-            lightCfg.DISTANCE,
-            lightCfg.ANGLE,
-            lightCfg.PENUMBRA,
-            lightCfg.DECAY
+    _initFlashlight() {
+        const light = new THREE.SpotLight(
+            0xffffff,
+            0, // 초기 강도 0
+            CONFIG.ITEMS.FLASHLIGHT.DISTANCE,
+            CONFIG.ITEMS.FLASHLIGHT.ANGLE,
+            CONFIG.ITEMS.FLASHLIGHT.PENUMBRA
         );
-        this.torch.position.set(0, 0.4, 0);
-
-        const lightTarget = new THREE.Object3D();
-        lightTarget.position.set(0, 1.2, -10);
-        this.group.add(lightTarget);
-        this.torch.target = lightTarget;
-        this.torch.castShadow = true;
-        this.group.add(this.torch);
+        light.position.set(0, 0, 0);
+        light.target.position.set(0, 0, -1);
+        this.group.add(light);
+        this.group.add(light.target);
+        return light;
     }
+
 
     /**
      * 위치 및 회전 초기화
@@ -86,9 +92,6 @@ export class Player {
     }
 
     update(deltaTime) {
-        // 0. 횃불 깜빡임
-        this.torch.intensity = CONFIG.ENVIRONMENT.SPOTLIGHT.INTENSITY + Math.sin(Date.now() * 0.075) * 0.15 + Math.random() * 0.1;
-
         // 1. 애니메이션
         this.animateCharacter(deltaTime);
 
@@ -110,7 +113,7 @@ export class Player {
         if (this.isMoving) {
             if (!this.isJumping) this.actionState = PLAYER_ACTION_STATES.MOVE;
             this.moveTimer += deltaTime;
-            const progress = Math.min(this.moveTimer / CONFIG.PLAYER.MOVE_DURATION, 1);
+            const progress = Math.min(this.moveTimer / this.moveDuration, 1);
 
             const currentY = this.group.position.y;
             this.group.position.lerpVectors(this.startPos, this.targetPos, progress);
@@ -135,6 +138,27 @@ export class Player {
                 this.actionState = this.isMoving ? PLAYER_ACTION_STATES.MOVE : PLAYER_ACTION_STATES.IDLE;
             }
         }
+
+
+        // 7. 손전등 타이머 및 깜빡임 업데이트 (켜져 있을 때만 소모)
+        if (this.isFlashlightOn && this.flashlightTimer > 0) {
+            this.flashlightTimer -= deltaTime;
+
+            if (this.flashlightTimer <= 0) {
+                this.flashlightTimer = 0;
+                this.isFlashlightOn = false;
+                this.flashlight.intensity = 0;
+                console.log("Flashlight battery dead");
+            } else if (this.flashlightTimer < CONFIG.ITEMS.FLASHLIGHT.FLICKER_THRESHOLD) {
+                // 배터리 부족 시 깜빡임
+                const flicker = Math.sin(Date.now() * 0.05) > 0.3 ? CONFIG.ITEMS.FLASHLIGHT.INTENSITY : 0.2;
+                this.flashlight.intensity = flicker;
+            } else {
+                this.flashlight.intensity = CONFIG.ITEMS.FLASHLIGHT.INTENSITY;
+            }
+        } else if (!this.isFlashlightOn || this.flashlightTimer <= 0) {
+            this.flashlight.intensity = 0;
+        }
     }
 
     startMove(stepDir) {
@@ -149,6 +173,9 @@ export class Player {
             this.moveTimer = 0;
             this.startPos.copy(this.group.position);
             this.targetPos.copy(nextPos);
+
+            // 이동 소요 시간
+            this.moveDuration = CONFIG.PLAYER.MOVE_DURATION;
         }
     }
 
@@ -160,12 +187,94 @@ export class Player {
         this.targetRotationY = this.startRotationY + angle;
     }
 
-    startJump() {
+    startJump(isSpecial = false) {
         if (this.isJumping) return;
+
+        // 특수 점프(버튼 클릭)인 경우 소모성 체크
+        if (isSpecial) {
+            if (this.inventory.jumpCount <= 0) return;
+            this.inventory.jumpCount--;
+            this.jumpHeight = CONFIG.PLAYER.JUMP_HEIGHT * CONFIG.ITEMS.JUMP_BOOST.MULTIPLIER;
+        } else {
+            // 일반 점프 (스페이스바 등)
+            this.jumpHeight = CONFIG.PLAYER.JUMP_HEIGHT;
+        }
+
         this.isJumping = true;
         this.jumpTimer = 0;
+
         if (this.sound) this.sound.playSFX(CONFIG.AUDIO.JUMP_SFX_URL, 0.4);
     }
+
+    /**
+     * 망치 사용: 정면의 방향(dx, dy)을 콜백으로 전달
+     */
+    useHammer(callback) {
+        if (this.inventory.hammerCount <= 0 || this.isMoving || this.isJumping) return;
+
+        // 현재 회전(Y)을 기준으로 정면 그리드 방향 계산
+        // -z 가 정면 (y 회전 0일 때)
+        // Three.js 좌표계: sin/cos을 통해 90도 단위의 그리드 방향 dx, dy 추출
+        const dx = Math.round(-Math.sin(this.group.rotation.y));
+        const dy = Math.round(-Math.cos(this.group.rotation.y));
+
+        if (callback) callback(dx, dy);
+    }
+
+    /**
+     * 치트: 모든 아이템 획득 및 수량 최대화
+     */
+    applyCheat() {
+        this.inventory.hasMap = true;
+        this.inventory.hasFlashlight = true;
+        this.inventory.hammerCount = 99;
+        this.inventory.jumpCount = 99;
+        this.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
+        console.log("Cheat activated: All items maximized!");
+    }
+
+    /**
+     * 아이템 효과 적용
+     */
+    applyItemEffect(item) {
+        switch (item.type) {
+            case 'JUMP':
+                this.inventory.jumpCount++;
+                console.log("Jump item acquired!");
+                break;
+            case 'FLASHLIGHT':
+                this.inventory.hasFlashlight = true;
+                this.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
+                // 기존에 껴져있었다면 바로 강도 적용, 아니면 대기
+                if (this.isFlashlightOn) {
+                    this.flashlight.intensity = CONFIG.ITEMS.FLASHLIGHT.INTENSITY;
+                }
+                console.log("Flashlight acquired/recharged!");
+                break;
+            case 'MAP':
+                this.inventory.hasMap = true;
+                console.log("Map acquired!");
+                break;
+            case 'HAMMER':
+                this.inventory.hammerCount++;
+                console.log("Hammer acquired!");
+                break;
+        }
+    }
+
+    /**
+     * 손전등 온오프
+     */
+    toggleFlashlight() {
+        if (!this.inventory.hasFlashlight || this.flashlightTimer <= 0) return false;
+
+        this.isFlashlightOn = !this.isFlashlightOn;
+        this.flashlight.intensity = this.isFlashlightOn ? CONFIG.ITEMS.FLASHLIGHT.INTENSITY : 0;
+
+        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
+        return true;
+    }
+
 
     animateCharacter(deltaTime) {
         if (!this.model) return;

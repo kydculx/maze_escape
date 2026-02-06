@@ -20,10 +20,50 @@
 
     <!-- UI Overlay Container -->
     <div id="ui-overlay">
-        <!-- 랜덤 맵 생성 버튼 -->
-        <div class="random-map-container">
-            <button id="random-map-btn" class="maze-btn">MAP</button>
+        <!-- 상단 중앙 정보 -->
+        <div id="top-hud">
+            <div id="hud-stage" class="hud-item">
+                <span class="label">STAGE</span>
+                <span class="count highlight">1</span>
+            </div>
         </div>
+    </div>
+
+    <!-- 실시간 좌표 표시 (좌상단) -->
+    <div id="grid-pos-display">Pos: 0, 0</div>
+
+    <!-- 우측 상단 치트 버튼 -->
+    <div id="cheat-hud">
+        <button id="cheat-btn" title="치트 실행">😈</button>
+    </div>
+
+    <div id="game-hud">
+        <!-- status-panel 제거 (아이콘에 통합) -->
+    </div>
+
+    <!-- 랜덤 맵 생성 버튼 -->
+    <div class="random-map-container">
+        <button id="random-map-btn" class="maze-btn">MAP</button>
+    </div>
+
+    <!-- 아이템 액션 버튼 (좌측 세로 정렬) -->
+    <div id="item-actions">
+        <div class="action-btn locked" id="use-jump-btn" title="특수 점프 (소모성)">
+            <span class="icon">➰</span>
+            <span class="count">0</span>
+        </div>
+        <div id="use-flashlight-btn" class="action-btn locked" title="손전등 온오프">
+            <span class="icon">🔦</span>
+            <svg class="progress-ring" width="60" height="60">
+                <circle class="progress-ring__circle" stroke="#00ffff" stroke-width="4" fill="transparent" r="26"
+                    cx="30" cy="30" />
+            </svg>
+        </div>
+        <div id="use-hammer-btn" class="action-btn locked" title="망치 사용">
+            <span class="icon">🔨</span>
+            <span class="count">0</span>
+        </div>
+    </div>
     </div>
 
     <!-- 스플래시 화면 오버레이 -->
@@ -39,6 +79,8 @@
         <div class="content">
             <h2>MAIN MENU</h2>
             <div class="menu-options">
+                <!-- 게임 UI (HUD) -->
+
                 <button id="new-game-button">NEW GAME</button>
                 <button id="continue-button" class="disabled">CONTINUE</button>
                 <button id="rankings-button">RANKINGS</button>

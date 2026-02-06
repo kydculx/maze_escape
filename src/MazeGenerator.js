@@ -92,28 +92,56 @@ export class MazeGenerator {
             metalness: 0.05
         });
 
+        // 바닥 타일 설정
+        const floorTexture = textureLoader.load(config.FLOOR_TEXTURE_URL);
+        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+        // 타일 하나당 텍스처 한 번 반복
+        floorTexture.repeat.set(1, 1);
+
+        const floorGeometry = new THREE.PlaneGeometry(config.WALL_THICKNESS, config.WALL_THICKNESS);
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            map: floorTexture,
+            color: 0x888888, // 바닥은 약간 어둡게 (PlayScene의 기존 0x444444보다 약간 밝게)
+            roughness: 0.8,
+            metalness: 0.1
+        });
+
         const offsetX = -(this.width * config.WALL_THICKNESS) / 2;
         const offsetZ = -(this.height * config.WALL_THICKNESS) / 2;
 
+        let wallCount = 0;
+        let floorCount = 0;
+
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
+                const posX = offsetX + (x * config.WALL_THICKNESS) + config.WALL_THICKNESS / 2;
+                const posZ = offsetZ + (y * config.WALL_THICKNESS) + config.WALL_THICKNESS / 2;
+
+                // 1. 모든 칸에 바닥 생성 (벽이 있건 없건)
+                const floorTile = new THREE.Mesh(floorGeometry, floorMaterial);
+                floorTile.position.set(posX, 0.01, posZ);
+                floorTile.rotation.x = -Math.PI / 2;
+                floorTile.receiveShadow = true;
+                group.add(floorTile);
+
+                // 2. 벽인 경우에만 그 위에 벽 생성
                 if (this.grid[y][x] === 1) {
                     const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-                    wall.position.set(
-                        offsetX + (x * config.WALL_THICKNESS) + config.WALL_THICKNESS / 2,
-                        config.WALL_HEIGHT / 2,
-                        offsetZ + (y * config.WALL_THICKNESS) + config.WALL_THICKNESS / 2
-                    );
-
-                    // 그림자 설정
+                    // 바닥 타일 위에 올라오도록 y 위치 살짝 조정 (0.01 + 높이/2)
+                    wall.position.set(posX, config.WALL_HEIGHT / 2 + 0.01, posZ);
                     wall.castShadow = true;
                     wall.receiveShadow = true;
-
                     group.add(wall);
+                    wallCount++;
+                } else {
+                    floorCount++;
                 }
             }
         }
 
+        console.log(`Mesh Gen: ${wallCount} walls, ${floorCount} floors created.`);
+
+        console.log(`Mesh Gen: ${wallCount} walls, ${floorCount} floors.`);
         return group;
     }
 

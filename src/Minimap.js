@@ -13,8 +13,8 @@ export class Minimap {
 
         this.colors = {
             background: 'rgba(0, 0, 0, 0.4)',
-            wall: '#444444', // 돌 담 느낌
-            road: '#111111', // 어두운 바닥
+            wall: '#666666', // 약간 더 밝은 벽
+            road: '#222222', // 길은 어둡지만 구분 가능하게
             player: '#ffaa44', // 횃불/캐릭터 색상
             border: '#555555',
             entrance: '#00ffaa', // 초록계열 (Start)
@@ -61,6 +61,9 @@ export class Minimap {
             for (let x = 0; x < mazeWidth; x++) {
                 if (grid[y][x] === 1) {
                     ctx.fillStyle = this.colors.wall;
+                    ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+                } else {
+                    ctx.fillStyle = this.colors.road;
                     ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
                 }
 
