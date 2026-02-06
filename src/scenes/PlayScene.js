@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { BaseScene } from './BaseScene.js';
 import { CONFIG } from '../Config.js';
 import { MazeGenerator } from '../MazeGenerator.js';
+import { MazeView } from '../MazeView.js';
+import { UIManager } from '../UIManager.js';
 import { Minimap } from '../Minimap.js';
 import { Player } from '../Player.js';
 import { CameraController } from '../CameraController.js';
@@ -30,38 +32,51 @@ export class PlayScene extends BaseScene {
         // 2. 조명 추가
         this._initLights();
 
-        // 3. 미로 생성
+        // 3. 미로 로직 및 뷰 초기화
         this.mazeGen = new MazeGenerator(CONFIG.MAZE.DEFAULT_WIDTH, CONFIG.MAZE.DEFAULT_HEIGHT);
         this.mazeGen.generateData();
-        this._refreshMazeMesh();
+
+        this.mazeView = new MazeView(this.scene);
+        this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
 
         // 4. 플레이어 초기화
-        const startPos = this.mazeGen.getStartPosition(CONFIG.MAZE);
+        const startPos = this.mazeGen.getStartWorldPosition(CONFIG.MAZE);
         this.player = new Player(this.scene, this.mazeGen, this.game.sound);
 
-        // 초기 방향 설정
         const initialAngle = this._calculateInitialAngle();
         this.player.reset(startPos, initialAngle);
 
-        // 5. 카메라 컨트롤러 초기화
+        // 5. 카메라 및 매니저들
         this.cameraController = new CameraController(this.player, this.scene);
         this.camera = this.cameraController.camera;
 
-        // 6. 바닥 생성
         this._refreshFloorMesh();
 
-        // 7. 아이템 매니저 초기화
         this.itemManager = new ItemManager(this.scene, this.mazeGen, CONFIG.ITEMS);
         this.itemManager.spawnItems();
 
-        // 8. 미니맵 초기화
         this.minimap = new Minimap();
-
-        // 9. 스테이지 매니저 초기화
         this.stageManager = new StageManager();
 
-        // 10. 아이템 액션 버튼 바인딩
-        this._initItemButtons();
+        // 6. UI 매니저 초기화 및 바인딩
+        this.ui = new UIManager(this.player, this.mazeGen, this.stageManager);
+        this.ui.bindButtons({
+            onHammer: () => this._useHammer(),
+            onJump: () => {
+                this.player.startJump(true);
+                this.ui.updateAll();
+            },
+            onFlashlight: () => {
+                this.player.toggleFlashlight();
+                this.ui.updateAll();
+            },
+            onCheat: () => {
+                this.player.applyCheat();
+                this.ui.updateAll();
+            }
+        });
+
+        this.ui.updateAll();
     }
 
     _initLights() {
@@ -101,12 +116,12 @@ export class PlayScene extends BaseScene {
         this.mazeGen = new MazeGenerator(newWidth, newHeight);
         this.mazeGen.generateData();
 
-        this._refreshMazeMesh();
+        this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
         this._refreshFloorMesh();
 
-        const startPos = this.mazeGen.getStartPosition(CONFIG.MAZE);
+        const startPos = this.mazeGen.getStartWorldPosition(CONFIG.MAZE);
         const initialAngle = this._calculateInitialAngle();
-        this.player.mazeGen = this.mazeGen; // 주입된 미로 데이터 갱신
+        this.player.mazeGen = this.mazeGen;
         this.player.reset(startPos, initialAngle);
 
         if (this.itemManager) {
@@ -114,172 +129,13 @@ export class PlayScene extends BaseScene {
             this.itemManager.spawnItems();
         }
 
+        // UI에 새 미로 데이터 연결 및 갱신
+        this.ui.mazeGen = this.mazeGen;
+        this.ui.updateAll();
+
         console.log(`Maze reset: ${newWidth}x${newHeight}`);
     }
 
-    _refreshMazeMesh() {
-        console.log("--- DEBUG: Refresing Maze Visuals (Atomic Sweep) ---");
-
-        // 1. 씬 전체를 뒤져서 'maze-'로 시작하는 모든 오브젝트(메쉬, 그룹, 마커) 강제 소탕
-        const toRemove = [];
-        this.scene.traverse(child => {
-            if (child.name && child.name.startsWith('maze-')) {
-                toRemove.push(child);
-            }
-        });
-
-        toRemove.forEach(obj => {
-            console.log(`Force Purging Ghost Object: ${obj.name} (${obj.type})`);
-            this.scene.remove(obj);
-            this._disposeObject(obj);
-        });
-
-        // 2. 새 메쉬 생성 및 추가
-        this.mazeMesh = this.mazeGen.generateThreeMesh(CONFIG.MAZE);
-        this.mazeMesh.name = 'maze-mesh';
-        this.scene.add(this.mazeMesh);
-
-        // 3. 입구/출구 시각적 표식 추가
-        this._addMazeMarkers();
-
-        console.log("Visual refresh complete. Current scene graph purged.");
-    }
-
-    _disposeObject(obj) {
-        if (!obj) return;
-        obj.traverse((child) => {
-            if (child.isMesh) {
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(m => m.dispose());
-                    } else {
-                        child.material.dispose();
-                    }
-                }
-            }
-        });
-    }
-
-    _addMazeMarkers() {
-        // 기존 마커 제거
-        const existing = this.scene.getObjectByName('maze-markers');
-        if (existing) {
-            this.scene.remove(existing);
-        }
-
-        const markers = new THREE.Group();
-        markers.name = 'maze-markers';
-
-        const thickness = CONFIG.MAZE.WALL_THICKNESS;
-        const offsetX = -(this.mazeGen.width * thickness) / 2;
-        const offsetZ = -(this.mazeGen.height * thickness) / 2;
-
-        // 입구 (S - 초록색)
-        if (this.mazeGen.entrance) {
-            const startMarker = this._createMarkerMesh(0x00ffaa, 'S');
-            startMarker.position.set(
-                offsetX + (this.mazeGen.entrance.x * thickness) + thickness / 2,
-                0.01,
-                offsetZ + (this.mazeGen.entrance.y * thickness) + thickness / 2
-            );
-            markers.add(startMarker);
-        }
-
-        // 출구 (G - 빨간색)
-        if (this.mazeGen.exit) {
-            const exitMarker = this._createMarkerMesh(0xff4444, 'G');
-            exitMarker.position.set(
-                offsetX + (this.mazeGen.exit.x * thickness) + thickness / 2,
-                0.01,
-                offsetZ + (this.mazeGen.exit.y * thickness) + thickness / 2
-            );
-            markers.add(exitMarker);
-        }
-
-        this.scene.add(markers);
-    }
-
-    _createMarkerMesh(color, label) {
-        const group = new THREE.Group();
-
-        // 1. 바닥 마법진 표식 (이전 디자인 복구)
-        const texture = this._createMagicCircleTexture(color);
-        const geo = new THREE.PlaneGeometry(1.2, 1.2);
-        const mat = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            opacity: 0.8,
-            side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending
-        });
-        const marker = new THREE.Mesh(geo, mat);
-        marker.name = 'magic-circle';
-        marker.rotation.x = -Math.PI / 2;
-        group.add(marker);
-
-        return group;
-    }
-
-    _createMagicCircleTexture(colorHex) {
-        const size = 256; // 원래 해상도로 복구
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        const color = `#${colorHex.toString(16).padStart(6, '0')}`;
-
-        ctx.clearRect(0, 0, size, size);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 4;
-        const center = size / 2;
-
-        // 바깥 큰 원
-        ctx.beginPath();
-        ctx.arc(center, center, 120, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // 안쪽 작은 원
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(center, center, 100, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // 육각형
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-            const angle = (i / 6) * Math.PI * 2;
-            const x = center + Math.cos(angle) * 100;
-            const y = center + Math.sin(angle) * 100;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.stroke();
-
-        // 다윗의 별
-        for (let j = 0; j < 2; j++) {
-            ctx.beginPath();
-            const offset = (j * Math.PI);
-            for (let i = 0; i < 3; i++) {
-                const angle = (i / 3) * Math.PI * 2 + offset;
-                const x = center + Math.cos(angle) * 100;
-                const y = center + Math.sin(angle) * 100;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.stroke();
-        }
-
-        // 중앙 원
-        ctx.beginPath();
-        ctx.arc(center, center, 30, 0, Math.PI * 2);
-        ctx.stroke();
-
-        const texture = new THREE.CanvasTexture(canvas);
-        return texture;
-    }
 
     _refreshFloorMesh() {
         const old = this.scene.getObjectByName('floor-mesh');
@@ -309,39 +165,23 @@ export class PlayScene extends BaseScene {
         // 1. 플레이어 업데이트
         this.player.update(deltaTime);
 
-        // 1.5 마법진 회전 애니메이션
-        const markers = this.scene.getObjectByName('maze-markers');
-        if (markers) {
-            markers.children.forEach(markerGroup => {
-                const time = Date.now();
-
-                markerGroup.children.forEach(child => {
-                    if (child.name === 'magic-circle') {
-                        child.rotation.z += deltaTime * 0.5;
-                    }
-                });
-            });
+        // 1.5 마법진 회전 애니메이션 (MazeView로 위임)
+        if (this.mazeView) {
+            this.mazeView.animateMarkers(deltaTime);
         }
 
         // 1.6 아이템 업데이트 및 충돌 체크
         if (this.itemManager) {
             this.itemManager.update(deltaTime);
             this.itemManager.checkCollisions(this.player.position, CONFIG.PLAYER.PLAYER_RADIUS, (item) => {
-                // 아이템 획득 시 효과
-                if (this.game.sound) {
-                    this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
-                }
-
-                // 플레이어 상태에 반영
+                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
                 this.player.applyItemEffect(item);
-
-                // HUD 즉시 갱신
-                this._updateHUD();
+                this.ui.updateAll();
             });
         }
 
-        // 아이콘/타이머 등 지속적인 HUD 상태 업데이트
-        this._updateHUD();
+        // UI 상태 업데이트
+        this.ui.updateHUD();
 
         // 2. 스테이지 종료 체크 (출구 도달)
         this._checkStageCompletion();
@@ -396,134 +236,6 @@ export class PlayScene extends BaseScene {
         }
     }
 
-    /**
-     * HUD UI (인벤토리 및 상태 효과) 동기화
-     */
-    _updateHUD() {
-        if (!this.player) return;
-
-        // 1. 인벤토리 수량 업데이트
-        const stageCountEl = document.querySelector('#hud-stage .count');
-        if (stageCountEl) stageCountEl.textContent = this.stageManager.level;
-
-        // 2. 점프 아이템 개수 업데이트 (진행중인 부스트 효과 대신 개수 표시)
-        const jumpBtn = document.getElementById('use-jump-btn');
-        if (jumpBtn) {
-            const count = this.player.inventory.jumpCount;
-            jumpBtn.querySelector('.count').textContent = count;
-            if (count > 0) jumpBtn.classList.remove('locked');
-            else jumpBtn.classList.add('locked');
-        }
-
-        // 3. 손전등 상태 (원형 프로그레스)
-        const flashlightBtn = document.getElementById('use-flashlight-btn');
-        if (flashlightBtn) {
-            const circle = flashlightBtn.querySelector('.progress-ring__circle');
-            if (this.player.flashlightTimer > 0) {
-                const radius = 26;
-                const circumference = 2 * Math.PI * radius;
-                const offset = circumference - (this.player.flashlightTimer / CONFIG.ITEMS.FLASHLIGHT.DURATION) * circumference;
-                circle.style.strokeDashoffset = offset;
-
-                if (this.player.flashlightTimer < CONFIG.ITEMS.FLASHLIGHT.FLICKER_THRESHOLD) {
-                    circle.style.stroke = "#ff4444"; // 배터리 부족 시 빨간색
-                } else {
-                    circle.style.stroke = "#00ffff";
-                }
-            } else {
-                circle.style.strokeDashoffset = 163.36;
-            }
-        }
-
-        // 4. 미니맵 가시성 제어
-        if (this.minimap && this.minimap.container) {
-            this.minimap.container.style.display = this.player.inventory.hasMap ? 'block' : 'none';
-        }
-
-        // 5. 아이템 액션 버튼 상태 제어
-        this._updateItemButtons();
-
-        // 6. 플레이어 좌표 정보 업데이트 (사용자 피드백 반영)
-        const thickness = CONFIG.MAZE.WALL_THICKNESS;
-        const offsetX = -(this.mazeGen.width * thickness) / 2;
-        const offsetZ = -(this.mazeGen.height * thickness) / 2;
-
-        // Math.round로 더 직관적인 그리드 인덱스 계산
-        const px = Math.round((this.player.group.position.x - offsetX - thickness / 2) / thickness);
-        const py = Math.round((this.player.group.position.z - offsetZ - thickness / 2) / thickness);
-
-        const posDisplay = document.getElementById('grid-pos-display');
-        if (posDisplay) {
-            posDisplay.textContent = `Pos: ${px}, ${py} (${this.mazeGen.width}x${this.mazeGen.height})`;
-        }
-    }
-
-    /**
-     * 아이템 사용 버튼 초기화
-     */
-    _initItemButtons() {
-        const jumpBtn = document.getElementById('use-jump-btn');
-        if (jumpBtn) {
-            jumpBtn.onclick = () => {
-                this.player.startJump(true); // 특수 점프 사용
-                this._updateHUD();
-            };
-        }
-
-        const hammerBtn = document.getElementById('use-hammer-btn');
-        if (hammerBtn) {
-            hammerBtn.onclick = () => {
-                this._useHammer();
-            };
-        }
-
-        const cheatBtn = document.getElementById('cheat-btn');
-        if (cheatBtn) {
-            cheatBtn.onclick = () => {
-                this.player.applyCheat();
-                this._updateHUD();
-                this._updateItemButtons();
-            };
-        }
-
-        const flashlightBtn = document.getElementById('use-flashlight-btn');
-        if (flashlightBtn) {
-            flashlightBtn.onclick = () => {
-                this.player.toggleFlashlight();
-                this._updateHUD();
-            };
-        }
-    }
-
-    /**
-     * 아이템 버튼의 활성/비활성 시각적 상태 업데이트
-     */
-    _updateItemButtons() {
-        if (!this.player) return;
-
-        const hammerBtn = document.getElementById('use-hammer-btn');
-        if (hammerBtn) {
-            const count = this.player.inventory.hammerCount;
-            hammerBtn.querySelector('.count').textContent = count;
-            if (count > 0) hammerBtn.classList.remove('locked');
-            else hammerBtn.classList.add('locked');
-        }
-
-        const flashlightBtn = document.getElementById('use-flashlight-btn');
-        if (flashlightBtn) {
-            const hasFlashlight = this.player.inventory.hasFlashlight;
-            const battery = this.player.flashlightTimer;
-
-            if (hasFlashlight && battery > 0) {
-                flashlightBtn.classList.remove('locked');
-                if (this.player.isFlashlightOn) flashlightBtn.classList.add('active');
-                else flashlightBtn.classList.remove('active');
-            } else {
-                flashlightBtn.classList.add('locked');
-                flashlightBtn.classList.remove('active');
-            }
-        }
-    }
 
     /**
      * 망치 사용 실질 로직
@@ -577,12 +289,11 @@ export class PlayScene extends BaseScene {
 
                     console.log(`SUCCESS: Wall at [${tx}, ${ty}] destroyed. Refreshing visuals...`);
 
-                    // 4. 시각적 메쉬 완전 갱신 (Atomic Sweep)
-                    this._refreshMazeMesh();
+                    // 4. 시각적 메쉬 완전 갱신 (MazeView 로 위임)
+                    this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
 
-                    // 5. UI 갱신
-                    this._updateHUD();
-                    this._updateItemButtons();
+                    // 5. UI 갱신 (UIManager 로 위임)
+                    this.ui.updateAll();
 
                     if (this.game.sound) {
                         this.game.sound.playSFX(CONFIG.AUDIO.ITEM_PICKUP_SFX_URL, 0.6);
@@ -633,15 +344,19 @@ export class PlayScene extends BaseScene {
         this.mazeGen = new MazeGenerator(nextSize, nextSize);
         this.mazeGen.generateData();
 
-        // 씬 갱신
-        this._refreshMazeMesh();
+        // 씬 갱신 (MazeView 위임)
+        this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
         this._refreshFloorMesh();
 
         // 플레이어 위치 초기화
-        const startPos = this.mazeGen.getStartPosition(CONFIG.MAZE);
+        const startPos = this.mazeGen.getStartWorldPosition(CONFIG.MAZE);
         const initialAngle = this._calculateInitialAngle();
         this.player.mazeGen = this.mazeGen;
         this.player.reset(startPos, initialAngle);
+
+        // UI 데이터 동기화
+        this.ui.mazeGen = this.mazeGen;
+        this.ui.updateAll();
 
         // 아이템 재배치
         if (this.itemManager) {
