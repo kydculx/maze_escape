@@ -11,11 +11,10 @@ export const PLAYER_ACTION_STATES = {
  * 게임 전반의 설정값을 관리하는 객체
  */
 export const CONFIG = {
-    // [1] 시계/물리 설정 (Movement & Physics)
-    PHYSICS: {
-        MOVE_SPEED: 0.01,
-        ROTATION_SPEED: 0.03,
-        ROTATION_DURATION: 0.3,
+    // [1] 플레이어 설정 (Player Settings)
+    PLAYER: {
+        ROTATION_SPEED: 0.05,
+        ROTATION_DURATION: 0.5,
         MOVE_DURATION: 0.5,
         PLAYER_RADIUS: 0.15,
         JUMP_HEIGHT: 4.4,
