@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Web Game</title>
+    <link rel="icon" href="./favicon.png" type="image/png">
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <!-- 3D 게임이 렌더링될 캔버스 컨테이너 -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- 미니맵 HUD -->
+    <div id="minimap-container">
+        <canvas id="minimap-canvas"></canvas>
+    </div>
+
+    <!-- UI Overlay Container -->
+    <div id="ui-overlay">
+        <!-- 랜덤 맵 생성 버튼 -->
+        <div class="random-map-container">
+            <button id="random-map-btn" class="maze-btn">MAP</button>
+        </div>
+    </div>
+
+    <!-- 스플래시 화면 오버레이 -->
+    <div id="splash-screen">
+        <div class="content">
+            <h1>MAZE ESCAPE 3D</h1>
+            <p>화면을 클릭하여 시작하세요.</p>
+        </div>
+    </div>
+
+    <!-- 메인 메뉴 화면 오버레이 -->
+    <div id="main-menu-screen" class="hidden">
+        <div class="content">
+            <h2>MAIN MENU</h2>
+            <div class="menu-options">
+                <button id="new-game-button">NEW GAME</button>
+                <button id="continue-button" class="disabled">CONTINUE</button>
+                <button id="rankings-button">RANKINGS</button>
+                <button id="settings-button">SETTINGS</button>
+                <button id="help-button">HELP</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="./main.js"></script>
+</body>
+
+</html>

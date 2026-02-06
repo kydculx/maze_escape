@@ -1,0 +1,94 @@
+/**
+ * 미로의 구조와 플레이어 위치를 보여주는 미니맵 클래스
+ */
+export class Minimap {
+    constructor() {
+        this.container = document.getElementById('minimap-container');
+        this.canvas = document.getElementById('minimap-canvas');
+        this.ctx = this.canvas.getContext('2d');
+
+        // 캔버스 내부 해상도 설정
+        this.canvas.width = 200;
+        this.canvas.height = 200;
+
+        this.colors = {
+            background: 'rgba(0, 0, 0, 0.4)',
+            wall: '#444444', // 돌 담 느낌
+            road: '#111111', // 어두운 바닥
+            player: '#ffaa44', // 횃불/캐릭터 색상
+            border: '#555555'
+        };
+    }
+
+    /**
+     * 미니맵 렌더링 (회전형 HUD 스타일)
+     */
+    draw(grid, playerPos, playerRotationY, mazeWidth, mazeHeight, thickness) {
+        if (!grid || !this.ctx) return;
+
+        const ctx = this.ctx;
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+        const centerX = cw / 2;
+        const centerY = ch / 2;
+
+        // 1. 초기화 (투명하게)
+        ctx.clearRect(0, 0, cw, ch);
+
+        // 2. 전체 미로 정중앙 기준 회전 설정
+        const cellW = Math.min(cw / mazeWidth, ch / mazeHeight) * 0.8;
+        const cellH = cellW;
+
+        // 월드 좌표를 그리드 좌표로 변환
+        const offsetX = -(mazeWidth * thickness) / 2;
+        const offsetZ = -(mazeHeight * thickness) / 2;
+        const gridX = (playerPos.x - offsetX) / thickness;
+        const gridY = (playerPos.z - offsetZ) / thickness;
+
+        ctx.save();
+        ctx.translate(centerX, centerY); // 1. 캔버스 정중앙으로 이동
+
+        // 캐릭터의 시야가 항상 북쪽(위쪽)을 향하도록 맵 회전
+        // Three.js의 CCW(+)와 Canvas의 CW(+) 방향 차이 보정
+        ctx.rotate(playerRotationY);
+
+        // 3. 미로 그리드 그리기 (벽만 그리기)
+        ctx.translate(-(mazeWidth * cellW / 2), -(mazeHeight * cellH / 2));
+
+        for (let y = 0; y < mazeHeight; y++) {
+            for (let x = 0; x < mazeWidth; x++) {
+                if (grid[y][x] === 1) {
+                    ctx.fillStyle = this.colors.wall;
+                    ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+                }
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.strokeRect(x * cellW, y * cellH, cellW, cellH);
+            }
+        }
+
+        // 4. 플레이어 아이콘 표시
+        const px = gridX * cellW;
+        const py = gridY * cellH;
+
+        ctx.save();
+        ctx.translate(px, py);
+        // 플레이어 본체는 항상 미니맵 HUD의 '위'(전방)를 바라보도록 역회전
+        ctx.rotate(-playerRotationY);
+
+        const iconSize = cellW * 1.0;
+        ctx.fillStyle = this.colors.player;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -iconSize / 2); // 정면 
+        ctx.lineTo(iconSize / 2, iconSize / 2);
+        ctx.lineTo(-iconSize / 2, iconSize / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        ctx.restore();
+
+        ctx.restore();
+    }
+}
