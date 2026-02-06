@@ -166,7 +166,7 @@ export class PlayScene extends BaseScene {
     _createMarkerMesh(color, label) {
         const group = new THREE.Group();
 
-        // 1. 바닥 마법진 표식
+        // 1. 바닥 마법진 표식 (이전 디자인 복구)
         const texture = this._createMagicCircleTexture(color);
         const geo = new THREE.PlaneGeometry(1.2, 1.2);
         const mat = new THREE.MeshBasicMaterial({
@@ -185,7 +185,7 @@ export class PlayScene extends BaseScene {
     }
 
     _createMagicCircleTexture(colorHex) {
-        const size = 256;
+        const size = 256; // 원래 해상도로 복구
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -208,7 +208,7 @@ export class PlayScene extends BaseScene {
         ctx.arc(center, center, 100, 0, Math.PI * 2);
         ctx.stroke();
 
-        // 육각형 (또는 별 모양)
+        // 육각형
         ctx.beginPath();
         for (let i = 0; i < 6; i++) {
             const angle = (i / 6) * Math.PI * 2;
@@ -220,7 +220,7 @@ export class PlayScene extends BaseScene {
         ctx.closePath();
         ctx.stroke();
 
-        // 역삼각형 2개로 다윗의 별 형태
+        // 다윗의 별
         for (let j = 0; j < 2; j++) {
             ctx.beginPath();
             const offset = (j * Math.PI);
@@ -235,7 +235,7 @@ export class PlayScene extends BaseScene {
             ctx.stroke();
         }
 
-        // 중앙 기호 혹은 작은 원
+        // 중앙 원
         ctx.beginPath();
         ctx.arc(center, center, 30, 0, Math.PI * 2);
         ctx.stroke();
@@ -279,8 +279,13 @@ export class PlayScene extends BaseScene {
         const markers = this.scene.getObjectByName('maze-markers');
         if (markers) {
             markers.children.forEach(markerGroup => {
-                const circle = markerGroup.children.find(c => c.name === 'magic-circle');
-                if (circle) circle.rotation.z += deltaTime * 0.5;
+                const time = Date.now();
+
+                markerGroup.children.forEach(child => {
+                    if (child.name === 'magic-circle') {
+                        child.rotation.z += deltaTime * 0.5;
+                    }
+                });
             });
         }
 
@@ -307,12 +312,8 @@ export class PlayScene extends BaseScene {
     }
 
     _handleInput(input) {
-        // 점프 중에는 회전/이동 입력 차단 (필요시 시도 가능하지만 조작 안정성을 위해)
-        if (this.player.isJumping) {
-            return;
-        }
+        if (this.player.isJumping) return;
 
-        // [1] 키보드 입력 처리
         if (input.wasJustPressed('ArrowLeft')) this.player.startRotation(Math.PI / 2);
         if (input.wasJustPressed('ArrowRight')) this.player.startRotation(-Math.PI / 2);
 
@@ -322,7 +323,6 @@ export class PlayScene extends BaseScene {
         if (input.wasJustPressed(CONFIG.PLAYER.TOGGLE_VIEW_KEY)) this.cameraController.toggleView();
         if (input.wasJustPressed('Space')) this.player.startJump();
 
-        // [2] 제스처(스와이프) 입력 처리
         const swipe = input.consumeSwipe();
         if (swipe) {
             switch (swipe) {
