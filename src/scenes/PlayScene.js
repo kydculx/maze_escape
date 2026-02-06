@@ -165,16 +165,17 @@ export class PlayScene extends BaseScene {
     }
 
     _handleInput(input) {
-        // 점프 중이나 애니메이션 중에는 입력 차단 (Player 내부에서 체크해도 되지만 여기서도 제어 가능)
-        if (this.player.isMoving || this.player.isRotating || this.player.isJumping) {
+        // 점프 중에는 회전/이동 입력 차단 (필요시 시도 가능하지만 조작 안정성을 위해)
+        if (this.player.isJumping) {
             return;
         }
 
         // [1] 키보드 입력 처리
         if (input.wasJustPressed('ArrowLeft')) this.player.startRotation(Math.PI / 2);
-        else if (input.wasJustPressed('ArrowRight')) this.player.startRotation(-Math.PI / 2);
-        else if (input.isPressed('ArrowUp')) this.player.startMove(1);
-        else if (input.isPressed('ArrowDown')) this.player.startMove(-1);
+        if (input.wasJustPressed('ArrowRight')) this.player.startRotation(-Math.PI / 2);
+
+        if (input.wasJustPressed('ArrowUp')) this.player.startMove(1);
+        else if (input.wasJustPressed('ArrowDown')) this.player.startMove(-1);
 
         if (input.wasJustPressed(CONFIG.PHYSICS.TOGGLE_VIEW_KEY)) this.cameraController.toggleView();
         if (input.wasJustPressed('Space')) this.player.startJump();

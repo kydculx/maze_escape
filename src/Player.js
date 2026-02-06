@@ -41,6 +41,7 @@ export class Player {
         this.rotationTimer = 0;
         this.startRotationY = 0;
         this.targetRotationY = 0;
+        this.moveBaseRotationY = 0; // 이동 시작 시의 하체 방향 저장용
 
         this.isJumping = false;
         this.jumpTimer = 0;
@@ -119,6 +120,11 @@ export class Player {
             if (progress >= 1) {
                 this.isMoving = false;
                 if (!this.isJumping) this.actionState = PLAYER_ACTION_STATES.IDLE;
+
+                // 이동이 끝났을 때 하체 방향(배경)을 유지하지 않고 회전이 되어 있다면 원상복구
+                if (Math.abs(this.group.rotation.y - this.moveBaseRotationY) > 0.01) {
+                    this.startRotation(this.moveBaseRotationY - this.group.rotation.y);
+                }
             }
         }
 
@@ -138,7 +144,7 @@ export class Player {
     }
 
     startMove(stepDir) {
-        if (this.isMoving || this.isRotating || this.isJumping) return;
+        if (this.isMoving || this.isJumping) return;
 
         const moveDistance = CONFIG.MAZE.WALL_THICKNESS;
         const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(this.group.quaternion);
@@ -149,11 +155,12 @@ export class Player {
             this.moveTimer = 0;
             this.startPos.copy(this.group.position);
             this.targetPos.copy(nextPos);
+            this.moveBaseRotationY = this.group.rotation.y; // 이동 시작 시 방향 기억
         }
     }
 
     startRotation(angle) {
-        if (this.isMoving || this.isRotating || this.isJumping) return;
+        if (this.isRotating || this.isJumping) return;
         this.isRotating = true;
         this.rotationTimer = 0;
         this.startRotationY = this.group.rotation.y;
