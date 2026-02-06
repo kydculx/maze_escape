@@ -16,14 +16,16 @@ export class Minimap {
             wall: '#444444', // 돌 담 느낌
             road: '#111111', // 어두운 바닥
             player: '#ffaa44', // 횃불/캐릭터 색상
-            border: '#555555'
+            border: '#555555',
+            entrance: '#00ffaa', // 초록계열 (Start)
+            exit: '#ff4444'      // 빨간계열 (Goal)
         };
     }
 
     /**
      * 미니맵 렌더링 (회전형 HUD 스타일)
      */
-    draw(grid, playerPos, playerRotationY, mazeWidth, mazeHeight, thickness) {
+    draw(grid, playerPos, playerRotationY, mazeWidth, mazeHeight, thickness, entrance, exit) {
         if (!grid || !this.ctx) return;
 
         const ctx = this.ctx;
@@ -67,6 +69,18 @@ export class Minimap {
             }
         }
 
+        // 3.5 입구/출구 표시
+        if (entrance) {
+            ctx.fillStyle = this.colors.entrance;
+            ctx.fillRect(entrance.x * cellW, entrance.y * cellH, cellW, cellH);
+            this._drawLabel(ctx, 'S', entrance.x * cellW + cellW / 2, entrance.y * cellH + cellH / 2, cellW);
+        }
+        if (exit) {
+            ctx.fillStyle = this.colors.exit;
+            ctx.fillRect(exit.x * cellW, exit.y * cellH, cellW, cellH);
+            this._drawLabel(ctx, 'G', exit.x * cellW + cellW / 2, exit.y * cellH + cellH / 2, cellW);
+        }
+
         // 4. 플레이어 아이콘 표시
         const px = gridX * cellW;
         const py = gridY * cellH;
@@ -89,6 +103,16 @@ export class Minimap {
 
         ctx.restore();
 
+        ctx.restore();
+    }
+
+    _drawLabel(ctx, text, x, y, size) {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${size * 0.8}px Inter, Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x, y);
         ctx.restore();
     }
 }

@@ -13,11 +13,11 @@ export const PLAYER_ACTION_STATES = {
 export const CONFIG = {
     // [1] 플레이어 설정 (Player Settings)
     PLAYER: {
-        ROTATION_DURATION: 0.5,
         MOVE_DURATION: 0.5,
+        ROTATION_DURATION: 0.3,
         PLAYER_RADIUS: 0.15,
-        JUMP_HEIGHT: 4.4,
-        JUMP_DURATION: 2.0,
+        JUMP_HEIGHT: 5.0,
+        JUMP_DURATION: 1.5,
         TOGGLE_VIEW_KEY: 'KeyV'
     },
 

@@ -12,6 +12,8 @@ export class MazeGenerator {
 
         // 0: 길, 1: 벽
         this.grid = Array.from({ length: this.height }, () => Array(this.width).fill(1));
+        this.entrance = null;
+        this.exit = null;
     }
 
     /**
@@ -60,9 +62,11 @@ export class MazeGenerator {
 
         // 입구 생성 (왼쪽 벽)
         this.grid[1][0] = 0;
+        this.entrance = { x: 0, y: 1 };
 
         // 출구 생성 (오른쪽 벽 가장 먼 곳 중 하나)
         this.grid[this.height - 2][this.width - 1] = 0;
+        this.exit = { x: this.width - 1, y: this.height - 2 };
 
         return this.grid;
     }

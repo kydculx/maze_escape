@@ -44,8 +44,8 @@ export class Player {
 
         this.isJumping = false;
         this.jumpTimer = 0;
-        this.jumpHeight = CONFIG.PHYSICS.JUMP_HEIGHT;
-        this.jumpDuration = CONFIG.PHYSICS.JUMP_DURATION;
+        this.jumpHeight = CONFIG.PLAYER.JUMP_HEIGHT;
+        this.jumpDuration = CONFIG.PLAYER.JUMP_DURATION;
 
         this.updateStateLabel();
     }
@@ -101,7 +101,7 @@ export class Player {
         // 3. 회전 처리
         if (this.isRotating) {
             this.rotationTimer += deltaTime;
-            const progress = Math.min(this.rotationTimer / CONFIG.PHYSICS.ROTATION_DURATION, 1);
+            const progress = Math.min(this.rotationTimer / CONFIG.PLAYER.ROTATION_DURATION, 1);
             this.group.rotation.y = THREE.MathUtils.lerp(this.startRotationY, this.targetRotationY, progress);
             if (progress >= 1) this.isRotating = false;
         }
@@ -110,7 +110,7 @@ export class Player {
         if (this.isMoving) {
             if (!this.isJumping) this.actionState = PLAYER_ACTION_STATES.MOVE;
             this.moveTimer += deltaTime;
-            const progress = Math.min(this.moveTimer / CONFIG.PHYSICS.MOVE_DURATION, 1);
+            const progress = Math.min(this.moveTimer / CONFIG.PLAYER.MOVE_DURATION, 1);
 
             const currentY = this.group.position.y;
             this.group.position.lerpVectors(this.startPos, this.targetPos, progress);
@@ -252,7 +252,7 @@ export class Player {
 
     checkCollision(x, z) {
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
-        const radius = CONFIG.PHYSICS.PLAYER_RADIUS;
+        const radius = CONFIG.PLAYER.PLAYER_RADIUS;
         const offsetX = -(this.mazeGen.width * thickness) / 2;
         const offsetZ = -(this.mazeGen.height * thickness) / 2;
 
