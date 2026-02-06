@@ -13,7 +13,6 @@ export const PLAYER_ACTION_STATES = {
 export const CONFIG = {
     // [1] 플레이어 설정 (Player Settings)
     PLAYER: {
-        ROTATION_SPEED: 0.05,
         ROTATION_DURATION: 0.5,
         MOVE_DURATION: 0.5,
         PLAYER_RADIUS: 0.15,
