@@ -16,15 +16,70 @@ export class Zombie extends Monster {
             ...options
         });
 
-        // 길찾기 관련 상태
-        this.currentPath = null;
-        this.pathIndex = 0;
-        this.lastPathCalcTime = 0;
-
         // 배회(Patrol) 관련 상태
         this.isPatrolling = false;
         this.patrolWaitTimer = 0;
         this.patrolTarget = null;
+
+        // 타일 기반 이동 관련 상태
+        this.isMovingTile = false;
+        this.moveTimer = 0;
+        this.startTilePos = new THREE.Vector3();
+        this.targetTilePos = new THREE.Vector3();
+
+        // 사운드 관련
+        this.sound = options.sound;
+        this._initAudio();
+    }
+
+    _initAudio() {
+        if (!this.sound) return;
+
+        const audioCfg = CONFIG.AUDIO;
+
+        // 1. 배회 사운드 (Patrol/Idle)
+        this.patrolAudio = new Audio(audioCfg.ZOMBIE_PATROL_SFX);
+        this.patrolAudio.loop = true;
+        this.patrolAudio.volume = 0; // 초기 볼륨 0
+
+        // 2. 추적 사운드 (Tracking)
+        this.trackAudio = new Audio(audioCfg.ZOMBIE_TRACK_SFX);
+        this.trackAudio.loop = true;
+        this.trackAudio.volume = 0; // 초기 볼륨 0
+
+        // 사운드 시작 (브라우저 정책에 따라 상호작용 전에는 차단될 수 있음)
+        this._playAudio(this.patrolAudio);
+        this._playAudio(this.trackAudio);
+    }
+
+    _playAudio(audio) {
+        if (!audio) return;
+        audio.play().catch(() => {
+            // 재생 실패 시 무시 (첫 클릭 전 등)
+        });
+    }
+
+    _updateAudioVolumes(deltaTime) {
+        if (!this.sound || !this.patrolAudio || !this.trackAudio) return;
+
+        // 플레이어와의 거리에 따른 감쇄 (Positional Audio 효과 흉내)
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const dist = this.position.distanceTo(this.lastPlayerPos || new THREE.Vector3());
+        const maxDist = thickness * 8; // 소리가 들리는 최대 거리
+
+        let baseVolume = Math.max(0, 1 - (dist / maxDist));
+        baseVolume *= 0.4; // 마스터 좀비 볼륨 계수
+
+        const isTracking = !this.isPatrolling && (this.state === CONFIG.MONSTERS.STATES.MOVE || this.isMovingTile);
+
+        // 상태에 따른 타겟 볼륨 설정 (배회 vs 추적)
+        const targetPatrolVol = !isTracking ? baseVolume : 0;
+        const targetTrackVol = isTracking ? baseVolume : 0;
+
+        // 부드러운 볼륨 전환 (Fade)
+        const fadeSpeed = deltaTime * 2.0;
+        this.patrolAudio.volume = THREE.MathUtils.lerp(this.patrolAudio.volume, targetPatrolVol, fadeSpeed);
+        this.trackAudio.volume = THREE.MathUtils.lerp(this.trackAudio.volume, targetTrackVol, fadeSpeed);
     }
 
     _initModel(options) {
@@ -45,17 +100,8 @@ export class Zombie extends Monster {
         const config = CONFIG.MONSTERS.ZOMBIE;
         const states = CONFIG.MONSTERS.STATES;
 
-        if (this.state === states.IDLE) {
-            // 대기 시: 몸이 앞뒤좌우로 미세하게 흔들림 (흐느적거림)
-            const sway = Math.sin(this.animationTime * config.IDLE_SWAY_SPEED);
-            this.model.rotation.z = sway * config.IDLE_SWAY_AMPLITUDE;
-            this.model.rotation.x = Math.cos(this.animationTime * config.IDLE_SWAY_SPEED * 0.7) * config.IDLE_SWAY_AMPLITUDE;
-
-            // 팔도 미세하게 까닥거림
-            if (this.leftArm) this.leftArm.rotation.z = sway * 0.1;
-            if (this.rightArm) this.rightArm.rotation.z = -sway * 0.1;
-
-        } else if (this.state === states.MOVE) {
+        // 이동 중이거나 이동 상태인 경우
+        if (this.state === states.MOVE || this.isMovingTile) {
             // 이동 시: 비틀거리며 걷기
             const walkCycle = this.animationTime * config.WALK_BOB_SPEED;
             const bob = Math.abs(Math.sin(walkCycle)) * config.WALK_BOB_AMPLITUDE;
@@ -67,14 +113,31 @@ export class Zombie extends Monster {
 
             // 몸의 좌우 흔들림 (비틀거림)
             this.model.rotation.z = Math.sin(walkCycle * 0.5) * 0.1;
+        } else {
+            // 대기 시: 몸이 앞뒤좌우로 미세하게 흔들림 (흐느적거림)
+            const sway = Math.sin(this.animationTime * config.IDLE_SWAY_SPEED);
+            this.model.rotation.z = sway * config.IDLE_SWAY_AMPLITUDE;
+            this.model.rotation.x = Math.cos(this.animationTime * config.IDLE_SWAY_SPEED * 0.7) * config.IDLE_SWAY_AMPLITUDE;
+
+            // 팔도 미세하게 까닥거림
+            if (this.leftArm) this.leftArm.rotation.z = sway * 0.1;
+            if (this.rightArm) this.rightArm.rotation.z = -sway * 0.1;
         }
     }
 
     _updateLogic(deltaTime, player) {
         if (!player) return;
+        this.lastPlayerPos = player.group.position;
 
         const config = CONFIG.MONSTERS.ZOMBIE;
         const states = CONFIG.MONSTERS.STATES;
+
+        // 타일 이동 중에는 논리 업데이트 생략 (도착 후 판단)
+        if (this.isMovingTile) {
+            this._moveAlongPath(deltaTime);
+            this._updateAudioVolumes(deltaTime);
+            return;
+        }
 
         // 1. 플레이어와의 거리 계산
         const dist = this.position.distanceTo(player.group.position);
@@ -124,60 +187,59 @@ export class Zombie extends Monster {
         if (this.state === states.MOVE) {
             this._moveAlongPath(deltaTime);
         }
+
+        // 5. 사운드 볼륨/상태 업데이트
+        this._updateAudioVolumes(deltaTime);
     }
 
     /**
-     * 경로를 따라 실제 이동 수행
+     * 경로를 따라 실제 이동 수행 (타일 단위)
      */
     _moveAlongPath(deltaTime) {
-        if (!this.currentPath || this.pathIndex >= this.currentPath.length) return;
-
         const config = CONFIG.MONSTERS.ZOMBIE;
-        const thickness = CONFIG.MAZE.WALL_THICKNESS;
-        const targetNode = this.currentPath[this.pathIndex];
-        const targetPos = this._gridToWorld(targetNode.x, targetNode.y);
 
-        // 현재 위치에서 타겟 노드까지의 방향 벡터 (World Space)
-        const toTarget = new THREE.Vector3(
-            targetPos.x - this.position.x,
-            0,
-            targetPos.z - this.position.z
-        );
-        const distToNode = toTarget.length();
+        // 1. 타일 이동 중인 경우 (Lerp 처리)
+        if (this.isMovingTile) {
+            this.moveTimer += deltaTime;
+            const progress = Math.min(this.moveTimer / config.MOVE_DURATION, 1);
 
-        if (distToNode > 0.02) {
-            // 1. 회전 로직 (시각적용)
+            // 위치 Lerp
+            this.position.lerpVectors(this.startTilePos, this.targetTilePos, progress);
+
+            // 회전 Lerp (이동 방향 바라보기)
+            const toTarget = new THREE.Vector3().subVectors(this.targetTilePos, this.startTilePos);
             const targetAngle = Math.atan2(toTarget.x, toTarget.z);
             let angleDiff = targetAngle - this.rotation.y;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            this.rotation.y += angleDiff * deltaTime * 5.0; // 회전 속도 약간 상향
+            this.rotation.y += angleDiff * Math.min(deltaTime * 10, 1);
 
-            // 2. 이동 로직 (World Space에서 직선 이동 - 벽 뚫기 방지)
-            const moveStep = config.SPEED * thickness * deltaTime;
-            const finalStep = Math.min(moveStep, distToNode);
-
-            const moveVec = toTarget.normalize().multiplyScalar(finalStep);
-
-            // 안전 장치: 이동할 위치가 유효한지 최종 체크
-            const nextX = this.position.x + moveVec.x;
-            const nextZ = this.position.z + moveVec.z;
-
-            if (this._canMoveTo(nextX, nextZ)) {
-                this.position.x = nextX;
-                this.position.z = nextZ;
-            } else {
-                // 비정상적인 경우 (예: 경로가 벽을 걸침) 스냅 처리
-                this.position.x = targetPos.x;
-                this.position.z = targetPos.z;
+            if (progress >= 1) {
+                this.isMovingTile = false;
+                this.position.copy(this.targetTilePos);
                 this.pathIndex++;
             }
-        } else {
-            // 노드에 매우 근접했으면 위치 스냅 후 다음 노드로
-            this.position.x = targetPos.x;
-            this.position.z = targetPos.z;
-            this.pathIndex++;
+            return;
         }
+
+        // 2. 새로운 타일 이동 시작 체크
+        if (!this.currentPath || this.pathIndex >= this.currentPath.length) return;
+
+        const targetNode = this.currentPath[this.pathIndex];
+        const targetWorldPos = this._gridToWorld(targetNode.x, targetNode.y);
+        const targetVec = new THREE.Vector3(targetWorldPos.x, 0, targetWorldPos.z);
+
+        // 현재 위치와 다음 노드 위치가 같으면 건너뜀 (이미 도착해있는 노드인 경우)
+        if (this.position.distanceTo(targetVec) < 0.01) {
+            this.pathIndex++;
+            return;
+        }
+
+        // 새로운 타일 이동 개시
+        this.isMovingTile = true;
+        this.moveTimer = 0;
+        this.startTilePos.copy(this.position);
+        this.targetTilePos.copy(targetVec);
     }
 
     /**
@@ -268,5 +330,17 @@ export class Zombie extends Monster {
 
         // 벽 체크 (0: 길, 1: 벽)
         return this.mazeGen.grid[grid.y][grid.x] === 0;
+    }
+
+    destroy() {
+        if (this.patrolAudio) {
+            this.patrolAudio.pause();
+            this.patrolAudio = null;
+        }
+        if (this.trackAudio) {
+            this.trackAudio.pause();
+            this.trackAudio = null;
+        }
+        super.destroy();
     }
 }

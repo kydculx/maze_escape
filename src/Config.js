@@ -85,9 +85,10 @@ export const CONFIG = {
     // [6] 사운드 리소스 및 설정 (Audio Assets)
     AUDIO: {
         BGM_URL: 'audio/bgm_background.mp3',      // 배경음악 경로
-        CLICK_SFX_URL: 'audio/eff_click.mp3',     // 클릭 효과음 경로
+        CLICK_SFX_URL: 'audio/eff_teleport.mp3',   // 클릭 효과음 경로 (eff_click 대체)
         FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3', // 발소리 효과음 경로
         JUMP_SFX_URL: 'audio/eff_jump.wav',       // 점프 효과음 경로
+        ITEM_PICKUP_SFX_URL: 'audio/eff_itemget.mp3', // 아이템 획득 효과음
         ZOMBIE_PATROL_SFX: 'audio/eff_zombie_1.mp3', // 좀비 배회음
         ZOMBIE_TRACK_SFX: 'audio/eff_zombie_2.mp3',      // 좀비 추적음
         DEFAULT_BGM_VOLUME: 0.4                   // 기본 배경음악 볼륨 (0~1)
@@ -163,15 +164,16 @@ export const CONFIG = {
             DIE: 'DIE'
         },
         ZOMBIE: {
-            SPEED: 0.2,               // 이동 속도 (칸/초)
-            DETECTION_RANGE: 2,        // 플레이어 감지 범위 (칸)
+            SPEED: 1.5,                // 이동 속도 (미사용 예정 - MOVE_DURATION으로 대체 가능)
+            MOVE_DURATION: 0.6,        // 한 칸 이동 대략 시간 (초)
+            DETECTION_RANGE: 6,        // 플레이어 감지 범위 (타일)
             IDLE_SWAY_SPEED: 2,        // 대기 시 흔들림 속도
             IDLE_SWAY_AMPLITUDE: 0.1,  // 대기 시 흔들림 크기
             WALK_BOB_SPEED: 10,        // 이동 시 움찔거리는 속도
             WALK_BOB_AMPLITUDE: 0.05,  // 이동 시 움찔거리는 크기
             MODEL_SCALE: 0.3,          // 모델 크기
             COLOR: 0x77aa77,           // 좀비 기본 색상 (창백한 초록)
-            PATH_RECALC_INTERVAL: 0.5, // 경로 재계산 주기 (초)
+            PATH_RECALC_INTERVAL: 0.3, // 길찾기 경로 갱신 간격 (초)
             PATROL_RADIUS: 3,          // 배회 반경 (타일)
             PATROL_WAIT_MIN: 1.0,      // 배회 목적지 도착 후 최소 대기 시간 (초)
             PATROL_WAIT_MAX: 3.0       // 배회 목적지 도착 후 최대 대기 시간 (초)
