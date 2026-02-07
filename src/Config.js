@@ -88,6 +88,8 @@ export const CONFIG = {
         CLICK_SFX_URL: 'audio/eff_click.mp3',     // 클릭 효과음 경로
         FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3', // 발소리 효과음 경로
         JUMP_SFX_URL: 'audio/eff_jump.wav',       // 점프 효과음 경로
+        ZOMBIE_PATROL_SFX: 'audio/eff_zombie_1.mp3', // 좀비 배회음
+        ZOMBIE_TRACK_SFX: 'audio/eff_zombie_2.mp3',      // 좀비 추적음
         DEFAULT_BGM_VOLUME: 0.4                   // 기본 배경음악 볼륨 (0~1)
     },
 

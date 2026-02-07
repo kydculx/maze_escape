@@ -6,9 +6,10 @@ import { Zombie } from './Zombie.js';
  * 미로 내의 모든 몬스터를 관리하는 클래스
  */
 export class MonsterManager {
-    constructor(scene, mazeGen) {
+    constructor(scene, mazeGen, soundManager) {
         this.scene = scene;
         this.mazeGen = mazeGen;
+        this.sound = soundManager;
         this.monsters = [];
     }
 
@@ -25,7 +26,7 @@ export class MonsterManager {
             const randomIndex = Math.floor(Math.random() * emptyCells.length);
             const cell = emptyCells.splice(randomIndex, 1)[0];
 
-            const zombie = new Zombie(this.scene);
+            const zombie = new Zombie(this.scene, this.mazeGen, { sound: this.sound });
 
             // 월드 좌표 계산 (MazeGenerator의 좌표계 사용)
             const thickness = CONFIG.MAZE.WALL_THICKNESS;

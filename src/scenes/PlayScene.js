@@ -66,7 +66,7 @@ export class PlayScene extends BaseScene {
 
         this.minimap = new Minimap();
         this.stageManager = new StageManager();
-        this.monsterManager = new MonsterManager(this.scene, this.mazeGen);
+        this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound);
         this.monsterManager.spawnZombies(5);
 
         // 6. UI 매니저 초기화 및 바인딩
