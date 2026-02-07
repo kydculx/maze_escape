@@ -12,11 +12,11 @@ export class UIManager {
         // UI 요소 캐싱
         this.elements = {
             stage: document.querySelector('#hud-stage .count'),
-            pos: document.getElementById('grid-pos-display'),
             hammer: document.getElementById('use-hammer-btn'),
             jump: document.getElementById('use-jump-btn'),
             flashlight: document.getElementById('use-flashlight-btn'),
-            minimap: document.getElementById('minimap-container')
+            minimap: document.getElementById('minimap-container'),
+            map: document.getElementById('random-map-btn')
         };
     }
 
@@ -35,17 +35,7 @@ export class UIManager {
         // 1. 스테이지 표시
         if (this.elements.stage) this.elements.stage.textContent = this.stageManager.level;
 
-        // 2. 좌표 표시
-        if (this.elements.pos && this.player) {
-            const thickness = CONFIG.MAZE.WALL_THICKNESS;
-            const offsetX = -(this.mazeGen.width * thickness) / 2;
-            const offsetZ = -(this.mazeGen.height * thickness) / 2;
 
-            const px = Math.round((this.player.group.position.x - offsetX - thickness / 2) / thickness);
-            const py = Math.round((this.player.group.position.z - offsetZ - thickness / 2) / thickness);
-
-            this.elements.pos.textContent = `Pos: ${px}, ${py} (${this.mazeGen.width}x${this.mazeGen.height})`;
-        }
 
         // 3. 손전등 배터리 프로그레스
         if (this.elements.flashlight) {
@@ -97,31 +87,52 @@ export class UIManager {
     }
 
     /**
-     * 버튼 이벤트 리스너 바인딩
+     * 버튼 이벤트 리스너 바인딩 (터치 대응)
      */
     bindButtons(callbacks) {
-        if (this.elements.hammer) {
-            this.elements.hammer.onclick = (e) => {
-                e.stopPropagation();
-                if (callbacks.onHammer) callbacks.onHammer();
-            };
-        }
-        if (this.elements.jump) {
-            this.elements.jump.onclick = (e) => {
-                e.stopPropagation();
-                if (callbacks.onJump) callbacks.onJump();
-            };
-        }
-        if (this.elements.flashlight) {
-            this.elements.flashlight.onclick = (e) => {
-                e.stopPropagation();
-                if (callbacks.onFlashlight) callbacks.onFlashlight();
-            };
-        }
+        this._setupButton(this.elements.hammer, callbacks.onHammer);
+        this._setupButton(this.elements.jump, callbacks.onJump);
+        this._setupButton(this.elements.flashlight, callbacks.onFlashlight);
+        this._setupButton(this.elements.map, callbacks.onMap);
 
         const cheatBtn = document.getElementById('cheat-btn');
-        if (cheatBtn && callbacks.onCheat) {
-            cheatBtn.onclick = () => callbacks.onCheat();
-        }
+        this._setupButton(cheatBtn, callbacks.onCheat);
+    }
+
+    /**
+     * 마우스와 터치를 모두 지원하는 버튼 바인딩 헬퍼
+     */
+    _setupButton(element, callback) {
+        if (!element) return;
+
+        const handleAction = (e) => {
+            if (callback) callback();
+        };
+
+        // 1. 마우스 클릭 (데스크탑)
+        element.addEventListener('click', (e) => {
+            // 터치 이벤트가 이미 처리된 경우(일부 모바일 브라우저 중복 발생) 방지
+            if (e.pointerType === 'touch') return;
+            handleAction(e);
+        });
+
+        // 2. 터치 시작 (피드백용)
+        element.addEventListener('touchstart', (e) => {
+            if (element.classList.contains('locked')) return;
+            element.classList.add('pressed');
+        }, { passive: true });
+
+        // 3. 터치 종료 (실제 실행)
+        element.addEventListener('touchend', (e) => {
+            if (element.classList.contains('locked')) return;
+            element.classList.remove('pressed');
+            e.preventDefault(); // 클릭 이벤트 중복 방지
+            handleAction(e);
+        }, { passive: false });
+
+        // 4. 터치 취소 (버튼 밖으로 나갔을 때 등)
+        element.addEventListener('touchcancel', () => {
+            element.classList.remove('pressed');
+        });
     }
 }

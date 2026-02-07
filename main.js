@@ -47,7 +47,6 @@ class Game {
 
         // 4. UI 및 이벤트 등록
         this.initUI();
-        this.initMazeUI();
 
         // 초기 UI 숨김 처리 (스플래시 및 메인메뉴)
         document.getElementById('splash-screen').classList.add('hidden');
@@ -127,29 +126,29 @@ class Game {
      * 창 크기 변경 시 현재 장면의 카메라 및 렌더러 업데이트
      */
     onResize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const aspect = width / height;
+
         const camera = this.sceneManager.getCamera();
         if (camera) {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.aspect = aspect;
+
+            // 반응형 FOV (가로 모드 보정)
+            const baseFov = CONFIG.CAMERA.FOV;
+            if (aspect > 1) {
+                const rad = (baseFov * Math.PI) / 180;
+                camera.fov = (2 * Math.atan(Math.tan(rad / 2) / aspect) * 180) / Math.PI;
+            } else {
+                camera.fov = baseFov;
+            }
+
             camera.updateProjectionMatrix();
         }
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(width, height);
     }
 
-    /**
-     * 미로 관련 UI 초기화 및 이벤트 바인딩
-     */
-    initMazeUI() {
-        const randomBtn = document.getElementById('random-map-btn');
 
-        if (randomBtn) {
-            randomBtn.onclick = () => {
-                const currentScene = this.sceneManager.currentScene;
-                if (currentScene instanceof PlayScene) {
-                    currentScene.resetMaze();
-                }
-            };
-        }
-    }
 
     /**
      * 메인 애니메이션 루프

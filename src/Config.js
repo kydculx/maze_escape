@@ -13,123 +13,127 @@ export const PLAYER_ACTION_STATES = {
 export const CONFIG = {
     // [1] 플레이어 설정 (Player Settings)
     PLAYER: {
-        MOVE_DURATION: 0.5,
-        ROTATION_DURATION: 0.3,
-        PLAYER_RADIUS: 0.15,
-        JUMP_HEIGHT: 5.0,
-        JUMP_DURATION: 1.5,
-        TOGGLE_VIEW_KEY: 'KeyV'
+        MOVE_DURATION: 0.5,       // 한 칸 이동 시 소요되는 시간 (초)
+        ROTATION_DURATION: 0.3,   // 90도 회전 시 소요되는 시간 (초)
+        PLAYER_RADIUS: 0.15,      // 플레이어 충돌 판정 반지름
+        JUMP_HEIGHT: 5.0,         // 기본 점프 높이
+        JUMP_DURATION: 1.5,       // 점프 전체 사이클 시간 (초)
+        // 점프 시 시각 효과 설정
+        JUMP_EFFECT: {
+            MAX_EXTRA_VISIBILITY: 10,  // 점프 시 추가로 확보되는 안개 가시거리
+            VISIBILITY_THRESHOLD: 0.50, // 가시거리가 넓어지기 시작하는 높이 임계값 (0~1)
+            FIRST_PERSON_TILT: 1.2     // 1인칭 점프 시 아래를 내려다보는 강도
+        }
     },
 
     // [2] 카메라 기본 설정 (Camera Settings)
     CAMERA: {
-        FOV: 75,
-        NEAR: 0.1,
-        FAR: 1000,
-        FIRST_PERSON_HEIGHT: 0.5,
-        INITIAL_POS: { x: 0, y: 2, z: 5 }, // 스플래시/메뉴용
-        LOOK_AT: { x: 0, y: 0, z: 0 },      // 스플래시/메뉴용
-        THIRD_PERSON: {
-            OFFSET: { x: 0, y: 0.43, z: 0.29 },
-            LOOK_AT_OFFSET: { x: 0, y: 0.41, z: -1 }
-        }
+        FOV: 75,                      // 시야각 (Field of View)
+        NEAR: 0.1,                    // 렌더링 시작 최소 거리
+        FAR: 10,                    // 렌더링 끝 최대 거리
+        FIRST_PERSON_HEIGHT: 0.5,     // 1인칭 시점의 카메라 높이
+        INITIAL_POS: { x: 0, y: 2, z: 5 }, // 스플래시/메뉴 화면에서의 초기 카메라 위치
+        LOOK_AT: { x: 0, y: 0, z: 0 }       // 스플래시/메뉴 화면에서 카메라가 바라보는 지점
     },
 
     // [3] 환경 및 조명 (Environment & Lighting)
     ENVIRONMENT: {
         FOG: {
-            COLOR: 0x000000,
-            NEAR: 1,
-            FAR: 4
+            COLOR: 0x000000,          // 안개 색상 (검정색은 어둠을 표현)
+            NEAR: 0,                  // 안개가 시작되는 거리
+            FAR: 4                    // 안개로 인해 아무것도 보이지 않게 되는 거리
         },
         LIGHTING: {
-            // 주방 설정 (Menu/Splash)
+            // 메뉴/스플래시 화면용 조명
             MENU_AMBIENT: { COLOR: 0xffffff, INTENSITY: 0.05 },
             MENU_POINT: { COLOR: 0xffffff, INTENSITY: 1, POSITION: { x: 5, y: 5, z: 5 } },
-            // 게임 플레이 설정
-            AMBIENT_INTENSITY: 0.05,
-            SUN_INTENSITY: 0.1
-        },
-        SPOTLIGHT: {
-            COLOR: 0xffffff,
-            INTENSITY: 2.0,
-            DISTANCE: 10,
-            ANGLE: Math.PI / 7,
-            PENUMBRA: 0.1,
-            DECAY: 0
-        },
-        MOON: {
-            SIZE: 2,
-            COLOR: 0xddddff,
-            EMISSIVE: 0x222244,
-            POSITION: { x: -20, y: 15, z: -20 }
-        },
-        STARS: {
-            COUNT: 2000,
-            COLOR: 0xffffff,
-            SIZE: 0.1
+            // 실제 게임 플레이 조명
+            AMBIENT_INTENSITY: 0.005,  // 전체적인 환경 광도
+            SUN_INTENSITY: 0.005        // 태양광(직사광) 강도
         }
     },
 
-    // [4] 메뉴 및 미학적 요소 (Menu & Aesthetics)
+    // [4] 메뉴 애니메이션용 객체 설정 (Menu & Aesthetics)
     CUBE: {
-        SIZE: [1, 1, 1],
-        COLOR: 0x00ff00,
-        ROTATION_SPEED: 0.01
+        SIZE: [1, 1, 1],              // 큐브 크기 [가로, 세로, 높이]
+        COLOR: 0x00ff00,              // 큐브 색상
+        ROTATION_SPEED: 0.01          // 큐브 회전 속도
     },
     FLOOR: {
-        SIZE: [20, 20],
-        COLOR: 0x111111,
-        POSITION_Y: -2
+        SIZE: [20, 20],               // 바닥 크기 [가로, 세로]
+        COLOR: 0x111111,              // 바닥 색상
+        POSITION_Y: -2                // 바닥의 Y축 위치
     },
 
-    // [4] 미로 설정 (Maze Settings)
+    // [5] 미로 기본 설정 (Maze Settings)
     MAZE: {
-        DEFAULT_WIDTH: 15,
-        DEFAULT_HEIGHT: 15,
-        WALL_HEIGHT: 2,
-        WALL_THICKNESS: 1.5,
-        WALL_COLOR: 0xffffff,
-        TEXTURE_URL: 'textures/wall_brick.png',
-        FLOOR_TEXTURE_URL: 'textures/floor_stone.png'
+        DEFAULT_WIDTH: 15,            // 초기 미로 가로 칸 수
+        DEFAULT_HEIGHT: 15,           // 초기 미로 세로 칸 수
+        WALL_HEIGHT: 2,               // 벽의 높이
+        WALL_THICKNESS: 1.5,          // 벽의 두께 (이동 거리 단위)
+        WALL_COLOR: 0xffffff,         // 벽의 기본 색상 (텍스처와 곱해짐)
+        TEXTURE_URL: 'textures/wall_brick.png',   // 벽 텍스처 경로
+        FLOOR_TEXTURE_URL: 'textures/floor_stone.png' // 바닥 텍스처 경로
     },
 
-    // [5] 사운드 리소스 (Audio Assets)
+    // [6] 사운드 리소스 및 설정 (Audio Assets)
     AUDIO: {
-        BGM_URL: 'audio/bgm_background.mp3',
-        CLICK_SFX_URL: 'audio/eff_click.mp3',
-        FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3',
-        JUMP_SFX_URL: 'audio/eff_jump.wav',
-        DEFAULT_BGM_VOLUME: 0.4
+        BGM_URL: 'audio/bgm_background.mp3',      // 배경음악 경로
+        CLICK_SFX_URL: 'audio/eff_click.mp3',     // 클릭 효과음 경로
+        FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3', // 발소리 효과음 경로
+        JUMP_SFX_URL: 'audio/eff_jump.wav',       // 점프 효과음 경로
+        DEFAULT_BGM_VOLUME: 0.4                   // 기본 배경음악 볼륨 (0~1)
     },
 
-    // [6] 아이템 설정 (Item Settings)
+    // [7] 아이템 설정 (Item Settings)
     ITEMS: {
-        SPAWN_COUNT: 20,
+        SPAWN_COUNT: 20, // 스테이지 시작 시 생성될 아이템 총 개수
         TYPES: {
-            JUMP: { TYPE: 'JUMP', COLOR: 0xFFFF00, SCALE: 0.12 },
-            FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1 },
-            MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15 },
-            HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 }
+            JUMP: { TYPE: 'JUMP', COLOR: 0xFFFF00, SCALE: 0.12 },      // 점프 아이템 외형 설정
+            FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1 }, // 손전등 아이템 외형 설정
+            MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15 },       // 지도 아이템 외형 설정
+            HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 }  // 망치 아이템 외형 설정
         },
+        // 지도 관련 세부 설정
+        MAP: {
+            COLORS: {
+                WALL: '#666666',      // 미니맵 상의 벽 색상
+                ROAD: '#222222',      // 미니맵 상의 길 색상
+                PLAYER: '#ffaa44',    // 플레이어 아이콘 색상
+                ENTRANCE: '#00ffaa',  // 입구 색상
+                EXIT: '#ff4444'       // 출구 색상
+            },
+            ROTATION_FOLLOW: true     // 플레이어 회전에 따라 맵을 회전시킬지 여부
+        },
+        // 망치 관련 세부 설정
+        HAMMER: {
+            CAN_BREAK_BOUNDARY: false,   // 최외곽 경계 벽 파괴 가능 여부
+            CAN_BREAK_THICK_WALLS: false // 두 겹 이상의 두꺼운 벽 파괴 가능 여부
+        },
+        // 점프 강화 관련 설정
         JUMP_BOOST: {
-            MULTIPLIER: 1.5
+            MULTIPLIER: 1 // 특수 점프 시의 높이 배율
         },
+        // 손전등 관련 세부 설정
         FLASHLIGHT: {
-            DURATION: 20.0, // 배터리 지속 시간 (초)
-            INTENSITY: 2.5,
-            DISTANCE: 12,
-            ANGLE: Math.PI / 6,
-            PENUMBRA: 0.4,
-            FLICKER_THRESHOLD: 5.0 // 남은 시간 5초부터 깜빡임
+            DURATION: 30.0,           // 배터리 지속 시간 (초)
+            RECHARGE_DURATION: 30.0,  // 완충에 소요되는 시간 (초, 대기 및 OFF 시)
+            RECHARGE_DELAY: 3.0,     // 충전이 시작되기 위한 최소 대기 시간 (초)
+            INTENSITY: 10,            // 빛의 밝기 (강도)
+            DISTANCE: 4,              // 빛이 도달하는 최대 거리
+            ANGLE: Math.PI / 7,       // 빛의 조사 각도 (라디안)
+            PENUMBRA: 1,              // 빛 가장자리의 부드러움 정도 (0~1)
+            FLICKER_THRESHOLD: 3.0,    // 깜빡임 시작 기준 배터리 잔량 시간 (초)
+            POSITION_OFFSET: { x: 0, y: 0.5, z: 0 }, // 플레이어 위치 기준 손전등 배치 오프셋
+            TARGET_OFFSET: { x: 0, y: 0.5, z: -1 }   // 손전등이 조준하는 방향 오프셋
         }
     },
 
-    // [7] 스테이지 설정 (Stage Settings)
+    // [8] 스테이지 성장 설정 (Stage Settings)
     STAGE: {
-        INITIAL_LEVEL: 1,
-        INITIAL_SIZE: 11,
-        SIZE_INCREMENT: 2,
-        MAX_SIZE: 31
+        INITIAL_LEVEL: 1,             // 시작 레벨
+        INITIAL_SIZE: 11,             // 시작 미로 크기 (11x11)
+        SIZE_INCREMENT: 2,            // 레벨업 시 증가할 미로 크기
+        MAX_SIZE: 31                  // 최대 미로 크기 제한
     }
 };

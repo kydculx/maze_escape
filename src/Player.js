@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import { CONFIG, PLAYER_ACTION_STATES } from './Config.js';
-import { CharacterBuilder } from './CharacterBuilder.js';
 
 /**
- * 플레이어 캐릭터의 모델, 이동, 애니메이션, 상태를 관리하는 클래스
+ * 플레이어 캐릭터의 위치, 이동, 상태를 관리하는 클래스 (1인칭 전용)
  */
 export class Player {
     constructor(scene, mazeGen, soundManager) {
@@ -11,22 +10,14 @@ export class Player {
         this.mazeGen = mazeGen;
         this.sound = soundManager;
 
-        // 플레이어 그룹 (이 그룹이 실제 월드 상의 위치/회전을 가짐)
+        // 플레이어 그룹 (카메라와 조명의 부모)
         this.group = new THREE.Group();
         this.scene.add(this.group);
 
-        // 시각적 모델 제작
-        this.model = CharacterBuilder.createPlayerModel();
-        this.model.scale.set(0.3, 0.3, 0.3);
-        this.model.visible = false; // 기본 1인칭이므로 숨김
-        this.group.add(this.model);
-
         // 상태 변수
         this.actionState = PLAYER_ACTION_STATES.IDLE;
-        this.lastActionState = null;
         this.animationTime = 0;
         this.lastFootstepTime = 0;
-        this.stateSprite = null;
 
         // 이동/회전/점프 제어용 변수
         this.isMoving = false;
@@ -52,24 +43,29 @@ export class Player {
             jumpCount: 0
         };
 
-        // 손전등 관련 상태
+        // 손전등 및 충전 관련 상태
         this.flashlightTimer = 0;
         this.isFlashlightOn = false;
+        this.idleTimer = 0; // 대기 시간 측정용 타이머
         this.flashlight = this._initFlashlight();
-
-        this.updateStateLabel();
     }
 
     _initFlashlight() {
+        const config = CONFIG.ITEMS.FLASHLIGHT;
         const light = new THREE.SpotLight(
             0xffffff,
             0, // 초기 강도 0
-            CONFIG.ITEMS.FLASHLIGHT.DISTANCE,
-            CONFIG.ITEMS.FLASHLIGHT.ANGLE,
-            CONFIG.ITEMS.FLASHLIGHT.PENUMBRA
+            config.DISTANCE,
+            config.ANGLE,
+            config.PENUMBRA
         );
-        light.position.set(0, 0, 0);
-        light.target.position.set(0, 0, -1);
+
+        const pos = config.POSITION_OFFSET;
+        const target = config.TARGET_OFFSET;
+
+        light.position.set(pos.x, pos.y, pos.z);
+        light.target.position.set(target.x, target.y, target.z);
+
         this.group.add(light);
         this.group.add(light.target);
         return light;
@@ -88,20 +84,13 @@ export class Player {
         this.isJumping = false;
         this.actionState = PLAYER_ACTION_STATES.IDLE;
         this.animationTime = 0;
-        this.updateStateLabel();
     }
 
     update(deltaTime) {
-        // 1. 애니메이션
-        this.animateCharacter(deltaTime);
+        // 1. 발소리 타이머 업데이트
+        this.animationTime += deltaTime;
 
-        // 2. 상태 라벨
-        if (this.lastActionState !== this.actionState) {
-            this.updateStateLabel();
-            this.lastActionState = this.actionState;
-        }
-
-        // 3. 회전 처리
+        // 2. 회전 처리
         if (this.isRotating) {
             this.rotationTimer += deltaTime;
             const progress = Math.min(this.rotationTimer / CONFIG.PLAYER.ROTATION_DURATION, 1);
@@ -109,7 +98,7 @@ export class Player {
             if (progress >= 1) this.isRotating = false;
         }
 
-        // 4. 이동 처리
+        // 3. 이동 처리
         if (this.isMoving) {
             if (!this.isJumping) this.actionState = PLAYER_ACTION_STATES.MOVE;
             this.moveTimer += deltaTime;
@@ -119,13 +108,22 @@ export class Player {
             this.group.position.lerpVectors(this.startPos, this.targetPos, progress);
             this.group.position.y = this.isJumping ? currentY : 0;
 
+            // 이동 중 발소리 (1인칭 연출용)
+            if (!this.isJumping) {
+                const walkSpeed = 12;
+                if (this.animationTime - this.lastFootstepTime >= Math.PI / walkSpeed) {
+                    if (this.sound) this.sound.playSFX(CONFIG.AUDIO.FOOTSTEP_SFX_URL, 0.3);
+                    this.lastFootstepTime = this.animationTime;
+                }
+            }
+
             if (progress >= 1) {
                 this.isMoving = false;
                 if (!this.isJumping) this.actionState = PLAYER_ACTION_STATES.IDLE;
             }
         }
 
-        // 5. 점프 처리
+        // 4. 점프 처리
         if (this.isJumping) {
             this.actionState = PLAYER_ACTION_STATES.JUMP;
             this.jumpTimer += deltaTime;
@@ -140,8 +138,19 @@ export class Player {
         }
 
 
-        // 7. 손전등 타이머 및 깜빡임 업데이트 (켜져 있을 때만 소모)
+        // 5. 손전등 타이머 및 배터리 관리
+        const flCfg = CONFIG.ITEMS.FLASHLIGHT;
+        const isIdle = !this.isMoving && !this.isRotating && !this.isJumping;
+
+        // 대기 시간(Idle) 추적
+        if (isIdle) {
+            this.idleTimer += deltaTime;
+        } else {
+            this.idleTimer = 0; // 움직임이 있으면 즉시 초기화
+        }
+
         if (this.isFlashlightOn && this.flashlightTimer > 0) {
+            // 켜져 있을 때: 배터리 소모
             this.flashlightTimer -= deltaTime;
 
             if (this.flashlightTimer <= 0) {
@@ -149,15 +158,22 @@ export class Player {
                 this.isFlashlightOn = false;
                 this.flashlight.intensity = 0;
                 console.log("Flashlight battery dead");
-            } else if (this.flashlightTimer < CONFIG.ITEMS.FLASHLIGHT.FLICKER_THRESHOLD) {
+            } else if (this.flashlightTimer < flCfg.FLICKER_THRESHOLD) {
                 // 배터리 부족 시 깜빡임
-                const flicker = Math.sin(Date.now() * 0.05) > 0.3 ? CONFIG.ITEMS.FLASHLIGHT.INTENSITY : 0.2;
+                const flicker = Math.sin(Date.now() * 0.05) > 0.3 ? flCfg.INTENSITY : 0.2;
                 this.flashlight.intensity = flicker;
             } else {
-                this.flashlight.intensity = CONFIG.ITEMS.FLASHLIGHT.INTENSITY;
+                this.flashlight.intensity = flCfg.INTENSITY;
             }
-        } else if (!this.isFlashlightOn || this.flashlightTimer <= 0) {
+        } else {
+            // 꺼져 있거나 배터리가 없을 때: 빛 끄기
             this.flashlight.intensity = 0;
+
+            // 자동 충전 로직: OFF 상태 + 대기 시간 충족
+            if (!this.isFlashlightOn && this.idleTimer >= flCfg.RECHARGE_DELAY && this.flashlightTimer < flCfg.DURATION) {
+                const rechargeRate = flCfg.DURATION / flCfg.RECHARGE_DURATION;
+                this.flashlightTimer = Math.min(this.flashlightTimer + rechargeRate * deltaTime, flCfg.DURATION);
+            }
         }
     }
 
@@ -275,90 +291,6 @@ export class Player {
         return true;
     }
 
-
-    animateCharacter(deltaTime) {
-        if (!this.model) return;
-        this.animationTime += deltaTime;
-
-        const leftArm = this.model.getObjectByName('leftArm');
-        const rightArm = this.model.getObjectByName('rightArm');
-        const leftLeg = this.model.getObjectByName('leftLeg');
-        const rightLeg = this.model.getObjectByName('rightLeg');
-        const body = this.model.getObjectByName('body');
-        const head = this.model.getObjectByName('headGroup');
-
-        if (!leftArm || !rightArm || !leftLeg || !rightLeg || !body || !head) return;
-
-        const lerpSpeed = 0.15;
-
-        switch (this.actionState) {
-            case PLAYER_ACTION_STATES.MOVE:
-                const walkSpeed = 12;
-                const swing = Math.sin(this.animationTime * walkSpeed) * 0.6;
-                leftLeg.rotation.x = swing;
-                rightLeg.rotation.x = -swing;
-                leftArm.rotation.x = -swing;
-                rightArm.rotation.x = swing;
-
-                const bob = Math.abs(Math.cos(this.animationTime * walkSpeed)) * 0.04;
-                body.position.y = 0.54 + bob;
-                head.position.y = 0.845 + bob;
-
-                if (this.animationTime - this.lastFootstepTime >= Math.PI / walkSpeed) {
-                    if (this.sound) this.sound.playSFX(CONFIG.AUDIO.FOOTSTEP_SFX_URL, 0.3);
-                    this.lastFootstepTime = this.animationTime;
-                }
-                break;
-
-            case PLAYER_ACTION_STATES.JUMP:
-                leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, -0.6, 0.2);
-                rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, -0.6, 0.2);
-                leftArm.rotation.z = THREE.MathUtils.lerp(leftArm.rotation.z, -0.4, 0.2);
-                rightArm.rotation.z = THREE.MathUtils.lerp(rightArm.rotation.z, 0.4, 0.2);
-                break;
-
-            case PLAYER_ACTION_STATES.IDLE:
-            default:
-                const idleBob = Math.sin(this.animationTime * 2.5) * 0.015;
-                body.position.y = 0.54 + idleBob;
-                head.position.y = 0.845 + idleBob;
-                leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, 0, lerpSpeed);
-                rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, 0, lerpSpeed);
-                leftArm.rotation.x = THREE.MathUtils.lerp(leftArm.rotation.x, 0, lerpSpeed);
-                rightArm.rotation.x = THREE.MathUtils.lerp(rightArm.rotation.x, 0, lerpSpeed);
-                leftArm.rotation.z = THREE.MathUtils.lerp(leftArm.rotation.z, 0, lerpSpeed);
-                rightArm.rotation.z = THREE.MathUtils.lerp(rightArm.rotation.z, 0, lerpSpeed);
-                break;
-        }
-    }
-
-    updateStateLabel() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 256; canvas.height = 128;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, 256, 128);
-
-        let color = '#00ffff';
-        if (this.actionState === PLAYER_ACTION_STATES.JUMP) color = '#ff00ff';
-        else if (this.actionState === PLAYER_ACTION_STATES.MOVE) color = '#ffff00';
-
-        ctx.font = 'Bold 60px Inter, Arial';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = color;
-        ctx.fillText(this.actionState, 128, 64);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        if (!this.stateSprite) {
-            this.stateSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-            this.stateSprite.scale.set(0.8, 0.4, 1);
-            this.stateSprite.position.set(0, 1.2, 0);
-            this.group.add(this.stateSprite);
-        } else {
-            this.stateSprite.material.map.dispose();
-            this.stateSprite.material.map = texture;
-        }
-    }
-
     checkCollision(x, z) {
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
         const radius = CONFIG.PLAYER.PLAYER_RADIUS;
@@ -384,9 +316,9 @@ export class Player {
     get quaternion() { return this.group.quaternion; }
 
     /**
-     * 시점 전환 대응 (모델 가시성 조절)
+     * 시점 전환 대응 (모델 가시성 조절) - 3인칭 삭제로 더 이상 사용되지 않음
      */
     setVisibility(visible) {
-        if (this.model) this.model.visible = visible;
+        // 3인칭 모델 삭제로 아무 연동 없음
     }
 }

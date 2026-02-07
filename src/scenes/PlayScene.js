@@ -70,6 +70,7 @@ export class PlayScene extends BaseScene {
                 this.player.toggleFlashlight();
                 this.ui.updateAll();
             },
+            onMap: () => this.resetMaze(),
             onCheat: () => {
                 this.player.applyCheat();
                 this.ui.updateAll();
@@ -265,21 +266,25 @@ export class PlayScene extends BaseScene {
 
                 if (targetVal === 1) {
                     // 1. 외곽 벽 보호
-                    if (tx === 0 || tx === width - 1 || ty === 0 || ty === height - 1) {
-                        console.warn("ACTION DENIED: Cannot break outer boundary walls!");
-                        return;
+                    if (!CONFIG.ITEMS.HAMMER.CAN_BREAK_BOUNDARY) {
+                        if (tx === 0 || tx === width - 1 || ty === 0 || ty === height - 1) {
+                            console.warn("ACTION DENIED: Cannot break outer boundary walls!");
+                            return;
+                        }
                     }
 
                     // 2. 1겹 벽 제약 조건 체크 (뒤쪽 칸 확인)
-                    const bx = tx + dx;
-                    const by = ty + dy;
+                    if (!CONFIG.ITEMS.HAMMER.CAN_BREAK_THICK_WALLS) {
+                        const bx = tx + dx;
+                        const by = ty + dy;
 
-                    // 뒤쪽 칸이 그리드 범위 안이고 & 거기에도 벽이 있다면? -> 두꺼운 벽임
-                    if (bx >= 0 && bx < width && by >= 0 && by < height) {
-                        if (this.mazeGen.grid[by][bx] === 1) {
-                            console.warn(`ACTION DENIED: Wall at [${tx}, ${ty}] is too thick to break!`);
-                            if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.3); // 실패음 대용
-                            return;
+                        // 뒤쪽 칸이 그리드 범위 안이고 & 거기에도 벽이 있다면? -> 두꺼운 벽임
+                        if (bx >= 0 && bx < width && by >= 0 && by < height) {
+                            if (this.mazeGen.grid[by][bx] === 1) {
+                                console.warn(`ACTION DENIED: Wall at [${tx}, ${ty}] is too thick to break!`);
+                                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.3); // 실패음 대용
+                                return;
+                            }
                         }
                     }
 

@@ -43,48 +43,9 @@ export class MainMenuScene extends BaseScene {
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = -2;
         this.scene.add(floor);
-
-        // 달 추가 (배경 연출용으로 작게 멀리 배치)
-        const moonCfg = CONFIG.ENVIRONMENT.MOON;
-        const moonGeometry = new THREE.SphereGeometry(moonCfg.SIZE * 0.5, 32, 32);
-        const moonMaterial = new THREE.MeshStandardMaterial({
-            color: moonCfg.COLOR,
-            emissive: moonCfg.EMISSIVE,
-            emissiveIntensity: 0.5
-        });
-        const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-        moon.position.set(-20, 15, -20);
-        this.scene.add(moon);
-
-        // 별 추가
-        this.createStars();
     }
 
-    /**
-     * 메인 메뉴용 별무리 생성 (PlayScene과 공유 가능하나 독립적 구현)
-     */
-    createStars() {
-        const starCfg = CONFIG.ENVIRONMENT.STARS;
-        const starGeometry = new THREE.BufferGeometry();
-        const starMaterial = new THREE.PointsMaterial({
-            color: starCfg.COLOR,
-            size: starCfg.SIZE,
-            transparent: true,
-            opacity: 0.6
-        });
 
-        const starVertices = [];
-        for (let i = 0; i < starCfg.COUNT / 2; i++) { // 메뉴는 조금 적게
-            const x = (Math.random() - 0.5) * 100;
-            const y = (Math.random() - 0.5) * 100;
-            const z = (Math.random() - 0.5) * 100;
-            starVertices.push(x, y, z);
-        }
-
-        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-        const stars = new THREE.Points(starGeometry, starMaterial);
-        this.scene.add(stars);
-    }
 
     update() {
         // 객체 자동 회전 및 카메라 부드러운 이동

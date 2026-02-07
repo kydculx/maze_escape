@@ -183,7 +183,7 @@ export class MazeView {
         ctx.arc(center, center, 100, 0, Math.PI * 2);
         ctx.stroke();
 
-        // 육각형 및 별 생략 (CharacterBuilder 등과 중복 로직) - 간단하게 원형만 유지 가능하나 기존 디자인 유지
+        // 육각형 및 별 생략 - 간단하게 원형만 유지 가능하나 기존 디자인 유지
         ctx.beginPath();
         for (let i = 0; i < 6; i++) {
             const angle = (i / 6) * Math.PI * 2;

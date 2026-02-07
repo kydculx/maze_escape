@@ -1,8 +1,11 @@
+import { CONFIG } from './Config.js';
+
 /**
  * 미로의 구조와 플레이어 위치를 보여주는 미니맵 클래스
  */
 export class Minimap {
     constructor() {
+        const config = CONFIG.ITEMS.MAP;
         this.container = document.getElementById('minimap-container');
         this.canvas = document.getElementById('minimap-canvas');
         this.ctx = this.canvas.getContext('2d');
@@ -11,15 +14,17 @@ export class Minimap {
         this.canvas.width = 200;
         this.canvas.height = 200;
 
+        const colors = config.COLORS;
         this.colors = {
             background: 'rgba(0, 0, 0, 0.4)',
-            wall: '#666666', // 약간 더 밝은 벽
-            road: '#222222', // 길은 어둡지만 구분 가능하게
-            player: '#ffaa44', // 횃불/캐릭터 색상
+            wall: colors.WALL,
+            road: colors.ROAD,
+            player: colors.PLAYER,
             border: '#555555',
-            entrance: '#00ffaa', // 초록계열 (Start)
-            exit: '#ff4444'      // 빨간계열 (Goal)
+            entrance: colors.ENTRANCE,
+            exit: colors.EXIT
         };
+        this.rotationFollow = config.ROTATION_FOLLOW;
     }
 
     /**
@@ -51,8 +56,9 @@ export class Minimap {
         ctx.translate(centerX, centerY); // 1. 캔버스 정중앙으로 이동
 
         // 캐릭터의 시야가 항상 북쪽(위쪽)을 향하도록 맵 회전
-        // Three.js의 CCW(+)와 Canvas의 CW(+) 방향 차이 보정
-        ctx.rotate(playerRotationY);
+        if (this.rotationFollow) {
+            ctx.rotate(playerRotationY);
+        }
 
         // 3. 미로 그리드 그리기 (벽만 그리기)
         ctx.translate(-(mazeWidth * cellW / 2), -(mazeHeight * cellH / 2));
@@ -90,8 +96,13 @@ export class Minimap {
 
         ctx.save();
         ctx.translate(px, py);
-        // 플레이어 본체는 항상 미니맵 HUD의 '위'(전방)를 바라보도록 역회전
-        ctx.rotate(-playerRotationY);
+        // 맵이 회전할 때는 아이콘이 항상 위를 보고, 맵이 고정일 때는 아이콘이 회전함
+        if (this.rotationFollow) {
+            ctx.rotate(-playerRotationY);
+        } else {
+            // 맵이 고정일 때는 아이콘이 실제 회전각을 따라감
+            ctx.rotate(-playerRotationY);
+        }
 
         const iconSize = cellW * 1.0;
         ctx.fillStyle = this.colors.player;
