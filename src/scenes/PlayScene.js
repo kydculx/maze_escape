@@ -204,7 +204,7 @@ export class PlayScene extends BaseScene {
 
         // 1.7 몬스터 업데이트
         if (this.monsterManager) {
-            this.monsterManager.update(deltaTime);
+            this.monsterManager.update(deltaTime, this.player);
         }
 
         // UI 상태 업데이트

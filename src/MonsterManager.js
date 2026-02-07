@@ -71,9 +71,9 @@ export class MonsterManager {
     /**
      * 모든 몬스터 업데이트
      */
-    update(deltaTime) {
+    update(deltaTime, player) {
         for (const monster of this.monsters) {
-            monster.update(deltaTime);
+            monster.update(deltaTime, player);
         }
     }
 

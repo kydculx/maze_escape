@@ -59,8 +59,75 @@ export class Zombie extends Monster {
         }
     }
 
-    _updateLogic(deltaTime) {
-        // TODO: AI 로직 (플레이어 추적 등)
-        // 현재는 생성 시 IDLE 상태 유지
+    _updateLogic(deltaTime, player) {
+        if (!player) return;
+
+        const config = CONFIG.MONSTERS.ZOMBIE;
+        const states = CONFIG.MONSTERS.STATES;
+
+        // 1. 플레이어와의 거리 계산
+        const dist = this.position.distanceTo(player.group.position);
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const distInCells = dist / thickness;
+
+        // 2. 상태 전환 로직
+        if (this.state === states.IDLE) {
+            if (distInCells <= config.DETECTION_RANGE) {
+                this.setState(states.MOVE);
+            }
+        } else if (this.state === states.MOVE) {
+            if (distInCells > config.DETECTION_RANGE + 2) { // 약간의 여유(Hysteresis)를 둠
+                this.setState(states.IDLE);
+                return;
+            }
+
+            // 3. 플레이어 추적 및 이동 로직
+            // 3.1 플레이어 방향으로 서서히 회전 (Y축만)
+            const targetRotation = Math.atan2(
+                player.group.position.x - this.position.x,
+                player.group.position.z - this.position.z
+            );
+
+            // 각도 보간 (Lerp)
+            let angleDiff = targetRotation - this.rotation.y;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            this.rotation.y += angleDiff * deltaTime * 2.0;
+
+            // 3.2 이동 전진
+            const moveStep = config.SPEED * thickness * deltaTime;
+
+            // 이동할 목표 위치 계산
+            const nextX = this.position.x + Math.sin(this.rotation.y) * moveStep;
+            const nextZ = this.position.z + Math.cos(this.rotation.y) * moveStep;
+
+            // 3.3 벽 충돌 체크
+            if (this._canMoveTo(nextX, nextZ)) {
+                this.position.x = nextX;
+                this.position.z = nextZ;
+            } else {
+                // 벽에 막혔을 때: 미끄러지기 시도 등 추가 가능 (현재는 정지)
+            }
+        }
+    }
+
+    /**
+     * 월드 좌표 기준으로 해당 위치가 이동 가능한지(벽이 아닌지) 체크
+     */
+    _canMoveTo(worldX, worldZ) {
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const offsetX = -(this.mazeGen.width * thickness) / 2;
+        const offsetZ = -(this.mazeGen.height * thickness) / 2;
+
+        const gridX = Math.floor((worldX - offsetX) / thickness);
+        const gridY = Math.floor((worldZ - offsetZ) / thickness);
+
+        // 미로 범위 체크
+        if (gridX < 0 || gridX >= this.mazeGen.width || gridY < 0 || gridY >= this.mazeGen.height) {
+            return false;
+        }
+
+        // 벽 체크 (0: 길, 1: 벽)
+        return this.mazeGen.grid[gridY][gridX] === 0;
     }
 }

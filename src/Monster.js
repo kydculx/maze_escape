@@ -49,12 +49,12 @@ export class Monster {
     /**
      * 매 프레임 업데이트
      */
-    update(deltaTime) {
+    update(deltaTime, player) {
         this.stateTimer += deltaTime;
         this.animationTime += deltaTime;
 
         this._updateAnimation(deltaTime);
-        this._updateLogic(deltaTime);
+        this._updateLogic(deltaTime, player);
     }
 
     /**
@@ -67,7 +67,7 @@ export class Monster {
     /**
      * 상속받는 클래스에서 구현: AI/이동 로직
      */
-    _updateLogic(deltaTime) {
+    _updateLogic(deltaTime, player) {
         // Override in subclass
     }
 
