@@ -44,14 +44,13 @@ export class Zombie extends Monster {
         this.patrolAudio.preload = 'auto';
         this.patrolAudio.volume = 0;
 
-        // 2. 추적 사운드 (Tracking) - 반복 재생 (요청사항 복구)
+        // 추적 사운드 (Tracking) - 반복 재생 (요청사항 복구)
         this.trackAudio = new Audio(audioCfg.ZOMBIE_TRACK_SFX);
         this.trackAudio.loop = true;
         this.trackAudio.preload = 'auto';
         this.trackAudio.volume = 0;
 
-        // 추적 사운드 시작 (볼륨 0으로 시작)
-        this._playAudio(this.trackAudio);
+        // 초기 재생 시도 제거 -> _updateAudioVolumes에서 처리
     }
 
     _playOneShot(audio) {

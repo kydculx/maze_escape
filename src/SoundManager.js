@@ -7,6 +7,21 @@ export class SoundManager {
         this.sfxMap = new Map();
         this.masterVolume = 1.0;
         this.enabled = true;
+        this.initialized = false;
+    }
+
+    /**
+     * 사용자 상호작용 후 오디오 컨텍스트 등 활성화
+     */
+    init() {
+        if (this.initialized) return;
+        this.initialized = true;
+        console.log('SoundManager initialized (Audio unlocked)');
+
+        // 대기 중이던 BGM이 있다면 재생 시도
+        if (this.bgm && this.bgm.paused) {
+            this.bgm.play().catch(() => { });
+        }
     }
 
     /**
@@ -27,10 +42,12 @@ export class SoundManager {
         this.bgm.loop = true;
         this.bgm.volume = volume * this.masterVolume;
 
-        // 브라우저 정책상 사용자 상호작용 후 재생 가능하므로 에러 핸들링
-        this.bgm.play().catch(error => {
-            console.warn('BGM play failed (User interaction might be needed):', error);
-        });
+        // 이미 상호작용이 있었다면 바로 재생, 아니면 대기 (init()에서 재생됨)
+        if (this.initialized) {
+            this.bgm.play().catch(error => {
+                console.warn('BGM play failed:', error);
+            });
+        }
     }
 
     /**

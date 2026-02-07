@@ -34,8 +34,11 @@ class Game {
 
         // 브라우저 정책상 사용자 상호작용 후 재생 가능하므로 이벤트 리스너 등록
         const initAudio = () => {
-            if (this.sound && !this.sound.bgm) {
-                this.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+            if (this.sound) {
+                this.sound.init(); // 오디오 잠금 해제 알림
+                if (!this.sound.bgm) {
+                    this.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+                }
             }
             window.removeEventListener('click', initAudio);
             window.removeEventListener('keydown', initAudio);
