@@ -84,6 +84,8 @@ export class Player {
         this.isJumping = false;
         this.actionState = PLAYER_ACTION_STATES.IDLE;
         this.animationTime = 0;
+        this.lastFootstepTime = 0; // 사운드 타이머 초기화
+        this.idleTimer = 0;        // 대기 타이머 초기화
     }
 
     update(deltaTime) {
