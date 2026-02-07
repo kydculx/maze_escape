@@ -25,41 +25,54 @@ export class CameraController {
     }
 
     /**
-     * 매 프레임 업데이트 (점프 연출 등)
+     * 매 프레임 업데이트 (점프 연출, 대기 중 도리도리 등)
      */
     update(deltaTime, isJumping, jumpProgress) {
-        if (!isJumping) return;
-
-        // 점프 중 안개 및 카메라 각도 동적 조절
-        const rawFactor = Math.sin(jumpProgress * Math.PI);
-
-        // 1. 안개 가시거리 확장 (임계값 이상일 때만)
-        const fogCfg = CONFIG.ENVIRONMENT.FOG;
+        // 1. 대기 중 도리도리(Sway) 연출
+        const isIdle = !this.player.isMoving && !this.player.isRotating && !this.player.isJumping;
         const jumpCfg = CONFIG.PLAYER.JUMP_EFFECT;
-
-        let visibilityFactor = 0;
-        if (rawFactor > jumpCfg.VISIBILITY_THRESHOLD) {
-            // 임계값(예: 0.5) ~ 1.0 사이를 0.0 ~ 1.0으로 매핑
-            visibilityFactor = (rawFactor - jumpCfg.VISIBILITY_THRESHOLD) / (1.0 - jumpCfg.VISIBILITY_THRESHOLD);
-            visibilityFactor = Math.pow(visibilityFactor, 1.2);
-        }
-
-        if (this.scene.fog) {
-            this.scene.fog.far = fogCfg.FAR + (visibilityFactor * jumpCfg.MAX_EXTRA_VISIBILITY);
-        }
-
-        // 2. 카메라 각도 조절 (정점에서 아래를 내려다봄)
         const camCfg = CONFIG.CAMERA;
-        const targetPos = new THREE.Vector3(
-            0,
-            camCfg.FIRST_PERSON_HEIGHT - (rawFactor * jumpCfg.FIRST_PERSON_TILT),
-            -1
-        );
 
-        // 로컬 좌표를 월드 좌표로 변환하여 lookAt
-        const worldTarget = targetPos.clone();
-        this.player.group.localToWorld(worldTarget);
-        this.camera.lookAt(worldTarget);
+        let swayOffset = 0;
+        if (isIdle) {
+            swayOffset = Math.sin(this.player.animationTime * jumpCfg.IDLE_SWAY_FREQUENCY) * jumpCfg.IDLE_SWAY_AMPLITUDE;
+        }
+
+        // 2. 카메라 시선 처리
+        if (isJumping) {
+            // 점프 중 안개 및 카메라 각도 동적 조절
+            const rawFactor = Math.sin(jumpProgress * Math.PI);
+
+            // 안개 가시거리 확장
+            const fogCfg = CONFIG.ENVIRONMENT.FOG;
+            let visibilityFactor = 0;
+            if (rawFactor > jumpCfg.VISIBILITY_THRESHOLD) {
+                visibilityFactor = (rawFactor - jumpCfg.VISIBILITY_THRESHOLD) / (1.0 - jumpCfg.VISIBILITY_THRESHOLD);
+                visibilityFactor = Math.pow(visibilityFactor, 1.2);
+            }
+
+            if (this.scene.fog) {
+                this.scene.fog.far = fogCfg.FAR + (visibilityFactor * jumpCfg.MAX_EXTRA_VISIBILITY);
+            }
+
+            // 카메라 각도 (점프 정점에서 아래를 내려다봄 + 도리도리?)
+            const targetPos = new THREE.Vector3(
+                swayOffset, // Idle sway 적용 (도리도리)
+                camCfg.FIRST_PERSON_HEIGHT - (rawFactor * jumpCfg.FIRST_PERSON_TILT),
+                -1
+            );
+
+            const worldTarget = targetPos.clone();
+            this.player.group.localToWorld(worldTarget);
+            this.camera.lookAt(worldTarget);
+        } else {
+            // 점프가 아닐 때 (일반 이동 혹은 대기)
+            // 기본 시선 처리 + 도리도리 offset 적용
+            const forward = new THREE.Vector3(swayOffset, camCfg.FIRST_PERSON_HEIGHT, -1);
+            const worldForward = forward.clone();
+            this.player.group.localToWorld(worldForward);
+            this.camera.lookAt(worldForward);
+        }
     }
 
     setFirstPerson() {

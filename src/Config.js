@@ -25,8 +25,8 @@ export const CONFIG = {
             FIRST_PERSON_TILT: 1.2,    // 1인칭 점프 시 아래를 내려다보는 강도
             BOB_FREQUENCY: 12,        // 이동 시 상하 흔들림 속도
             BOB_AMPLITUDE: 0.05,      // 이동 시 상하 흔들림 크기
-            IDLE_SWAY_FREQUENCY: 1.5, // 대기 시 좌우 흔들림 속도
-            IDLE_SWAY_AMPLITUDE: 0.02 // 대기 시 좌우 흔들림 크기
+            IDLE_SWAY_FREQUENCY: 1.2, // 대기 시 도리도리 속도 (조금 더 천천히)
+            IDLE_SWAY_AMPLITUDE: 0.2  // 대기 시 도리도리 강도 (시선 이동이므로 값을 키움)
         }
     },
 
