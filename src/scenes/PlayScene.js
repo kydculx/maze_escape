@@ -167,7 +167,7 @@ export class PlayScene extends BaseScene {
         this.player.update(deltaTime);
 
         // 1.1 스테이지 통계 업데이트 (시간)
-        if (this.stageManager) {
+        if (this.stageManager && this.stageManager.isStageActive) {
             this.stageManager.stageTime += deltaTime;
         }
 
@@ -226,13 +226,25 @@ export class PlayScene extends BaseScene {
     _handleInput(input) {
         if (this.player.isJumping) return;
 
-        if (input.wasJustPressed('ArrowLeft')) this.player.startRotation(Math.PI / 2);
-        if (input.wasJustPressed('ArrowRight')) this.player.startRotation(-Math.PI / 2);
+        if (input.wasJustPressed('ArrowLeft')) {
+            this.player.startRotation(Math.PI / 2);
+            this.stageManager.isStageActive = true;
+        }
+        if (input.wasJustPressed('ArrowRight')) {
+            this.player.startRotation(-Math.PI / 2);
+            this.stageManager.isStageActive = true;
+        }
 
         if (input.wasJustPressed('ArrowUp')) {
-            if (this.player.startMove(1)) this.stageManager.moveCount++;
+            if (this.player.startMove(1)) {
+                this.stageManager.moveCount++;
+                this.stageManager.isStageActive = true;
+            }
         } else if (input.wasJustPressed('ArrowDown')) {
-            if (this.player.startMove(-1)) this.stageManager.moveCount++;
+            if (this.player.startMove(-1)) {
+                this.stageManager.moveCount++;
+                this.stageManager.isStageActive = true;
+            }
         }
 
         // 3. 점프 (Space 삭제 - 이제 아이템 버튼으로만 가능)
@@ -246,10 +258,22 @@ export class PlayScene extends BaseScene {
         const swipe = input.consumeSwipe();
         if (swipe) {
             switch (swipe) {
-                case 'up': if (this.player.startMove(1)) this.stageManager.moveCount++; break;
-                case 'down': if (this.player.startMove(-1)) this.stageManager.moveCount++; break;
-                case 'left': this.player.startRotation(Math.PI / 2); break;
-                case 'right': this.player.startRotation(-Math.PI / 2); break;
+                case 'up': if (this.player.startMove(1)) {
+                    this.stageManager.moveCount++;
+                    this.stageManager.isStageActive = true;
+                } break;
+                case 'down': if (this.player.startMove(-1)) {
+                    this.stageManager.moveCount++;
+                    this.stageManager.isStageActive = true;
+                } break;
+                case 'left':
+                    this.player.startRotation(Math.PI / 2);
+                    this.stageManager.isStageActive = true;
+                    break;
+                case 'right':
+                    this.player.startRotation(-Math.PI / 2);
+                    this.stageManager.isStageActive = true;
+                    break;
             }
         }
     }
@@ -309,6 +333,7 @@ export class PlayScene extends BaseScene {
                     this.mazeGen.grid[ty][tx] = 0;
                     this.player.inventory.hammerCount--;
                     this.stageManager.moveCount++; // 망치 사용도 이동(턴)으로 카운트
+                    this.stageManager.isStageActive = true; // 망치질로도 스타트
 
                     console.log(`SUCCESS: Wall at [${tx}, ${ty}] destroyed. Refreshing visuals...`);
 

@@ -37,6 +37,7 @@ export class StageManager {
     resetStats() {
         this.stageTime = 0;
         this.moveCount = 0;
+        this.isStageActive = false;
     }
 
     /**
