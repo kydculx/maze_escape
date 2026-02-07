@@ -73,7 +73,8 @@ export const CONFIG = {
         WALL_THICKNESS: 1.5,          // 벽의 두께 (이동 거리 단위)
         WALL_COLOR: 0xffffff,         // 벽의 기본 색상 (텍스처와 곱해짐)
         TEXTURE_URL: 'textures/wall_brick.png',   // 벽 텍스처 경로
-        FLOOR_TEXTURE_URL: 'textures/floor_stone.png' // 바닥 텍스처 경로
+        FLOOR_TEXTURE_URL: 'textures/floor_stone.png', // 바닥 텍스처 경로
+        SHAPE: 'RECTANGLE'            // 미로 모양 (RECTANGLE, DIAMOND, CIRCLE, TRIANGLE)
     },
 
     // [6] 사운드 리소스 및 설정 (Audio Assets)

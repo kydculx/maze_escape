@@ -14,17 +14,69 @@ export class MazeGenerator {
         // 탐험 상태 (true: 방문함, false: 미지)
         this.explored = Array.from({ length: this.height }, () => Array(this.width).fill(false));
 
+        // 마스크 (true: 미로 구역, false: 영구 벽 구역)
+        this.mask = Array.from({ length: this.height }, () => Array(this.width).fill(true));
+
         this.entrance = null;
         this.exit = null;
+    }
+
+    /**
+     * 특정 모양의 마스크 적용
+     */
+    applyShapeMask(type) {
+        if (!type || type === 'RECTANGLE') return;
+
+        const centerX = Math.floor(this.width / 2);
+        const centerY = Math.floor(this.height / 2);
+
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                if (type === 'DIAMOND') {
+                    // 마름모꼴: 중심으로부터의 맨해튼 거리 기준
+                    const dist = Math.abs(x - centerX) + Math.abs(y - centerY);
+                    if (dist > Math.max(centerX, centerY)) {
+                        this.mask[y][x] = false;
+                    }
+                } else if (type === 'CIRCLE') {
+                    // 원형: 중심으로부터의 유클리드 거리 기준
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > Math.min(centerX, centerY)) {
+                        this.mask[y][x] = false;
+                    }
+                } else if (type === 'TRIANGLE') {
+                    // 삼각형: 단순 하향 삼각형
+                    if (y < Math.abs(x - centerX)) {
+                        this.mask[y][x] = false;
+                    }
+                }
+            }
+        }
     }
 
     /**
      * 미로 데이터 생성 (Recursive Backtracking)
      */
     generateData() {
+        // 모양 마스크가 적용된 곳은 미리 벽(1)으로 채워둠 (이미 fill(1) 이지만 명시적 확인용으로 놔둠)
+
         const stack = [];
-        const startX = 1;
-        const startY = 1;
+
+        // 마스크 내의 유효한 시작점 찾기 (보통 중심 근처)
+        let startX = Math.floor(this.width / 2);
+        let startY = Math.floor(this.height / 2);
+        // 만약 중심이 마스크 밖이라면 (그럴 일은 거의 없지만) 첫 번째 유효한 점 찾기
+        if (!this.mask[startY][startX]) {
+            outer: for (let y = 1; y < this.height - 1; y++) {
+                for (let x = 1; x < this.width - 1; x++) {
+                    if (this.mask[y][x]) {
+                        startX = x; startY = y; break outer;
+                    }
+                }
+            }
+        }
 
         this.grid[startY][startX] = 0;
         stack.push([startX, startY]);
@@ -44,7 +96,9 @@ export class MazeGenerator {
                 const nx = cx + dx;
                 const ny = cy + dy;
 
-                if (nx > 0 && nx < this.width - 1 && ny > 0 && ny < this.height - 1 && this.grid[ny][nx] === 1) {
+                // 마스크 범위 내에 있고 아직 벽인 곳만
+                if (nx > 0 && nx < this.width - 1 && ny > 0 && ny < this.height - 1 &&
+                    this.mask[ny][nx] && this.grid[ny][nx] === 1) {
                     neighbors.push([nx, ny, dx, dy]);
                 }
             }
@@ -62,13 +116,27 @@ export class MazeGenerator {
             }
         }
 
-        // 입구 생성 (왼쪽 벽)
-        this.grid[1][0] = 0;
-        this.entrance = { x: 0, y: 1 };
+        // 입구 생성: 마스크 내 왼쪽 가장자리에서 가장 처음 만나는 길 찾기
+        outerIn: for (let x = 0; x < this.width; x++) {
+            for (let y = 1; y < this.height - 1; y++) {
+                if (this.mask[y][x] && this.grid[y][x + 1] === 0) {
+                    this.grid[y][x] = 0;
+                    this.entrance = { x: x, y: y };
+                    break outerIn;
+                }
+            }
+        }
 
-        // 출구 생성 (오른쪽 벽 가장 먼 곳 중 하나)
-        this.grid[this.height - 2][this.width - 1] = 0;
-        this.exit = { x: this.width - 1, y: this.height - 2 };
+        // 출구 생성: 마스크 내 오른쪽 가장자리에서 가장 마지막에 만나는 길 찾기
+        outerOut: for (let x = this.width - 1; x >= 0; x--) {
+            for (let y = this.height - 2; y >= 1; y--) {
+                if (this.mask[y][x] && this.grid[y][x - 1] === 0 && (x !== this.entrance.x || y !== this.entrance.y)) {
+                    this.grid[y][x] = 0;
+                    this.exit = { x: x, y: y };
+                    break outerOut;
+                }
+            }
+        }
 
         return this.grid;
     }

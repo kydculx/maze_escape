@@ -34,6 +34,12 @@ export class PlayScene extends BaseScene {
 
         // 3. 미로 로직 및 뷰 초기화
         this.mazeGen = new MazeGenerator(CONFIG.MAZE.DEFAULT_WIDTH, CONFIG.MAZE.DEFAULT_HEIGHT);
+
+        // 모양 결정 (CONFIG 기반 또는 랜덤)
+        const shapes = ['RECTANGLE', 'DIAMOND', 'CIRCLE', 'TRIANGLE'];
+        const shape = CONFIG.MAZE.SHAPE || shapes[Math.floor(Math.random() * shapes.length)];
+        this.mazeGen.applyShapeMask(shape);
+
         this.mazeGen.generateData();
 
         this.mazeView = new MazeView(this.scene);
@@ -115,6 +121,11 @@ export class PlayScene extends BaseScene {
         const newHeight = getRandomOdd(11, 25);
 
         this.mazeGen = new MazeGenerator(newWidth, newHeight);
+
+        const shapes = ['RECTANGLE', 'DIAMOND', 'CIRCLE', 'TRIANGLE'];
+        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+        this.mazeGen.applyShapeMask(shape);
+
         this.mazeGen.generateData();
 
         this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
@@ -390,6 +401,15 @@ export class PlayScene extends BaseScene {
         // 새로운 미로 생성
         const nextSize = this.stageManager.mazeSize;
         this.mazeGen = new MazeGenerator(nextSize, nextSize);
+
+        // 레벨에 따라 모양 변경 (예: 1레벨 사각형, 그 이후 랜덤)
+        const shapes = ['RECTANGLE', 'DIAMOND', 'CIRCLE', 'TRIANGLE'];
+        let shape = 'RECTANGLE';
+        if (this.stageManager.level > 1) {
+            shape = shapes[Math.floor(Math.random() * shapes.length)];
+        }
+        this.mazeGen.applyShapeMask(shape);
+
         this.mazeGen.generateData();
 
         // 씬 갱신 (MazeView 위임)
