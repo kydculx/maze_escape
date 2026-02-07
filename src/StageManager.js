@@ -16,12 +16,10 @@ export class StageManager {
      */
     nextStage() {
         this.level++;
-        // 미로 크기 증가 (최대치 제한)
-        this.mazeSize = Math.min(
-            this.mazeSize + CONFIG.STAGE.SIZE_INCREMENT,
-            CONFIG.STAGE.MAX_SIZE
-        );
-
+        // 스테이지가 올라갈수록 미로 크기 증가 (최대 제한까지)
+        if (this.mazeSize < CONFIG.STAGE.MAX_SIZE) {
+            this.mazeSize += CONFIG.STAGE.SIZE_INCREMENT;
+        }
         this.resetStats();
 
         console.log(`Advancing to Stage ${this.level} (Size: ${this.mazeSize})`);

@@ -74,11 +74,8 @@ export class PlayScene extends BaseScene {
                 this.player.startJump(true);
                 this.ui.updateAll();
             },
-            onFlashlight: () => {
-                this.player.toggleFlashlight();
-                this.ui.updateAll();
-            },
-            onMap: () => this.resetMaze(),
+            onPrevStage: () => this._gotoPrevStage(),
+            onNextStage: () => this._gotoNextStage(),
             onCheat: () => {
                 this.player.applyCheat();
                 this.ui.updateAll();
@@ -368,6 +365,21 @@ export class PlayScene extends BaseScene {
         });
     }
 
+    _gotoPrevStage() {
+        if (this._isTransitioning) return;
+        if (this.stageManager.level <= CONFIG.STAGE.INITIAL_LEVEL) return;
+
+        this._isTransitioning = true;
+        if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 1.0);
+
+        this.stageManager.prevStage();
+        this._applyNewStage();
+
+        setTimeout(() => {
+            this._isTransitioning = false;
+        }, 1000);
+    }
+
     /**
      * 스테이지 완료 및 다음 스테이지 준비
      */
@@ -380,23 +392,16 @@ export class PlayScene extends BaseScene {
         const gx = Math.floor((this.player.position.x - offsetX) / thickness);
         const gy = Math.floor((this.player.position.z - offsetZ) / thickness);
 
-        // 출구 셀에 도달하면 바로 다음 스테이지
-        if (this.mazeGen.exit && gx === this.mazeGen.exit.x && gy === this.mazeGen.exit.y) {
-            console.log("Stage Cleared!");
-            this._gotoNextStage();
-        }
-    }
-
-    _gotoNextStage() {
-        if (this._isTransitioning) return;
-        this._isTransitioning = true;
-
-        // 효과음
-        if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 1.0);
-
         // 스테이지 매니저 업데이트
         this.stageManager.nextStage();
+        this._applyNewStage();
 
+        setTimeout(() => {
+            this._isTransitioning = false;
+        }, 1000);
+    }
+
+    _applyNewStage() {
         // 플레이어 상태 일부 초기화 (지도 등)
         this.stageManager.preparePlayerForNextStage(this.player);
 
@@ -430,10 +435,6 @@ export class PlayScene extends BaseScene {
             this.itemManager.mazeGen = this.mazeGen;
             this.itemManager.spawnItems();
         }
-
-        setTimeout(() => {
-            this._isTransitioning = false;
-        }, 1000);
     }
 
     /**
