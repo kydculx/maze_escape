@@ -427,7 +427,7 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* 상단 중앙 HUD 레이아웃 고도화 */
+/* 상단 중앙 HUD 레이아웃 (세로 병렬: 스테이지 / 통계) */
 #top-hud {
     position: fixed;
     top: 20px;
@@ -436,47 +436,48 @@ input[type="range"]::-webkit-slider-thumb {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     pointer-events: none;
     z-index: 100;
 }
 
 #hud-stage {
-    min-width: 120px;
+    min-width: 100px;
     justify-content: center;
-    border-bottom: 2px solid #00ffff;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-bottom: 3px solid #00ffff;
+    padding: 6px 16px;
+    border-radius: 8px;
 }
 
-#hud-stats {
+#hud-stats-row {
     display: flex;
-    gap: 12px;
-}
-
-.stat-item {
-    background: rgba(0, 0, 0, 0.5);
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(5px);
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-compact {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    min-width: 70px;
+    gap: 6px;
 }
 
-.stat-item .label {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 1px;
-    margin-bottom: 2px;
-}
-
-.stat-item .value {
-    font-family: 'Inter', sans-serif;
+.stat-compact .icon {
     font-size: 14px;
+}
+
+.stat-compact .value {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
     font-weight: bold;
     color: #fff;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
 }
 
 #hud-gem {
