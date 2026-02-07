@@ -24,7 +24,9 @@ export const CONFIG = {
             VISIBILITY_THRESHOLD: 0.50, // 가시거리가 넓어지기 시작하는 높이 임계값 (0~1)
             FIRST_PERSON_TILT: 1.2,    // 1인칭 점프 시 아래를 내려다보는 강도
             BOB_FREQUENCY: 12,        // 이동 시 상하 흔들림 속도
-            BOB_AMPLITUDE: 0.05       // 이동 시 상하 흔들림 크기
+            BOB_AMPLITUDE: 0.05,      // 이동 시 상하 흔들림 크기
+            IDLE_SWAY_FREQUENCY: 1.5, // 대기 시 좌우 흔들림 속도
+            IDLE_SWAY_AMPLITUDE: 0.02 // 대기 시 좌우 흔들림 크기
         }
     },
 

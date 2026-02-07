@@ -154,6 +154,14 @@ export class Player {
         const flCfg = CONFIG.ITEMS.FLASHLIGHT;
         const isIdle = !this.isMoving && !this.isRotating && !this.isJumping;
 
+        // Idle Swaying logic (Breathing effect)
+        if (isIdle) {
+            const swayCfg = CONFIG.PLAYER.JUMP_EFFECT;
+            this.group.rotation.z = Math.sin(this.animationTime * swayCfg.IDLE_SWAY_FREQUENCY) * swayCfg.IDLE_SWAY_AMPLITUDE;
+        } else {
+            this.group.rotation.z = 0;
+        }
+
         // 대기 시간(Idle) 추적
         if (isIdle) {
             this.idleTimer += deltaTime;
