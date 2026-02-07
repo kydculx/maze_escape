@@ -131,7 +131,12 @@ export const CONFIG = {
             PENUMBRA: 1,              // 빛 가장자리의 부드러움 정도 (0~1)
             FLICKER_THRESHOLD: 3.0,    // 깜빡임 시작 기준 배터리 잔량 시간 (초)
             POSITION_OFFSET: { x: 0, y: 0.5, z: 0 }, // 플레이어 위치 기준 손전등 배치 오프셋
-            TARGET_OFFSET: { x: 0, y: 0.5, z: -1 }   // 손전등이 조준하는 방향 오프셋
+            TARGET_OFFSET: { x: 0, y: 0.5, z: -1 },   // 손전등이 조준하는 방향 오프셋
+            MOVEMENT: {
+                LAG_SPEED: 15.0,        // 시선 따라가는 속도 (초당 반응성)
+                SWAY_AMPLITUDE: 0.03,  // 손전등 자체 흔들림 강도 (미세한 흔들림)
+                SWAY_FREQUENCY: 1.5    // 손전등 자체 흔들림 속도
+            }
         }
     },
 
