@@ -468,6 +468,12 @@ input[type="range"]::-webkit-slider-thumb {
     gap: 6px;
 }
 
+.stat-separator {
+    width: 1px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
 .stat-compact .icon {
     font-size: 14px;
 }
