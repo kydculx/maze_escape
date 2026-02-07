@@ -26,7 +26,7 @@ export const CONFIG = {
             BOB_FREQUENCY: 12,        // 이동 시 상하 흔들림 속도
             BOB_AMPLITUDE: 0.05,      // 이동 시 상하 흔들림 크기
             IDLE_SWAY_FREQUENCY: 0.8, // 대기 시 도리도리 속도 (더 천천히)
-            IDLE_SWAY_AMPLITUDE: 0.05, // 대기 시 도리도리 강도 (대폭 축소)
+            IDLE_SWAY_AMPLITUDE: 0.02, // 대기 시 도리도리 강도 (더 좁은 반경으로 축소)
             IDLE_SWAY_DELAY: 3.0       // 대기 후 효과 시작까지의 지연 시간 (초)
         }
     },
