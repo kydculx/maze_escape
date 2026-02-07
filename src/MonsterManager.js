@@ -18,7 +18,27 @@ export class MonsterManager {
      * @param {number} count 
      */
     spawnZombies(count = 5) {
-        const emptyCells = this._getEmptyCells();
+        // 빈 칸 가져오기 (입구/출구 제외된 상태)
+        let emptyCells = this._getEmptyCells();
+
+        // [안전 거리 확보] 입구로부터 5타일 이상 떨어진 곳만 필터링
+        if (this.mazeGen.entrance) {
+            const safeDistance = CONFIG.MONSTERS.ZOMBIE.SAFE_SPAWN_DISTANCE;
+            const safeCells = emptyCells.filter(cell => {
+                // 맨해튼 거리 (Manhattan Distance) 사용: |x1-x2| + |y1-y2|
+                const dist = Math.abs(cell.x - this.mazeGen.entrance.x) + Math.abs(cell.y - this.mazeGen.entrance.y);
+                return dist >= safeDistance;
+            });
+
+            // 만약 안전한 곳이 충분히 있다면 그곳들 중에서만 선택
+            // (맵이 너무 작거나 꽉 차서 안전한 곳이 아예 없으면 기존 emptyCells 사용)
+            if (safeCells.length > 0) {
+                emptyCells = safeCells;
+            } else {
+                console.warn('No safe spawn points found (too close to entrance). Using all empty cells.');
+            }
+        }
+
         const spawnCount = Math.min(count, emptyCells.length);
 
         for (let i = 0; i < spawnCount; i++) {

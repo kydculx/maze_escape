@@ -177,7 +177,8 @@ export const CONFIG = {
             PATH_RECALC_INTERVAL: 1, // 길찾기 경로 갱신 간격 (초)
             PATROL_RADIUS: 3,          // 배회 반경 (타일)
             PATROL_WAIT_MIN: 0.5,      // 배회 목적지 도착 후 최소 대기 시간 (초)
-            PATROL_WAIT_MAX: 2.0       // 배회 목적지 도착 후 최대 대기 시간 (초)
+            PATROL_WAIT_MAX: 2.0,      // 배회 목적지 도착 후 최대 대기 시간 (초)
+            SAFE_SPAWN_DISTANCE: 10     // 플레이어(입구)와의 최소 스폰 안전 거리 (타일)
         }
     }
 };

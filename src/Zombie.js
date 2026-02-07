@@ -76,11 +76,12 @@ export class Zombie extends Monster {
         // 타일 단위 거리 (올림 처리)
         const distInTiles = Math.ceil(dist / thickness);
 
-        // 볼륨 계산 (10단계)
+        // 볼륨 계산 (5단계: 1타일~5타일)
+        // 1타일: 100%, 2타일: 80%, ... 5타일: 20%, 6타일 이상: 0%
         let targetVolume = 0;
 
-        if (distInTiles <= 10) {
-            targetVolume = (11 - distInTiles) * 0.1;
+        if (distInTiles <= 5) {
+            targetVolume = (6 - distInTiles) * 0.2;
             targetVolume = Math.max(0, Math.min(1, targetVolume));
         } else {
             targetVolume = 0;
