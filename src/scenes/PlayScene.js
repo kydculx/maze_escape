@@ -146,6 +146,12 @@ export class PlayScene extends BaseScene {
             this.itemManager.spawnItems();
         }
 
+        if (this.monsterManager) {
+            this.monsterManager.mazeGen = this.mazeGen;
+            this.monsterManager.clear();
+            this.monsterManager.spawnZombies(5 + (this.stageManager ? this.stageManager.level : 1));
+        }
+
         // UI에 새 미로 데이터 연결 및 갱신
         this.ui.mazeGen = this.mazeGen;
         this.ui.updateAll();
@@ -239,7 +245,8 @@ export class PlayScene extends BaseScene {
                 this.mazeGen.height,
                 CONFIG.MAZE.WALL_THICKNESS,
                 this.mazeGen.entrance,
-                this.mazeGen.exit
+                this.mazeGen.exit,
+                this.monsterManager ? this.monsterManager.monsters : []
             );
         }
     }
@@ -460,5 +467,18 @@ export class PlayScene extends BaseScene {
         if (level >= 5) pool.push('HEXAGON');
         if (level >= 7) pool.push('HEART');
         return pool;
+    }
+
+    /**
+     * 장면 해제 및 리소스 정리
+     */
+    dispose() {
+        if (this.monsterManager) {
+            this.monsterManager.clear();
+        }
+        if (this.itemManager) {
+            this.itemManager.clearItems();
+        }
+        super.dispose();
     }
 }

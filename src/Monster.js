@@ -5,8 +5,9 @@ import { CONFIG } from './Config.js';
  * 모든 몬스터의 기본이 되는 추상 클래스
  */
 export class Monster {
-    constructor(scene, type, options = {}) {
+    constructor(scene, mazeGen, type, options = {}) {
         this.scene = scene;
+        this.mazeGen = mazeGen;
         this.type = type;
 
         // 3D 그룹 (모델의 부모)

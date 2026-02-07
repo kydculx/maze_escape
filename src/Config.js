@@ -106,11 +106,12 @@ export const CONFIG = {
         // 지도 관련 세부 설정
         MAP: {
             COLORS: {
-                WALL: '#666666',      // 미니맵 상의 벽 색상
+                WALL: '#444444',      // 미니맵 상의 벽 색상
                 ROAD: '#222222',      // 미니맵 상의 길 색상
-                PLAYER: '#ffaa44',    // 플레이어 아이콘 색상
-                ENTRANCE: '#00ffaa',  // 입구 색상
-                EXIT: '#ff4444'       // 출구 색상
+                PLAYER: '#00ff00',    // 플레이어 아이콘 색상
+                MONSTER: '#ff3333', // 좀비 표시 색상 (불타는 빨강)
+                ENTRANCE: '#ffff00',  // 입구 색상
+                EXIT: '#0000ff'       // 출구 색상
             },
             ROTATION_FOLLOW: true     // 플레이어 회전에 따라 맵을 회전시킬지 여부
         },
@@ -165,18 +166,18 @@ export const CONFIG = {
         },
         ZOMBIE: {
             SPEED: 1.5,                // 이동 속도 (미사용 예정 - MOVE_DURATION으로 대체 가능)
-            MOVE_DURATION: 0.6,        // 한 칸 이동 대략 시간 (초)
-            DETECTION_RANGE: 6,        // 플레이어 감지 범위 (타일)
-            IDLE_SWAY_SPEED: 2,        // 대기 시 흔들림 속도
+            MOVE_DURATION: 2,        // 한 칸 이동 대략 시간 (초)
+            DETECTION_RANGE: 3,        // 플레이어 감지 범위 (타일)
+            IDLE_SWAY_SPEED: 1,        // 대기 시 흔들림 속도
             IDLE_SWAY_AMPLITUDE: 0.1,  // 대기 시 흔들림 크기
-            WALK_BOB_SPEED: 10,        // 이동 시 움찔거리는 속도
+            WALK_BOB_SPEED: 3,        // 이동 시 움찔거리는 속도
             WALK_BOB_AMPLITUDE: 0.05,  // 이동 시 움찔거리는 크기
             MODEL_SCALE: 0.3,          // 모델 크기
             COLOR: 0x77aa77,           // 좀비 기본 색상 (창백한 초록)
-            PATH_RECALC_INTERVAL: 0.3, // 길찾기 경로 갱신 간격 (초)
+            PATH_RECALC_INTERVAL: 1, // 길찾기 경로 갱신 간격 (초)
             PATROL_RADIUS: 3,          // 배회 반경 (타일)
-            PATROL_WAIT_MIN: 1.0,      // 배회 목적지 도착 후 최소 대기 시간 (초)
-            PATROL_WAIT_MAX: 3.0       // 배회 목적지 도착 후 최대 대기 시간 (초)
+            PATROL_WAIT_MIN: 0.5,      // 배회 목적지 도착 후 최소 대기 시간 (초)
+            PATROL_WAIT_MAX: 2.0       // 배회 목적지 도착 후 최대 대기 시간 (초)
         }
     }
 };

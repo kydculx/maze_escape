@@ -39,8 +39,28 @@ export class MonsterManager {
                 offsetZ + cell.y * thickness + thickness / 2
             );
 
-            // 랜덤한 초기 회전
-            zombie.rotation.y = Math.random() * Math.PI * 2;
+            // 주변 통로(길) 방향을 찾아서 그 중 하나를 바라보게 설정
+            const neighbors = [
+                { dx: 1, dy: 0, angle: -Math.PI / 2 }, // 동 (MazeGenerator 기준)
+                { dx: -1, dy: 0, angle: Math.PI / 2 }, // 서
+                { dx: 0, dy: 1, angle: Math.PI },       // 남
+                { dx: 0, dy: -1, angle: 0 }            // 북
+            ];
+
+            const roadDirs = neighbors.filter(dir => {
+                const nx = cell.x + dir.dx;
+                const ny = cell.y + dir.dy;
+                return nx >= 0 && nx < this.mazeGen.width &&
+                    ny >= 0 && ny < this.mazeGen.height &&
+                    this.mazeGen.grid[ny][nx] === 0;
+            });
+
+            if (roadDirs.length > 0) {
+                // 길 중 하나를 무작위로 골라 바라봄
+                zombie.rotation.y = roadDirs[Math.floor(Math.random() * roadDirs.length)].angle;
+            } else {
+                zombie.rotation.y = Math.random() * Math.PI * 2;
+            }
 
             this.monsters.push(zombie);
         }

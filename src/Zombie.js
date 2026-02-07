@@ -26,6 +26,7 @@ export class Zombie extends Monster {
         this.moveTimer = 0;
         this.startTilePos = new THREE.Vector3();
         this.targetTilePos = new THREE.Vector3();
+        this.lastPathCalcTime = 0;
 
         // 사운드 관련
         this.sound = options.sound;
@@ -83,36 +84,51 @@ export class Zombie extends Monster {
     }
 
     _initModel(options) {
-        this.model = CharacterBuilder.createBasicCharacter(options);
+        // 좀비 전용 상세 모델 생성
+        this.model = CharacterBuilder.createZombie(options);
         this.group.add(this.model);
 
-        // 팔을 앞으로 쭉 뻗은 좀비 포즈 지원
+        // 부위별 참조 (피벗 그룹들)
         this.leftArm = this.model.getObjectByName('leftArm');
         this.rightArm = this.model.getObjectByName('rightArm');
         this.leftLeg = this.model.getObjectByName('leftLeg');
         this.rightLeg = this.model.getObjectByName('rightLeg');
+        this.head = this.model.getObjectByName('headGroup');
 
-        if (this.leftArm) this.leftArm.rotation.x = -Math.PI / 2.5;
-        if (this.rightArm) this.rightArm.rotation.x = -Math.PI / 2.2; // 약간 비대칭
+        // 기본 자세 설정 (팔을 앞으로 뻗음)
+        if (this.leftArm) this.leftArm.rotation.x = -Math.PI / 2.2;
+        if (this.rightArm) this.rightArm.rotation.x = -Math.PI / 2.5;
     }
 
     _updateAnimation(deltaTime) {
         const config = CONFIG.MONSTERS.ZOMBIE;
         const states = CONFIG.MONSTERS.STATES;
 
-        // 이동 중이거나 이동 상태인 경우
+        // 1. 공통 머리 흔들림 (흐느적)
+        if (this.head) {
+            this.head.rotation.z = Math.sin(this.animationTime * 1.5) * 0.1;
+            this.head.rotation.x = Math.cos(this.animationTime * 1.0) * 0.05;
+        }
+
+        // 2. 이동/대기 애니메이션
         if (this.state === states.MOVE || this.isMovingTile) {
             // 이동 시: 비틀거리며 걷기
             const walkCycle = this.animationTime * config.WALK_BOB_SPEED;
+
+            // 몸 전체 흔들림 (Bobbing)
             const bob = Math.abs(Math.sin(walkCycle)) * config.WALK_BOB_AMPLITUDE;
             this.model.position.y = bob;
 
-            // 다리 교차 흔들림
-            if (this.leftLeg) this.leftLeg.rotation.x = Math.sin(walkCycle) * 0.3;
-            if (this.rightLeg) this.rightLeg.rotation.x = Math.cos(walkCycle) * 0.3;
+            // 다리 교차 흔들림 (피벗 방식이므로 0.6 정도가 적당)
+            if (this.leftLeg) this.leftLeg.rotation.x = Math.sin(walkCycle) * 0.5;
+            if (this.rightLeg) this.rightLeg.rotation.x = -Math.sin(walkCycle) * 0.5;
+
+            // 팔도 위아래로 약간 흔들림
+            if (this.leftArm) this.leftArm.rotation.x = -Math.PI / 2.2 + Math.sin(walkCycle * 0.5) * 0.1;
+            if (this.rightArm) this.rightArm.rotation.x = -Math.PI / 2.5 + Math.cos(walkCycle * 0.5) * 0.1;
 
             // 몸의 좌우 흔들림 (비틀거림)
-            this.model.rotation.z = Math.sin(walkCycle * 0.5) * 0.1;
+            this.model.rotation.z = Math.sin(walkCycle * 0.5) * 0.05;
         } else {
             // 대기 시: 몸이 앞뒤좌우로 미세하게 흔들림 (흐느적거림)
             const sway = Math.sin(this.animationTime * config.IDLE_SWAY_SPEED);
@@ -120,8 +136,8 @@ export class Zombie extends Monster {
             this.model.rotation.x = Math.cos(this.animationTime * config.IDLE_SWAY_SPEED * 0.7) * config.IDLE_SWAY_AMPLITUDE;
 
             // 팔도 미세하게 까닥거림
-            if (this.leftArm) this.leftArm.rotation.z = sway * 0.1;
-            if (this.rightArm) this.rightArm.rotation.z = -sway * 0.1;
+            if (this.leftArm) this.leftArm.rotation.z = sway * 0.05;
+            if (this.rightArm) this.rightArm.rotation.z = -sway * 0.05;
         }
     }
 
@@ -131,13 +147,6 @@ export class Zombie extends Monster {
 
         const config = CONFIG.MONSTERS.ZOMBIE;
         const states = CONFIG.MONSTERS.STATES;
-
-        // 타일 이동 중에는 논리 업데이트 생략 (도착 후 판단)
-        if (this.isMovingTile) {
-            this._moveAlongPath(deltaTime);
-            this._updateAudioVolumes(deltaTime);
-            return;
-        }
 
         // 1. 플레이어와의 거리 계산
         const dist = this.position.distanceTo(player.group.position);
@@ -160,7 +169,7 @@ export class Zombie extends Monster {
             }
         }
         // 3. 플레이어 감지가 안 될 때의 자율 행동 (IDLE or PATROL)
-        else {
+        else if (!this.isMovingTile) { // 이동 중이 아닐 때만 자율 행동 판단
             if (this.state === states.IDLE) {
                 this.patrolWaitTimer -= deltaTime;
                 if (this.patrolWaitTimer <= 0) {
@@ -184,7 +193,8 @@ export class Zombie extends Monster {
         }
 
         // 4. 경로 추적 이동 처리 (추적이든 배회든 공통)
-        if (this.state === states.MOVE) {
+        // 타일 이동 중이거나 이동 상태인 경우
+        if (this.state === states.MOVE || this.isMovingTile) {
             this._moveAlongPath(deltaTime);
         }
 
@@ -217,6 +227,7 @@ export class Zombie extends Monster {
             if (progress >= 1) {
                 this.isMovingTile = false;
                 this.position.copy(this.targetTilePos);
+                this.rotation.y = targetAngle; // 정확한 각도로 스냅
                 this.pathIndex++;
             }
             return;
@@ -286,14 +297,31 @@ export class Zombie extends Monster {
     /**
      * 지정된 월드 위치까지의 경로 계산
      */
-    _calculatePath(targetWorldPos) {
-        const startIdx = this._worldToGrid(this.position.x, this.position.z);
+    _calculatePath(targetWorldPos, isChase = true) {
+        // 이동 중이라면 이동을 마친 후의 위치(targetTilePos)를 시작점으로 사용
+        const checkPos = this.isMovingTile ? this.targetTilePos : this.position;
+        const startIdx = this._worldToGrid(checkPos.x, checkPos.z);
         const endIdx = this._worldToGrid(targetWorldPos.x, targetWorldPos.z);
 
         const path = Pathfinder.findPath(this.mazeGen.grid, startIdx, endIdx);
-        if (path) {
+
+        if (path && path.length > 0) {
             this.currentPath = path;
-            this.pathIndex = 1;
+            // 이동 중(isMovingTile)인 경우: 
+            // 현재 targetTilePos에 도착한 후, path[1]로 가야 함.
+            // _moveAlongPath 끝에서 pathIndex++가 실행되므로, 0으로 세팅하여 도착 후 1이 되게 함.
+            // 이동 중이 아닌 경우:
+            // 현재 위치(path[0])에서 바로 path[1]로 이동 시작해야 하므로 1로 세팅.
+            this.pathIndex = this.isMovingTile ? 0 : 1;
+
+            if (isChase) {
+                this.lastPathCalcTime = this.animationTime;
+            }
+        } else {
+            if (isChase) {
+                console.warn(`[Zombie] Path not found to player at ${endIdx.x}, ${endIdx.y}`);
+            }
+            this.currentPath = null;
         }
     }
 
