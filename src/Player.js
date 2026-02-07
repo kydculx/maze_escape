@@ -108,7 +108,14 @@ export class Player {
 
             const currentY = this.group.position.y;
             this.group.position.lerpVectors(this.startPos, this.targetPos, progress);
-            this.group.position.y = this.isJumping ? currentY : 0;
+
+            if (this.isJumping) {
+                this.group.position.y = currentY;
+            } else {
+                // Head Bobbing logic
+                const bobCfg = CONFIG.PLAYER.JUMP_EFFECT;
+                this.group.position.y = Math.abs(Math.sin(this.animationTime * bobCfg.BOB_FREQUENCY)) * bobCfg.BOB_AMPLITUDE;
+            }
 
             // 이동 중 발소리 (1인칭 연출용)
             if (!this.isJumping) {
@@ -121,7 +128,10 @@ export class Player {
 
             if (progress >= 1) {
                 this.isMoving = false;
-                if (!this.isJumping) this.actionState = PLAYER_ACTION_STATES.IDLE;
+                if (!this.isJumping) {
+                    this.actionState = PLAYER_ACTION_STATES.IDLE;
+                    this.group.position.y = 0; // Reset bobbing
+                }
             }
         }
 
