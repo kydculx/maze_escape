@@ -51,6 +51,36 @@ export class MazeGenerator {
                     if (y < Math.abs(x - centerX)) {
                         this.mask[y][x] = false;
                     }
+                } else if (type === 'STAR') {
+                    // 별 모양: 극좌표계 활용
+                    const dx = (x - centerX) / centerX;
+                    const dy = (y - centerY) / centerY;
+                    const r = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx);
+
+                    // 5각 별 함참함수 (간단한 버전)
+                    const starR = 0.7 + 0.3 * Math.cos(5 * angle);
+                    if (r > starR) {
+                        this.mask[y][x] = false;
+                    }
+                } else if (type === 'HEXAGON') {
+                    // 육각형: 정육각형 충돌 판정
+                    const dx = Math.abs(x - centerX) / centerX;
+                    const dy = Math.abs(y - centerY) / centerY;
+                    // 육각형 공식: x <= 1 && x*0.5 + y*sqrt(3)/2 <= sqrt(3)/2
+                    const h = 0.85; // 크기 조절
+                    if (dx > h || (dx * 0.5 + dy * 0.866) > h * 0.866) {
+                        this.mask[y][x] = false;
+                    }
+                } else if (type === 'HEART') {
+                    // 하트 모양: 하트 곡선 방정식
+                    const dx = (x - centerX) / (centerX * 0.8);
+                    const dy = -(y - centerY) / (centerY * 0.8); // Y축 반전
+                    // (x^2 + y^2 - 1)^3 - x^2 * y^3 <= 0
+                    const a = dx * dx + dy * dy - 1;
+                    if (a * a * a - dx * dx * dy * dy * dy > 0) {
+                        this.mask[y][x] = false;
+                    }
                 }
             }
         }

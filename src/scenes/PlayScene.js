@@ -435,5 +435,16 @@ export class PlayScene extends BaseScene {
         setTimeout(() => {
             this._isTransitioning = false;
         }, 1000);
+
+        /**
+         * 레벨에 따라 사용 가능한 미로 모양 목록 반환
+         */
+        _getAvailableShapes(level) {
+            const pool = ['RECTANGLE'];
+            if (level >= 2) pool.push('DIAMOND', 'CIRCLE', 'TRIANGLE');
+            if (level >= 3) pool.push('STAR');
+            if (level >= 5) pool.push('HEXAGON');
+            if (level >= 7) pool.push('HEART');
+            return pool;
+        }
     }
-}
