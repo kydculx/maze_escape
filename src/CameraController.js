@@ -35,7 +35,14 @@ export class CameraController {
 
         let swayOffset = 0;
         if (isIdle && this.player.idleTimer >= jumpCfg.IDLE_SWAY_DELAY) {
-            swayOffset = Math.sin(this.player.animationTime * jumpCfg.IDLE_SWAY_FREQUENCY) * jumpCfg.IDLE_SWAY_AMPLITUDE;
+            // 효과 시작 시점부터의 경과 시간 계산
+            const swayTime = this.player.idleTimer - jumpCfg.IDLE_SWAY_DELAY;
+
+            // 시작 시 급격하게 튀지 않도록 1초간 서서히 강도 증가 (Fade-In)
+            const fadeFactor = Math.min(swayTime / 1.0, 1.0);
+
+            // swayTime을 sine 함수의 인자로 사용하여 항상 0(중앙)에서 시작하도록 함
+            swayOffset = Math.sin(swayTime * jumpCfg.IDLE_SWAY_FREQUENCY) * (jumpCfg.IDLE_SWAY_AMPLITUDE * fadeFactor);
         }
 
         // 2. 카메라 시선 처리
