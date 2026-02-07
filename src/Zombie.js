@@ -38,51 +38,75 @@ export class Zombie extends Monster {
 
         const audioCfg = CONFIG.AUDIO;
 
-        // 1. 배회 사운드 (Patrol/Idle)
+        // 1. 배회 사운드 (Patrol) - 1회성 (요청사항 유지)
         this.patrolAudio = new Audio(audioCfg.ZOMBIE_PATROL_SFX);
-        this.patrolAudio.loop = true;
-        this.patrolAudio.preload = 'auto'; // 미리 로딩
-        this.patrolAudio.volume = 0; // 초기 볼륨 0
+        this.patrolAudio.loop = false;
+        this.patrolAudio.preload = 'auto';
+        this.patrolAudio.volume = 0;
 
-        // 2. 추적 사운드 (Tracking)
+        // 2. 추적 사운드 (Tracking) - 반복 재생 (요청사항 복구)
         this.trackAudio = new Audio(audioCfg.ZOMBIE_TRACK_SFX);
         this.trackAudio.loop = true;
-        this.trackAudio.preload = 'auto'; // 미리 로딩
-        this.trackAudio.volume = 0; // 초기 볼륨 0
+        this.trackAudio.preload = 'auto';
+        this.trackAudio.volume = 0;
 
-        // 사운드 시작 (브라우저 정책에 따라 상호작용 전에는 차단될 수 있음)
-        this._playAudio(this.patrolAudio);
+        // 추적 사운드 시작 (볼륨 0으로 시작)
         this._playAudio(this.trackAudio);
+    }
+
+    _playOneShot(audio) {
+        if (!audio) return;
+        if (audio.volume <= 0) return;
+        audio.currentTime = 0;
+        audio.play().catch(() => { });
     }
 
     _playAudio(audio) {
         if (!audio) return;
-        audio.play().catch(() => {
-            // 재생 실패 시 무시 (첫 클릭 전 등)
-        });
+        audio.play().catch(() => { });
     }
 
     _updateAudioVolumes(deltaTime) {
         if (!this.sound || !this.patrolAudio || !this.trackAudio) return;
 
-        // 플레이어와의 거리에 따른 감쇄 (Positional Audio 효과 흉내)
+        // 플레이어와의 거리 계산 (타일 단위)
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
         const dist = this.position.distanceTo(this.lastPlayerPos || new THREE.Vector3());
-        const maxDist = thickness * 8; // 소리가 들리는 최대 거리
 
-        let baseVolume = Math.max(0, 1 - (dist / maxDist));
-        baseVolume *= 0.4; // 마스터 좀비 볼륨 계수
+        // 타일 단위 거리 (올림 처리)
+        const distInTiles = Math.ceil(dist / thickness);
 
+        // 볼륨 계산 (10단계)
+        let targetVolume = 0;
+
+        if (distInTiles <= 10) {
+            targetVolume = (11 - distInTiles) * 0.1;
+            targetVolume = Math.max(0, Math.min(1, targetVolume));
+        } else {
+            targetVolume = 0;
+        }
+
+        // 추적 모드 여부 확인
+        // isMovingTile이 true이면서 isPatrolling이 false이면 추적 중임
+        // 또는 상태가 MOVE이고 isPatrolling이 false여도 추적 중임
         const isTracking = !this.isPatrolling && (this.state === CONFIG.MONSTERS.STATES.MOVE || this.isMovingTile);
 
-        // 상태에 따른 타겟 볼륨 설정 (배회 vs 추적)
-        const targetPatrolVol = !isTracking ? baseVolume : 0;
-        const targetTrackVol = isTracking ? baseVolume : 0;
+        // 1. 배회 사운드: One-Shot이므로 볼륨만 거리에 따라 조절 (재생은 _startPatrol에서 함)
+        this.patrolAudio.volume = targetVolume;
+
+        // 2. 추적 사운드: 추적 중일 때만 볼륨 적용, 아니면 0
+        const targetTrackVol = isTracking ? targetVolume : 0;
 
         // 부드러운 볼륨 전환 (Fade)
         const fadeSpeed = deltaTime * 2.0;
-        this.patrolAudio.volume = THREE.MathUtils.lerp(this.patrolAudio.volume, targetPatrolVol, fadeSpeed);
         this.trackAudio.volume = THREE.MathUtils.lerp(this.trackAudio.volume, targetTrackVol, fadeSpeed);
+
+        // 최적화: 볼륨이 0에 가까우면 Pause, 아니면 Play (모바일 렉 방지)
+        if (this.trackAudio.volume < 0.01) {
+            if (!this.trackAudio.paused) this.trackAudio.pause();
+        } else {
+            if (this.trackAudio.paused) this.trackAudio.play().catch(() => { });
+        }
     }
 
     _initModel(options) {
@@ -289,6 +313,9 @@ export class Zombie extends Monster {
             if (this.currentPath) {
                 this.isPatrolling = true;
                 this.setState(CONFIG.MONSTERS.STATES.MOVE);
+
+                // 배회 시작 시 사운드 1회 재생
+                this._playOneShot(this.patrolAudio);
             }
         } else {
             // 못 찾으면 다시 대기
