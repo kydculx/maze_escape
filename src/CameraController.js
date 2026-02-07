@@ -34,7 +34,7 @@ export class CameraController {
         const camCfg = CONFIG.CAMERA;
 
         let swayOffset = 0;
-        if (isIdle) {
+        if (isIdle && this.player.idleTimer >= jumpCfg.IDLE_SWAY_DELAY) {
             swayOffset = Math.sin(this.player.animationTime * jumpCfg.IDLE_SWAY_FREQUENCY) * jumpCfg.IDLE_SWAY_AMPLITUDE;
         }
 
