@@ -9,6 +9,7 @@ import { Player } from '../Player.js';
 import { CameraController } from '../CameraController.js';
 import { ItemManager } from '../ItemManager.js';
 import { StageManager } from '../StageManager.js';
+import { MonsterManager } from '../MonsterManager.js';
 
 /**
  * 게임 플레이 장면 클래스 (Orchestrator)
@@ -65,6 +66,8 @@ export class PlayScene extends BaseScene {
 
         this.minimap = new Minimap();
         this.stageManager = new StageManager();
+        this.monsterManager = new MonsterManager(this.scene, this.mazeGen);
+        this.monsterManager.spawnZombies(5);
 
         // 6. UI 매니저 초기화 및 바인딩
         this.ui = new UIManager(this.player, this.mazeGen, this.stageManager);
@@ -197,6 +200,11 @@ export class PlayScene extends BaseScene {
                 this.player.applyItemEffect(item);
                 this.ui.updateAll();
             });
+        }
+
+        // 1.7 몬스터 업데이트
+        if (this.monsterManager) {
+            this.monsterManager.update(deltaTime);
         }
 
         // UI 상태 업데이트
@@ -425,10 +433,16 @@ export class PlayScene extends BaseScene {
         this.ui.mazeGen = this.mazeGen;
         this.ui.updateAll();
 
-        // 아이템 재배치
+        // 아이템 및 몬스터 재배치
         if (this.itemManager) {
             this.itemManager.mazeGen = this.mazeGen;
             this.itemManager.spawnItems();
+        }
+
+        if (this.monsterManager) {
+            this.monsterManager.mazeGen = this.mazeGen;
+            this.monsterManager.clear();
+            this.monsterManager.spawnZombies(5 + this.stageManager.level);
         }
 
         setTimeout(() => {

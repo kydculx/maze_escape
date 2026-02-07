@@ -146,5 +146,29 @@ export const CONFIG = {
         INITIAL_SIZE: 11,             // 시작 미로 크기 (11x11)
         SIZE_INCREMENT: 2,            // 레벨업 시 증가할 미로 크기
         MAX_SIZE: 31                  // 최대 미로 크기 제한
+    },
+
+    // [9] 몬스터 설정 (Monster Settings)
+    MONSTERS: {
+        TYPES: {
+            ZOMBIE: 'ZOMBIE'
+        },
+        STATES: {
+            IDLE: 'IDLE',
+            MOVE: 'MOVE',
+            ATTACK: 'ATTACK',
+            HURT: 'HURT',
+            DIE: 'DIE'
+        },
+        ZOMBIE: {
+            SPEED: 0.5,               // 이동 속도 (칸/초)
+            DETECTION_RANGE: 5,        // 플레이어 감지 범위 (칸)
+            IDLE_SWAY_SPEED: 2,        // 대기 시 흔들림 속도
+            IDLE_SWAY_AMPLITUDE: 0.1,  // 대기 시 흔들림 크기
+            WALK_BOB_SPEED: 10,        // 이동 시 움찔거리는 속도
+            WALK_BOB_AMPLITUDE: 0.05,  // 이동 시 움찔거리는 크기
+            MODEL_SCALE: 0.5,          // 모델 크기
+            COLOR: 0x77aa77            // 좀비 기본 색상 (창백한 초록)
+        }
     }
 };
