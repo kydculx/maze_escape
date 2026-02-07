@@ -182,7 +182,7 @@ export class PlayScene extends BaseScene {
         }
 
         // UI 상태 업데이트
-        this.ui.updateHUD();
+        this.ui.updateAll();
 
         // 2. 스테이지 종료 체크 (출구 도달)
         this._checkStageCompletion();
