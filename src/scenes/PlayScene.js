@@ -196,8 +196,17 @@ export class PlayScene extends BaseScene {
 
         // 4. 미니맵 업데이트
         if (this.minimap) {
+            // 탐험 상태 업데이트
+            this.mazeGen.markExplored(
+                this.player.position.x,
+                this.player.position.z,
+                CONFIG.MAZE.WALL_THICKNESS,
+                1 // 탐험 반경 (1칸)
+            );
+
             this.minimap.draw(
                 this.mazeGen.grid,
+                this.mazeGen.explored,
                 this.player.position,
                 this.player.rotation.y,
                 this.mazeGen.width,

@@ -30,8 +30,8 @@ export class Minimap {
     /**
      * 미니맵 렌더링 (회전형 HUD 스타일)
      */
-    draw(grid, playerPos, playerRotationY, mazeWidth, mazeHeight, thickness, entrance, exit) {
-        if (!grid || !this.ctx) return;
+    draw(grid, explored, playerPos, playerRotationY, mazeWidth, mazeHeight, thickness, entrance, exit) {
+        if (!grid || !explored || !this.ctx) return;
 
         const ctx = this.ctx;
         const cw = this.canvas.width;
@@ -60,11 +60,14 @@ export class Minimap {
             ctx.rotate(playerRotationY);
         }
 
-        // 3. 미로 그리드 그리기 (벽만 그리기)
+        // 3. 미로 그리드 그리기
         ctx.translate(-(mazeWidth * cellW / 2), -(mazeHeight * cellH / 2));
 
         for (let y = 0; y < mazeHeight; y++) {
             for (let x = 0; x < mazeWidth; x++) {
+                // 탐험된 곳만 그리기
+                if (!explored[y][x]) continue;
+
                 if (grid[y][x] === 1) {
                     ctx.fillStyle = this.colors.wall;
                     ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
@@ -78,13 +81,13 @@ export class Minimap {
             }
         }
 
-        // 3.5 입구/출구 표시
-        if (entrance) {
+        // 3.5 입구/출구 표시 (탐험된 경우에만)
+        if (entrance && explored[entrance.y][entrance.x]) {
             ctx.fillStyle = this.colors.entrance;
             ctx.fillRect(entrance.x * cellW, entrance.y * cellH, cellW, cellH);
             this._drawLabel(ctx, 'S', entrance.x * cellW + cellW / 2, entrance.y * cellH + cellH / 2, cellW);
         }
-        if (exit) {
+        if (exit && explored[exit.y][exit.x]) {
             ctx.fillStyle = this.colors.exit;
             ctx.fillRect(exit.x * cellW, exit.y * cellH, cellW, cellH);
             this._drawLabel(ctx, 'G', exit.x * cellW + cellW / 2, exit.y * cellH + cellH / 2, cellW);
@@ -96,13 +99,8 @@ export class Minimap {
 
         ctx.save();
         ctx.translate(px, py);
-        // 맵이 회전할 때는 아이콘이 항상 위를 보고, 맵이 고정일 때는 아이콘이 회전함
-        if (this.rotationFollow) {
-            ctx.rotate(-playerRotationY);
-        } else {
-            // 맵이 고정일 때는 아이콘이 실제 회전각을 따라감
-            ctx.rotate(-playerRotationY);
-        }
+        // 맵이 회전할 때는 아이콘이 항상 위를 보고, 맵이 고정일 때는 아이콘이 실제 회전각을 따라감
+        ctx.rotate(-playerRotationY);
 
         const iconSize = cellW * 1.0;
         ctx.fillStyle = this.colors.player;
@@ -113,8 +111,6 @@ export class Minimap {
         ctx.lineTo(-iconSize / 2, iconSize / 2);
         ctx.closePath();
         ctx.fill();
-        ctx.restore();
-
         ctx.restore();
 
         ctx.restore();

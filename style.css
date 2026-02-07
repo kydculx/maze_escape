@@ -159,7 +159,7 @@ body {
     /* 크기 절반으로 축소 */
     height: 120px;
     /* 원근감 효과를 위한 회전 */
-    transform: rotateX(65deg) translateY(-10px);
+    transform: rotateX(50deg) translateY(-10px);
     image-rendering: auto;
     background: transparent;
 }

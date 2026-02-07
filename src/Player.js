@@ -246,7 +246,11 @@ export class Player {
         this.inventory.hammerCount = 99;
         this.inventory.jumpCount = 99;
         this.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
-        console.log("Cheat activated: All items maximized!");
+
+        // 탐험 상태 모두 해제
+        if (this.mazeGen) this.mazeGen.revealAll();
+
+        console.log("Cheat activated: All items maximized and map revealed!");
     }
 
     /**

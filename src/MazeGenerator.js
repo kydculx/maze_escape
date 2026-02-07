@@ -10,6 +10,10 @@ export class MazeGenerator {
 
         // 0: 길, 1: 벽
         this.grid = Array.from({ length: this.height }, () => Array(this.width).fill(1));
+
+        // 탐험 상태 (true: 방문함, false: 미지)
+        this.explored = Array.from({ length: this.height }, () => Array(this.width).fill(false));
+
         this.entrance = null;
         this.exit = null;
     }
@@ -80,5 +84,37 @@ export class MazeGenerator {
             x: offsetX + (this.entrance.x * config.WALL_THICKNESS) + config.WALL_THICKNESS / 2,
             z: offsetZ + (this.entrance.y * config.WALL_THICKNESS) + config.WALL_THICKNESS / 2
         };
+    }
+
+    /**
+     * 월드 좌표를 그리드 좌표로 변환하고 주변을 탐험된 것으로 표시
+     */
+    markExplored(worldX, worldZ, thickness, radius = 1) {
+        const offsetX = -(this.width * thickness) / 2;
+        const offsetZ = -(this.height * thickness) / 2;
+
+        const gx = Math.floor((worldX - offsetX) / thickness);
+        const gy = Math.floor((worldZ - offsetZ) / thickness);
+
+        for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+                const nx = gx + dx;
+                const ny = gy + dy;
+                if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                    this.explored[ny][nx] = true;
+                }
+            }
+        }
+    }
+
+    /**
+     * 모든 구역을 탐험한 것으로 표시 (치트/아이템용)
+     */
+    revealAll() {
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                this.explored[y][x] = true;
+            }
+        }
     }
 }
