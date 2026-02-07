@@ -166,6 +166,11 @@ export class PlayScene extends BaseScene {
         // 1. 플레이어 업데이트
         this.player.update(deltaTime);
 
+        // 1.1 스테이지 통계 업데이트 (시간)
+        if (this.stageManager) {
+            this.stageManager.stageTime += deltaTime;
+        }
+
         // 1.5 마법진 회전 애니메이션 (MazeView로 위임)
         if (this.mazeView) {
             this.mazeView.animateMarkers(deltaTime);
@@ -224,8 +229,11 @@ export class PlayScene extends BaseScene {
         if (input.wasJustPressed('ArrowLeft')) this.player.startRotation(Math.PI / 2);
         if (input.wasJustPressed('ArrowRight')) this.player.startRotation(-Math.PI / 2);
 
-        if (input.wasJustPressed('ArrowUp')) this.player.startMove(1);
-        else if (input.wasJustPressed('ArrowDown')) this.player.startMove(-1);
+        if (input.wasJustPressed('ArrowUp')) {
+            if (this.player.startMove(1)) this.stageManager.moveCount++;
+        } else if (input.wasJustPressed('ArrowDown')) {
+            if (this.player.startMove(-1)) this.stageManager.moveCount++;
+        }
 
         // 3. 점프 (Space 삭제 - 이제 아이템 버튼으로만 가능)
 
@@ -238,8 +246,8 @@ export class PlayScene extends BaseScene {
         const swipe = input.consumeSwipe();
         if (swipe) {
             switch (swipe) {
-                case 'up': this.player.startMove(1); break;
-                case 'down': this.player.startMove(-1); break;
+                case 'up': if (this.player.startMove(1)) this.stageManager.moveCount++; break;
+                case 'down': if (this.player.startMove(-1)) this.stageManager.moveCount++; break;
                 case 'left': this.player.startRotation(Math.PI / 2); break;
                 case 'right': this.player.startRotation(-Math.PI / 2); break;
             }
@@ -300,6 +308,7 @@ export class PlayScene extends BaseScene {
                     // 3. 미로 데이터 업데이트
                     this.mazeGen.grid[ty][tx] = 0;
                     this.player.inventory.hammerCount--;
+                    this.stageManager.moveCount++; // 망치 사용도 이동(턴)으로 카운트
 
                     console.log(`SUCCESS: Wall at [${tx}, ${ty}] destroyed. Refreshing visuals...`);
 

@@ -7,6 +7,8 @@ export class StageManager {
     constructor() {
         this.level = CONFIG.STAGE.INITIAL_LEVEL;
         this.mazeSize = CONFIG.STAGE.INITIAL_SIZE;
+        this.stageTime = 0;
+        this.moveCount = 0;
     }
 
     /**
@@ -20,6 +22,8 @@ export class StageManager {
             CONFIG.STAGE.MAX_SIZE
         );
 
+        this.resetStats();
+
         console.log(`Advancing to Stage ${this.level} (Size: ${this.mazeSize})`);
         return {
             level: this.level,
@@ -28,11 +32,20 @@ export class StageManager {
     }
 
     /**
+     * 스테이지 통계 초기화
+     */
+    resetStats() {
+        this.stageTime = 0;
+        this.moveCount = 0;
+    }
+
+    /**
      * 게임 리셋 (완전 처음부터)
      */
     reset() {
         this.level = CONFIG.STAGE.INITIAL_LEVEL;
         this.mazeSize = CONFIG.STAGE.INITIAL_SIZE;
+        this.resetStats();
     }
 
     /**

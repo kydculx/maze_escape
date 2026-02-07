@@ -180,7 +180,7 @@ export class Player {
     }
 
     startMove(stepDir) {
-        if (this.isMoving || this.isJumping) return;
+        if (this.isMoving || this.isJumping) return false;
 
         const moveDistance = CONFIG.MAZE.WALL_THICKNESS;
         const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(this.group.quaternion);
@@ -194,7 +194,9 @@ export class Player {
 
             // 이동 소요 시간
             this.moveDuration = CONFIG.PLAYER.MOVE_DURATION;
+            return true;
         }
+        return false;
     }
 
     startRotation(angle) {

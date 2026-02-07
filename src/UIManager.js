@@ -52,7 +52,21 @@ export class UIManager {
             }
         }
 
-        // 4. 미니맵 가시성
+        // 4. 스테이지 시간 및 이동 수 표시
+        const timeEl = document.getElementById('stat-time');
+        const movesEl = document.getElementById('stat-moves');
+
+        if (timeEl) {
+            const totalSeconds = Math.floor(this.stageManager.stageTime);
+            const m = Math.floor(totalSeconds / 60);
+            const s = totalSeconds % 60;
+            timeEl.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        if (movesEl) {
+            movesEl.textContent = this.stageManager.moveCount;
+        }
+
+        // 5. 미니맵 가시성
         if (this.elements.minimap) {
             this.elements.minimap.style.display = this.player.inventory.hasMap ? 'block' : 'none';
         }

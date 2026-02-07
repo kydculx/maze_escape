@@ -427,6 +427,58 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
+/* 상단 중앙 HUD 레이아웃 고도화 */
+#top-hud {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    z-index: 100;
+}
+
+#hud-stage {
+    min-width: 120px;
+    justify-content: center;
+    border-bottom: 2px solid #00ffff;
+}
+
+#hud-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.stat-item {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 70px;
+}
+
+.stat-item .label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.stat-item .value {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
 #hud-gem {
     border-bottom: 3px solid #00ffff;
 }
