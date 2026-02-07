@@ -12,11 +12,11 @@ export class UIManager {
         // UI 요소 캐싱
         this.elements = {
             stage: document.querySelector('#hud-stage .count'),
-            hammer: document.getElementById('btn-hammer'),
-            jump: document.getElementById('btn-jump'),
-            cheat: document.getElementById('btn-cheat'),
-            prevStage: document.getElementById('btn-prev-stage'),
-            nextStage: document.getElementById('btn-next-stage')
+            hammer: document.getElementById('use-hammer-btn'),
+            jump: document.getElementById('use-jump-btn'),
+            flashlight: document.getElementById('use-flashlight-btn'),
+            minimap: document.getElementById('minimap-container'),
+            map: document.getElementById('random-map-btn')
         };
     }
 
@@ -106,23 +106,11 @@ export class UIManager {
     bindButtons(callbacks) {
         this._setupButton(this.elements.hammer, callbacks.onHammer);
         this._setupButton(this.elements.jump, callbacks.onJump);
-        // this._setupButton(this.elements.flashlight, callbacks.onFlashlight); // Flashlight button removed from elements
-        // this._setupButton(this.elements.map, callbacks.onMap); // Map button removed from elements
+        this._setupButton(this.elements.flashlight, callbacks.onFlashlight);
+        this._setupButton(this.elements.map, callbacks.onMap);
 
-        this._setupButton(this.elements.cheat, callbacks.onCheat);
-
-        if (this.elements.prevStage) {
-            this.elements.prevStage.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (callbacks.onPrevStage) callbacks.onPrevStage();
-            });
-        }
-        if (this.elements.nextStage) {
-            this.elements.nextStage.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (callbacks.onNextStage) callbacks.onNextStage();
-            });
-        }
+        const cheatBtn = document.getElementById('cheat-btn');
+        this._setupButton(cheatBtn, callbacks.onCheat);
     }
 
     /**
