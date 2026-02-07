@@ -1,19 +1,25 @@
 import * as THREE from 'three';
 import { Monster } from './Monster.js';
 import { CharacterBuilder } from './CharacterBuilder.js';
+import { Pathfinder } from './Pathfinder.js';
 import { CONFIG } from './Config.js';
 
 /**
  * 기본 좀비 클래스
  */
 export class Zombie extends Monster {
-    constructor(scene, options = {}) {
+    constructor(scene, mazeGen, options = {}) {
         const zombieCfg = CONFIG.MONSTERS.ZOMBIE;
-        super(scene, CONFIG.MONSTERS.TYPES.ZOMBIE, {
+        super(scene, mazeGen, CONFIG.MONSTERS.TYPES.ZOMBIE, {
             color: zombieCfg.COLOR,
             scale: zombieCfg.MODEL_SCALE,
             ...options
         });
+
+        // 길찾기 관련 상태
+        this.currentPath = null;
+        this.pathIndex = 0;
+        this.lastPathCalcTime = 0;
     }
 
     _initModel(options) {
@@ -76,58 +82,104 @@ export class Zombie extends Monster {
                 this.setState(states.MOVE);
             }
         } else if (this.state === states.MOVE) {
-            if (distInCells > config.DETECTION_RANGE + 2) { // 약간의 여유(Hysteresis)를 둠
+            if (distInCells > config.DETECTION_RANGE + 3) { // 좀더 멀어지면 포기
                 this.setState(states.IDLE);
+                this.currentPath = null;
                 return;
             }
 
-            // 3. 플레이어 추적 및 이동 로직
-            // 3.1 플레이어 방향으로 서서히 회전 (Y축만)
-            const targetRotation = Math.atan2(
-                player.group.position.x - this.position.x,
-                player.group.position.z - this.position.z
-            );
+            // 3. 길찾기 경로 업데이트 (주기적)
+            if (this.animationTime - this.lastPathCalcTime > config.PATH_RECALC_INTERVAL) {
+                this._calculatePath(player);
+                this.lastPathCalcTime = this.animationTime;
+            }
 
-            // 각도 보간 (Lerp)
-            let angleDiff = targetRotation - this.rotation.y;
-            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            this.rotation.y += angleDiff * deltaTime * 2.0;
+            // 4. 경로 추적 이동
+            if (this.currentPath && this.pathIndex < this.currentPath.length) {
+                const targetNode = this.currentPath[this.pathIndex];
+                const targetPos = this._gridToWorld(targetNode.x, targetNode.y);
 
-            // 3.2 이동 전진
-            const moveStep = config.SPEED * thickness * deltaTime;
+                // 현재 위치에서 타겟 노드까지의 방향 벡터
+                const direction = new THREE.Vector3(
+                    targetPos.x - this.position.x,
+                    0,
+                    targetPos.z - this.position.z
+                );
+                const distToNode = direction.length();
 
-            // 이동할 목표 위치 계산
-            const nextX = this.position.x + Math.sin(this.rotation.y) * moveStep;
-            const nextZ = this.position.z + Math.cos(this.rotation.y) * moveStep;
+                if (distToNode > 0.05) {
+                    // 회전 처리
+                    const targetAngle = Math.atan2(direction.x, direction.z);
+                    let angleDiff = targetAngle - this.rotation.y;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    this.rotation.y += angleDiff * deltaTime * 3.0;
 
-            // 3.3 벽 충돌 체크
-            if (this._canMoveTo(nextX, nextZ)) {
-                this.position.x = nextX;
-                this.position.z = nextZ;
+                    // 이동 전진 (단순 forward 이동 대신 translateZ 사용)
+                    const moveStep = config.SPEED * thickness * deltaTime;
+                    const finalStep = Math.min(moveStep, distToNode);
+                    this.group.translateZ(finalStep);
+                } else {
+                    // 노드 도착 -> 다음 노드로
+                    this.pathIndex++;
+                }
             } else {
-                // 벽에 막혔을 때: 미끄러지기 시도 등 추가 가능 (현재는 정지)
+                // 경로가 없거나 끝났으면 플레이어 직접 바라보기 (마지막 미세 조정)
+                const targetRotation = Math.atan2(
+                    player.group.position.x - this.position.x,
+                    player.group.position.z - this.position.z
+                );
+                this.rotation.y = THREE.MathUtils.lerp(this.rotation.y, targetRotation, deltaTime * 2.0);
             }
         }
+    }
+
+    /**
+     * A*를 이용해 플레이어까지의 경로 계산
+     */
+    _calculatePath(player) {
+        const startIdx = this._worldToGrid(this.position.x, this.position.z);
+        const endIdx = this._worldToGrid(player.group.position.x, player.group.position.z);
+
+        const path = Pathfinder.findPath(this.mazeGen.grid, startIdx, endIdx);
+        if (path) {
+            this.currentPath = path;
+            this.pathIndex = 1; // 0번은 현재 위치이므로 1번부터 추적
+        }
+    }
+
+    _gridToWorld(gridX, gridY) {
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const offsetX = -(this.mazeGen.width * thickness) / 2;
+        const offsetZ = -(this.mazeGen.height * thickness) / 2;
+        return {
+            x: offsetX + gridX * thickness + thickness / 2,
+            z: offsetZ + gridY * thickness + thickness / 2
+        };
+    }
+
+    _worldToGrid(worldX, worldZ) {
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const offsetX = -(this.mazeGen.width * thickness) / 2;
+        const offsetZ = -(this.mazeGen.height * thickness) / 2;
+        return {
+            x: Math.floor((worldX - offsetX) / thickness),
+            y: Math.floor((worldZ - offsetZ) / thickness)
+        };
     }
 
     /**
      * 월드 좌표 기준으로 해당 위치가 이동 가능한지(벽이 아닌지) 체크
      */
     _canMoveTo(worldX, worldZ) {
-        const thickness = CONFIG.MAZE.WALL_THICKNESS;
-        const offsetX = -(this.mazeGen.width * thickness) / 2;
-        const offsetZ = -(this.mazeGen.height * thickness) / 2;
-
-        const gridX = Math.floor((worldX - offsetX) / thickness);
-        const gridY = Math.floor((worldZ - offsetZ) / thickness);
+        const grid = this._worldToGrid(worldX, worldZ);
 
         // 미로 범위 체크
-        if (gridX < 0 || gridX >= this.mazeGen.width || gridY < 0 || gridY >= this.mazeGen.height) {
+        if (grid.x < 0 || grid.x >= this.mazeGen.width || grid.y < 0 || grid.y >= this.mazeGen.height) {
             return false;
         }
 
         // 벽 체크 (0: 길, 1: 벽)
-        return this.mazeGen.grid[gridY][gridX] === 0;
+        return this.mazeGen.grid[grid.y][grid.x] === 0;
     }
 }

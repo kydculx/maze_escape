@@ -168,7 +168,8 @@ export const CONFIG = {
             WALK_BOB_SPEED: 10,        // 이동 시 움찔거리는 속도
             WALK_BOB_AMPLITUDE: 0.05,  // 이동 시 움찔거리는 크기
             MODEL_SCALE: 0.5,          // 모델 크기
-            COLOR: 0x77aa77            // 좀비 기본 색상 (창백한 초록)
+            COLOR: 0x77aa77,           // 좀비 기본 색상 (창백한 초록)
+            PATH_RECALC_INTERVAL: 0.5  // 경로 재계산 주기 (초)
         }
     }
 };
