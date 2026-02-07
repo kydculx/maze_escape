@@ -161,15 +161,18 @@ export const CONFIG = {
             DIE: 'DIE'
         },
         ZOMBIE: {
-            SPEED: 0.5,               // 이동 속도 (칸/초)
-            DETECTION_RANGE: 5,        // 플레이어 감지 범위 (칸)
+            SPEED: 0.2,               // 이동 속도 (칸/초)
+            DETECTION_RANGE: 2,        // 플레이어 감지 범위 (칸)
             IDLE_SWAY_SPEED: 2,        // 대기 시 흔들림 속도
             IDLE_SWAY_AMPLITUDE: 0.1,  // 대기 시 흔들림 크기
             WALK_BOB_SPEED: 10,        // 이동 시 움찔거리는 속도
             WALK_BOB_AMPLITUDE: 0.05,  // 이동 시 움찔거리는 크기
-            MODEL_SCALE: 0.5,          // 모델 크기
+            MODEL_SCALE: 0.3,          // 모델 크기
             COLOR: 0x77aa77,           // 좀비 기본 색상 (창백한 초록)
-            PATH_RECALC_INTERVAL: 0.5  // 경로 재계산 주기 (초)
+            PATH_RECALC_INTERVAL: 0.5, // 경로 재계산 주기 (초)
+            PATROL_RADIUS: 3,          // 배회 반경 (타일)
+            PATROL_WAIT_MIN: 1.0,      // 배회 목적지 도착 후 최소 대기 시간 (초)
+            PATROL_WAIT_MAX: 3.0       // 배회 목적지 도착 후 최대 대기 시간 (초)
         }
     }
 };

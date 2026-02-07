@@ -20,6 +20,11 @@ export class Zombie extends Monster {
         this.currentPath = null;
         this.pathIndex = 0;
         this.lastPathCalcTime = 0;
+
+        // 배회(Patrol) 관련 상태
+        this.isPatrolling = false;
+        this.patrolWaitTimer = 0;
+        this.patrolTarget = null;
     }
 
     _initModel(options) {
@@ -76,75 +81,138 @@ export class Zombie extends Monster {
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
         const distInCells = dist / thickness;
 
-        // 2. 상태 전환 로직
-        if (this.state === states.IDLE) {
-            if (distInCells <= config.DETECTION_RANGE) {
+        // 2. 플레이어 감지 시 최우선 추적
+        if (distInCells <= config.DETECTION_RANGE) {
+            this.isPatrolling = false; // 배회 종료
+            this.patrolTarget = null;
+
+            if (this.state !== states.MOVE) {
                 this.setState(states.MOVE);
             }
-        } else if (this.state === states.MOVE) {
-            if (distInCells > config.DETECTION_RANGE + 3) { // 좀더 멀어지면 포기
-                this.setState(states.IDLE);
-                this.currentPath = null;
-                return;
-            }
 
-            // 3. 길찾기 경로 업데이트 (주기적)
+            // 길찾기 경로 업데이트 (주기적)
             if (this.animationTime - this.lastPathCalcTime > config.PATH_RECALC_INTERVAL) {
-                this._calculatePath(player);
+                this._calculatePath(player.group.position);
                 this.lastPathCalcTime = this.animationTime;
             }
-
-            // 4. 경로 추적 이동
-            if (this.currentPath && this.pathIndex < this.currentPath.length) {
-                const targetNode = this.currentPath[this.pathIndex];
-                const targetPos = this._gridToWorld(targetNode.x, targetNode.y);
-
-                // 현재 위치에서 타겟 노드까지의 방향 벡터
-                const direction = new THREE.Vector3(
-                    targetPos.x - this.position.x,
-                    0,
-                    targetPos.z - this.position.z
-                );
-                const distToNode = direction.length();
-
-                if (distToNode > 0.05) {
-                    // 회전 처리
-                    const targetAngle = Math.atan2(direction.x, direction.z);
-                    let angleDiff = targetAngle - this.rotation.y;
-                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-                    this.rotation.y += angleDiff * deltaTime * 3.0;
-
-                    // 이동 전진 (단순 forward 이동 대신 translateZ 사용)
-                    const moveStep = config.SPEED * thickness * deltaTime;
-                    const finalStep = Math.min(moveStep, distToNode);
-                    this.group.translateZ(finalStep);
-                } else {
-                    // 노드 도착 -> 다음 노드로
-                    this.pathIndex++;
+        }
+        // 3. 플레이어 감지가 안 될 때의 자율 행동 (IDLE or PATROL)
+        else {
+            if (this.state === states.IDLE) {
+                this.patrolWaitTimer -= deltaTime;
+                if (this.patrolWaitTimer <= 0) {
+                    this._startPatrol();
+                }
+            } else if (this.state === states.MOVE && this.isPatrolling) {
+                // 배회 이동 중 도달 여부 체크
+                if (!this.currentPath || this.pathIndex >= this.currentPath.length) {
+                    this.setState(states.IDLE);
+                    this.isPatrolling = false;
+                    // 1~3초 대기 시간 설정
+                    this.patrolWaitTimer = config.PATROL_WAIT_MIN + Math.random() * (config.PATROL_WAIT_MAX - config.PATROL_WAIT_MIN);
                 }
             } else {
-                // 경로가 없거나 끝났으면 플레이어 직접 바라보기 (마지막 미세 조정)
-                const targetRotation = Math.atan2(
-                    player.group.position.x - this.position.x,
-                    player.group.position.z - this.position.z
-                );
-                this.rotation.y = THREE.MathUtils.lerp(this.rotation.y, targetRotation, deltaTime * 2.0);
+                // 추적 중이었으나 플레이어가 멀어진 경우
+                this.setState(states.IDLE);
+                this.isPatrolling = false;
+                this.patrolWaitTimer = Math.random() * 2; // 즉시 배회하지 않도록 약간의 대기
+                this.currentPath = null;
             }
+        }
+
+        // 4. 경로 추적 이동 처리 (추적이든 배회든 공통)
+        if (this.state === states.MOVE) {
+            this._moveAlongPath(deltaTime);
         }
     }
 
     /**
-     * A*를 이용해 플레이어까지의 경로 계산
+     * 경로를 따라 실제 이동 수행
      */
-    _calculatePath(player) {
+    _moveAlongPath(deltaTime) {
+        if (!this.currentPath || this.pathIndex >= this.currentPath.length) return;
+
+        const config = CONFIG.MONSTERS.ZOMBIE;
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const targetNode = this.currentPath[this.pathIndex];
+        const targetPos = this._gridToWorld(targetNode.x, targetNode.y);
+
+        const direction = new THREE.Vector3(
+            targetPos.x - this.position.x,
+            0,
+            targetPos.z - this.position.z
+        );
+        const distToNode = direction.length();
+
+        if (distToNode > 0.05) {
+            // 회전
+            const targetAngle = Math.atan2(direction.x, direction.z);
+            let angleDiff = targetAngle - this.rotation.y;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            this.rotation.y += angleDiff * deltaTime * 3.0;
+
+            // 이동
+            const moveStep = config.SPEED * thickness * deltaTime;
+            const finalStep = Math.min(moveStep, distToNode);
+            this.group.translateZ(finalStep);
+        } else {
+            this.pathIndex++;
+        }
+    }
+
+    /**
+     * 주변 반경 내 무작위 지점으로 배회 시작
+     */
+    _startPatrol() {
+        const config = CONFIG.MONSTERS.ZOMBIE;
         const startIdx = this._worldToGrid(this.position.x, this.position.z);
-        const endIdx = this._worldToGrid(player.group.position.x, player.group.position.z);
+
+        // 반경 3타일 내의 무작위 빈 칸 찾기 (최대 10번 시도)
+        let targetX, targetY;
+        let found = false;
+
+        for (let i = 0; i < 10; i++) {
+            const rx = Math.floor(Math.random() * (config.PATROL_RADIUS * 2 + 1)) - config.PATROL_RADIUS;
+            const ry = Math.floor(Math.random() * (config.PATROL_RADIUS * 2 + 1)) - config.PATROL_RADIUS;
+
+            targetX = startIdx.x + rx;
+            targetY = startIdx.y + ry;
+
+            // 미로 범위 체크 및 벽 여부 체크
+            if (targetX >= 0 && targetX < this.mazeGen.width &&
+                targetY >= 0 && targetY < this.mazeGen.height &&
+                this.mazeGen.grid[targetY][targetX] === 0) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            const targetPos = this._gridToWorld(targetX, targetY);
+            this._calculatePath(new THREE.Vector3(targetPos.x, 0, targetPos.z));
+
+            if (this.currentPath) {
+                this.isPatrolling = true;
+                this.setState(CONFIG.MONSTERS.STATES.MOVE);
+            }
+        } else {
+            // 못 찾으면 다시 대기
+            this.patrolWaitTimer = 1.0;
+        }
+    }
+
+    /**
+     * 지정된 월드 위치까지의 경로 계산
+     */
+    _calculatePath(targetWorldPos) {
+        const startIdx = this._worldToGrid(this.position.x, this.position.z);
+        const endIdx = this._worldToGrid(targetWorldPos.x, targetWorldPos.z);
 
         const path = Pathfinder.findPath(this.mazeGen.grid, startIdx, endIdx);
         if (path) {
             this.currentPath = path;
-            this.pathIndex = 1; // 0번은 현재 위치이므로 1번부터 추적
+            this.pathIndex = 1;
         }
     }
 
