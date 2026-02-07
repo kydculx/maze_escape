@@ -41,11 +41,13 @@ export class Zombie extends Monster {
         // 1. 배회 사운드 (Patrol/Idle)
         this.patrolAudio = new Audio(audioCfg.ZOMBIE_PATROL_SFX);
         this.patrolAudio.loop = true;
+        this.patrolAudio.preload = 'auto'; // 미리 로딩
         this.patrolAudio.volume = 0; // 초기 볼륨 0
 
         // 2. 추적 사운드 (Tracking)
         this.trackAudio = new Audio(audioCfg.ZOMBIE_TRACK_SFX);
         this.trackAudio.loop = true;
+        this.trackAudio.preload = 'auto'; // 미리 로딩
         this.trackAudio.volume = 0; // 초기 볼륨 0
 
         // 사운드 시작 (브라우저 정책에 따라 상호작용 전에는 차단될 수 있음)
