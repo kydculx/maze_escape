@@ -64,10 +64,13 @@ export class Player {
         const target = config.TARGET_OFFSET;
 
         light.position.set(pos.x, pos.y, pos.z);
+
+        // 타일 조준점 초기화 (월드 좌표 추적을 위해 씬에 직접 추가)
         light.target.position.set(target.x, target.y, target.z);
+        this.group.localToWorld(light.target.position);
 
         this.group.add(light);
-        this.group.add(light.target);
+        this.scene.add(light.target);
         return light;
     }
 
@@ -157,6 +160,31 @@ export class Player {
         // Idle Swaying logic (Moved to CameraController)
         if (!isIdle) {
             this.group.rotation.z = 0;
+        }
+
+        // 5.2 손전등 독립 움직임 처리 (지연 및 흔들림)
+        if (this.flashlight) {
+            const flCfg = CONFIG.ITEMS.FLASHLIGHT;
+            const movCfg = flCfg.MOVEMENT;
+
+            // 이상적인 목표 지점 (로컬 -> 월드)
+            const idealLocalTarget = new THREE.Vector3(
+                flCfg.TARGET_OFFSET.x,
+                flCfg.TARGET_OFFSET.y,
+                flCfg.TARGET_OFFSET.z
+            );
+
+            // 미세한 손떨림(Sway) 추가
+            const swayX = Math.sin(this.animationTime * movCfg.SWAY_FREQUENCY) * movCfg.SWAY_AMPLITUDE;
+            const swayY = Math.cos(this.animationTime * movCfg.SWAY_FREQUENCY * 0.7) * movCfg.SWAY_AMPLITUDE;
+            idealLocalTarget.x += swayX;
+            idealLocalTarget.y += swayY;
+
+            const idealWorldTarget = idealLocalTarget.clone();
+            this.group.localToWorld(idealWorldTarget);
+
+            // 지연 효과(Lag) 적용: 현재 위치에서 목표 위치로 서서히 이동
+            this.flashlight.target.position.lerp(idealWorldTarget, deltaTime * movCfg.LAG_SPEED);
         }
 
         // 대기 시간(Idle) 추적
