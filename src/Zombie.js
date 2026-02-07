@@ -137,26 +137,45 @@ export class Zombie extends Monster {
         const targetNode = this.currentPath[this.pathIndex];
         const targetPos = this._gridToWorld(targetNode.x, targetNode.y);
 
-        const direction = new THREE.Vector3(
+        // 현재 위치에서 타겟 노드까지의 방향 벡터 (World Space)
+        const toTarget = new THREE.Vector3(
             targetPos.x - this.position.x,
             0,
             targetPos.z - this.position.z
         );
-        const distToNode = direction.length();
+        const distToNode = toTarget.length();
 
-        if (distToNode > 0.05) {
-            // 회전
-            const targetAngle = Math.atan2(direction.x, direction.z);
+        if (distToNode > 0.02) {
+            // 1. 회전 로직 (시각적용)
+            const targetAngle = Math.atan2(toTarget.x, toTarget.z);
             let angleDiff = targetAngle - this.rotation.y;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            this.rotation.y += angleDiff * deltaTime * 3.0;
+            this.rotation.y += angleDiff * deltaTime * 5.0; // 회전 속도 약간 상향
 
-            // 이동
+            // 2. 이동 로직 (World Space에서 직선 이동 - 벽 뚫기 방지)
             const moveStep = config.SPEED * thickness * deltaTime;
             const finalStep = Math.min(moveStep, distToNode);
-            this.group.translateZ(finalStep);
+
+            const moveVec = toTarget.normalize().multiplyScalar(finalStep);
+
+            // 안전 장치: 이동할 위치가 유효한지 최종 체크
+            const nextX = this.position.x + moveVec.x;
+            const nextZ = this.position.z + moveVec.z;
+
+            if (this._canMoveTo(nextX, nextZ)) {
+                this.position.x = nextX;
+                this.position.z = nextZ;
+            } else {
+                // 비정상적인 경우 (예: 경로가 벽을 걸침) 스냅 처리
+                this.position.x = targetPos.x;
+                this.position.z = targetPos.z;
+                this.pathIndex++;
+            }
         } else {
+            // 노드에 매우 근접했으면 위치 스냅 후 다음 노드로
+            this.position.x = targetPos.x;
+            this.position.z = targetPos.z;
             this.pathIndex++;
         }
     }
