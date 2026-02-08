@@ -44,18 +44,16 @@ export class UIManager {
 
 
 
-        // 3. 손전등 배터리 프로그레스
+        // 3. 손전등 배터리 프로그레스 (세로 바)
         if (this.elements.flashlight) {
-            const circle = this.elements.flashlight.querySelector('.progress-ring__circle');
-            if (circle && this.player) {
-                const radius = 26;
-                const circumference = 2 * Math.PI * radius;
-                const progress = this.player.flashlightTimer / CONFIG.ITEMS.FLASHLIGHT.DURATION;
-                const offset = circumference - progress * circumference;
-                circle.style.strokeDashoffset = offset;
+            const barFill = this.elements.flashlight.querySelector('.battery-bar-fill');
+            if (barFill && this.player) {
+                const percentage = (this.player.flashlightTimer / CONFIG.ITEMS.FLASHLIGHT.DURATION) * 100;
+                barFill.style.height = `${Math.min(100, Math.max(0, percentage))}%`;
 
-                circle.style.stroke = (this.player.flashlightTimer < CONFIG.ITEMS.FLASHLIGHT.FLICKER_THRESHOLD)
-                    ? "#ff4444" : "#00ffff";
+                // 배터리 부족 시 색상 변경
+                barFill.style.backgroundColor = (this.player.flashlightTimer < CONFIG.ITEMS.FLASHLIGHT.FLICKER_THRESHOLD)
+                    ? "#ff4444" : "#00ff00";
             }
         }
 
@@ -88,14 +86,14 @@ export class UIManager {
         // 망치
         if (this.elements.hammer) {
             const count = this.player.inventory.hammerCount;
-            this.elements.hammer.querySelector('.count').textContent = count;
+            this.elements.hammer.querySelector('.count').textContent = count.toString().padStart(2, '0');
             this.elements.hammer.classList.toggle('locked', count <= 0);
         }
 
         // 점프
         if (this.elements.jump) {
             const count = this.player.inventory.jumpCount;
-            this.elements.jump.querySelector('.count').textContent = count;
+            this.elements.jump.querySelector('.count').textContent = count.toString().padStart(2, '0');
             this.elements.jump.classList.toggle('locked', count <= 0);
         }
 
@@ -110,7 +108,7 @@ export class UIManager {
         if (this.elements.trap) {
             const count = this.player.inventory.trapCount;
             const countEl = this.elements.trap.querySelector('.count');
-            if (countEl) countEl.textContent = count;
+            if (countEl) countEl.textContent = count.toString().padStart(2, '0');
             this.elements.trap.classList.toggle('locked', count <= 0);
         }
 
@@ -118,7 +116,7 @@ export class UIManager {
         if (this.elements.teleport) {
             const count = this.player.inventory.teleportCount;
             const countEl = this.elements.teleport.querySelector('.count');
-            if (countEl) countEl.textContent = count;
+            if (countEl) countEl.textContent = count.toString().padStart(2, '0');
             this.elements.teleport.classList.toggle('locked', count <= 0);
         }
     }

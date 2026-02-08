@@ -140,7 +140,7 @@ export const CONFIG = {
             DURATION: 30.0,           // 배터리 지속 시간 (초)
             RECHARGE_DURATION: 30.0,  // 완충에 소요되는 시간 (초, 대기 및 OFF 시)
             RECHARGE_DELAY: 3.0,     // 충전이 시작되기 위한 최소 대기 시간 (초)
-            INTENSITY: 10,            // 빛의 밝기 (강도)
+            INTENSITY: 50,            // 빛의 밝기 (강도)
             DISTANCE: 4,              // 빛이 도달하는 최대 거리
             ANGLE: Math.PI / 7,       // 빛의 조사 각도 (라디안)
             PENUMBRA: 1,              // 빛 가장자리의 부드러움 정도 (0~1)

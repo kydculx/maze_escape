@@ -550,63 +550,113 @@ input[type="range"]::-webkit-slider-thumb {
 /* Item Action Buttons (Left Side Vertical) */
 #item-actions {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 5px;
+    left: 0px;
+    /* 더 왼쪽으로 이동 */
     display: flex;
     flex-direction: column-reverse;
     /* 최신 획득/자주 쓰는걸 아래로 배치하거나 취향껏 */
-    gap: 15px;
+    gap: 10px;
     pointer-events: auto;
     z-index: 100;
 }
 
 .action-btn {
-    width: 65px;
-    height: 65px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 18px;
+    width: auto;
+    /* 너비 자동 (내용물에 맞춤) */
+    min-width: 40px;
+    /* 최소 너비 유지 */
+    height: 40px;
+    background: transparent;
+    border: none;
+    /* border-radius: 45px; */
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    /* 가로 배치 */
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    /* 왼쪽 정렬 (아이콘 기준) */
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     user-select: none;
     color: white;
+    padding-left: 10px;
+    /* 아이콘 위치 잡기 */
+}
+
+#use-flashlight-btn {
+    width: 55px;
+    /* 고정 너비 할당 */
+    padding-left: 0;
+    justify-content: center;
+}
+
+#use-flashlight-btn .battery-bar-container {
+    right: 8px;
+    /* 위치 조정 */
+}
+
+#use-flashlight-btn .icon {
+    margin-right: 10px;
+    /* 아이콘 위치 조정 */
+}
+
+.action-btn .icon {
+    font-size: 24px;
+    z-index: 2;
+    margin-right: 1px;
+    /* 아이콘과 숫자 사이 간격 */
+}
+
+.action-btn .count {
+    position: static;
+    /* 절대 위치 제거 */
+    background: transparent;
+    color: white;
+    font-size: 12px;
+    /* 크기 조금 키움 */
+    font-weight: 800;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    display: block;
 }
 
 
 
+
+
+/* Click effect removed */
 .action-btn:active:not(.locked),
 .action-btn.pressed:not(.locked) {
-    transform: scale(0.9) translateY(4px);
-    background: rgba(0, 255, 255, 0.4);
-    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.4);
+    transform: none;
+    background: transparent;
+    box-shadow: none;
 }
 
 .action-btn.active {
-    background: rgba(0, 255, 255, 0.3);
-    border-color: #00ffff;
-    animation: pulse-border 1.5s infinite;
+    background: transparent;
+    border: none !important;
+    /* 강제 적용 */
+    box-shadow: none !important;
+    animation: none;
+    padding: 0;
+    /* 패딩 변화 방지 */
 }
 
 #use-jump-btn {
-    background: rgba(50, 50, 255, 0.5);
+    background: transparent;
 }
 
 #use-hammer-btn {
-    background: rgba(255, 100, 50, 0.5);
+    background: transparent;
 }
 
 #use-trap-btn {
-    background: rgba(255, 0, 0, 0.5);
+    background: transparent;
 }
 
 #use-teleport-btn {
-    background: rgba(136, 0, 255, 0.5);
+    background: transparent;
 }
 
 .action-btn.locked {
@@ -617,9 +667,9 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 #use-jump-btn.active {
-    border-color: #ffff00;
-    background: rgba(255, 255, 0, 0.1);
-    box-shadow: 0 0 15px rgba(255, 255, 0, 0.3);
+    border: none;
+    background: transparent;
+    box-shadow: none;
 }
 
 .action-btn .icon {
@@ -627,39 +677,33 @@ input[type="range"]::-webkit-slider-thumb {
     z-index: 2;
 }
 
-.action-btn .count {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #ffaa00;
-    color: black;
-    font-size: 12px;
-    font-weight: 800;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid #fff;
-    z-index: 10;
-}
 
-/* progress ring styles */
-.progress-ring {
+
+/* Vertical Battery Bar */
+.battery-bar-container {
     position: absolute;
+    right: 4px;
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-90deg);
-    pointer-events: none;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 25px;
+    /* 36px * 0.7 ≈ 25px */
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
 }
 
-.progress-ring__circle {
-    transition: stroke-dashoffset 0.35s;
-    transform-origin: 50% 50%;
-    stroke-dasharray: 163.36;
-    /* 2 * PI * 26 */
-    stroke-dashoffset: 163.36;
+.battery-bar-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #00ff00;
+    /* 초록색으로 변경 */
+    transition: height 0.3s, background-color 0.3s;
+    border-radius: 0 0 3px 3px;
+    /* 아래쪽 둥글게 */
 }
 
 @keyframes pulse-border {

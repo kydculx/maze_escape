@@ -125,7 +125,7 @@ export class MazeView {
             const startMarker = this.createMarkerMesh(0x00ffaa);
             startMarker.position.set(
                 offsetX + (mazeGen.entrance.x * thickness) + thickness / 2,
-                0.01,
+                0.03, // 바닥(0.01)보다 확실히 위로 띄움
                 offsetZ + (mazeGen.entrance.y * thickness) + thickness / 2
             );
             this.markers.add(startMarker);
@@ -135,7 +135,7 @@ export class MazeView {
             const exitMarker = this.createMarkerMesh(0xff4444);
             exitMarker.position.set(
                 offsetX + (mazeGen.exit.x * thickness) + thickness / 2,
-                0.01,
+                0.03, // 바닥(0.01)보다 확실히 위로 띄움
                 offsetZ + (mazeGen.exit.y * thickness) + thickness / 2
             );
             this.markers.add(exitMarker);
