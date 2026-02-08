@@ -53,8 +53,8 @@ export const CONFIG = {
             MENU_AMBIENT: { COLOR: 0xffffff, INTENSITY: 0.05 },
             MENU_POINT: { COLOR: 0xffffff, INTENSITY: 1, POSITION: { x: 5, y: 5, z: 5 } },
             // 실제 게임 플레이 조명
-            AMBIENT_INTENSITY: 0.05,  // 전체적인 환경 광도
-            SUN_INTENSITY: 0.02        // 태양광(직사광) 강도
+            AMBIENT_INTENSITY: 0.1,  // 전체적인 환경 광도
+            SUN_INTENSITY: 0.1        // 태양광(직사광) 강도
         }
     },
 

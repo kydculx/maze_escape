@@ -73,35 +73,19 @@ export class Zombie extends Monster {
 
         const audioCfg = CONFIG.AUDIO;
 
-        // 1. 배회 사운드 (Patrol) - 1회성 (요청사항 유지)
-        this.patrolAudio = new Audio(audioCfg.ZOMBIE_PATROL_SFX);
-        this.patrolAudio.loop = false;
-        this.patrolAudio.preload = 'auto';
-        this.patrolAudio.volume = 0;
+        // 1. 배회 사운드 (Patrol) - 1회성 (기존 유지)
+        // One-shot은 SoundManager.playSFX로 대체 가능하므로 멤버 변수 제거 고려 가능하나
+        // 기존 로직 유지
+        this.patrolSFXUrl = audioCfg.ZOMBIE_PATROL_SFX;
 
-        // 추적 사운드 (Tracking) - 반복 재생 (요청사항 복구)
-        this.trackAudio = new Audio(audioCfg.ZOMBIE_TRACK_SFX);
-        this.trackAudio.loop = true;
-        this.trackAudio.preload = 'auto';
-        this.trackAudio.volume = 0;
-
-        // 초기 재생 시도 제거 -> _updateAudioVolumes에서 처리
+        // 2. 추적 사운드 (Tracking) - Web Audio loop 사용
+        this.trackSoundController = this.sound.playLoop(audioCfg.ZOMBIE_TRACK_SFX, 0);
     }
 
-    _playOneShot(audio) {
-        if (!audio) return;
-        if (audio.volume <= 0) return;
-        audio.currentTime = 0;
-        audio.play().catch(() => { });
-    }
 
-    _playAudio(audio) {
-        if (!audio) return;
-        audio.play().catch(() => { });
-    }
 
     _updateAudioVolumes(deltaTime) {
-        if (!this.sound || !this.patrolAudio || !this.trackAudio) return;
+        if (!this.sound || !this.trackSoundController) return;
 
         // 플레이어와의 거리 계산 (타일 단위)
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
@@ -111,7 +95,6 @@ export class Zombie extends Monster {
         const distInTiles = Math.ceil(dist / thickness);
 
         // 볼륨 계산 (5단계: 1타일~5타일)
-        // 1타일: 100%, 2타일: 80%, ... 5타일: 20%, 6타일 이상: 0%
         let targetVolume = 0;
 
         if (distInTiles <= 5) {
@@ -122,25 +105,28 @@ export class Zombie extends Monster {
         }
 
         // 추적 모드 여부 확인
-        // isMovingTile이 true이면서 isPatrolling이 false이면 추적 중임
-        // 또는 상태가 MOVE이고 isPatrolling이 false여도 추적 중임
         const isTracking = !this.isPatrolling && (this.state === CONFIG.MONSTERS.STATES.MOVE || this.isMovingTile);
 
-        // 1. 배회 사운드: One-Shot이므로 볼륨만 거리에 따라 조절 (재생은 _startPatrol에서 함)
-        this.patrolAudio.volume = targetVolume;
-
-        // 2. 추적 사운드: 추적 중일 때만 볼륨 적용, 아니면 0
-        const targetTrackVol = isTracking ? targetVolume : 0;
-
-        // 부드러운 볼륨 전환 (Fade)
-        const fadeSpeed = deltaTime * 2.0;
-        this.trackAudio.volume = THREE.MathUtils.lerp(this.trackAudio.volume, targetTrackVol, fadeSpeed);
-
-        // 최적화: 볼륨이 0에 가까우면 Pause, 아니면 Play (모바일 렉 방지)
-        if (this.trackAudio.volume < 0.01) {
-            if (!this.trackAudio.paused) this.trackAudio.pause();
+        // 추적 사운드 제어
+        if (isTracking && targetVolume > 0) {
+            // 소리재생이 필요한 상황
+            if (!this.trackSoundController.isPlaying) {
+                this.trackSoundController.play();
+            }
+            this.trackSoundController.setVolume(targetVolume);
         } else {
-            if (this.trackAudio.paused) this.trackAudio.play().catch(() => { });
+            // 소리 끔
+            if (this.trackSoundController.isPlaying) {
+                // 갑자기 끄면 어색하니까 볼륨을 0으로 줄이다가 stop()하거나,
+                // playLoop 컨트롤러 내부에서 volume 0처리를 함.
+                // 여기서는 명시적으로 0으로 설정
+                this.trackSoundController.setVolume(0);
+
+                // 또는 완전히 멈춤 (자원 절약)
+                if (targetVolume === 0 && this.trackSoundController.volume < 0.01) {
+                    this.trackSoundController.stop();
+                }
+            }
         }
     }
 
@@ -364,7 +350,9 @@ export class Zombie extends Monster {
                 this.setState(CONFIG.MONSTERS.STATES.MOVE);
 
                 // 배회 시작 시 사운드 1회 재생
-                this._playOneShot(this.patrolAudio);
+                if (this.sound) {
+                    this.sound.playSFX(this.patrolSFXUrl, 0.5); // 거리기반 볼륨 계산 필요?
+                }
             }
         } else {
             // 못 찾으면 다시 대기
@@ -439,13 +427,9 @@ export class Zombie extends Monster {
     }
 
     destroy() {
-        if (this.patrolAudio) {
-            this.patrolAudio.pause();
-            this.patrolAudio = null;
-        }
-        if (this.trackAudio) {
-            this.trackAudio.pause();
-            this.trackAudio = null;
+        if (this.trackSoundController) {
+            this.trackSoundController.stop();
+            this.trackSoundController = null;
         }
         super.destroy();
     }
