@@ -302,6 +302,168 @@ body {
     font-size: 1.4em;
 }
 
+/* 중앙 조준점 */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 99;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 360도 사운드 레이더 */
+#radar-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 98;
+    display: none;
+    /* JS에서 센서 켜면 block으로 변경 */
+    opacity: 0.7;
+}
+
+.radar-circle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 255, 255, 0.05) 0%, rgba(0, 255, 255, 0.0) 70%);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+/* 레이더 중심 플레이어 표시 */
+.radar-player {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background-color: #00ffff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px #00ffff;
+}
+
+/* 좀비 위치 표시 (블립) - 방향 표시용 삼각형 */
+.radar-blip {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 12px solid #ff3333;
+    /* 삼각형 형태 */
+    background-color: transparent;
+    border-radius: 0;
+    transform: translate(-50%, -50%) rotate(0deg);
+    /* 회전 추가 가능 (옵션) */
+    box-shadow: none;
+    /* filter로 glow 대체 */
+    filter: drop-shadow(0 0 4px #ff0000);
+}
+
+/* 맥동 애니메이션 추가 */
+@keyframes radar-pulse {
+
+    /* scale제거하면 회전 유지 가능? transform 전체 덮어씀 */
+    /* JS에서 rotate를 동적으로 주므로, 여기서 transform 건드리면 회전 풀림. */
+    /* 해결: scale 대신 opacity만, 혹은 filter drop-shadow 강도 조절 */
+    0% {
+        filter: drop-shadow(0 0 2px #ff0000);
+        opacity: 0.8;
+    }
+
+    50% {
+        filter: drop-shadow(0 0 8px #ff0000);
+        opacity: 1;
+    }
+
+    100% {
+        filter: drop-shadow(0 0 2px #ff0000);
+        opacity: 0.8;
+    }
+}
+
+.radar-blip {
+    animation: radar-pulse 1s infinite;
+}
+
+/* --- Sound Indicators --- */
+#sound-indicators {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 500;
+    display: none;
+    /* 아이템 획득 시 block으로 변경 */
+}
+
+.indicator {
+    position: absolute;
+    font-size: 3rem;
+    color: rgba(255, 50, 50, 0.8);
+    opacity: 0;
+    transition: opacity 0.2s;
+    text-shadow: 0 0 10px red;
+}
+
+.indicator.on {
+    opacity: 1;
+    animation: flash 0.5s infinite alternate;
+}
+
+@keyframes flash {
+    from {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+.indicator.top {
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.indicator.bottom {
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.indicator.left {
+    top: 50%;
+    left: 50px;
+    transform: translateY(-50%);
+}
+
+.indicator.right {
+    top: 50%;
+    right: 50px;
+    transform: translateY(-50%);
+}
+
 /* Top Center HUD */
 #top-hud {
     position: absolute;
@@ -634,6 +796,21 @@ input[type="range"]::-webkit-slider-thumb {
     /* 아이콘 위치 조정 */
 }
 
+/* 사운드 센서 버튼 (손전등과 동일 스타일 적용) */
+#use-sensor-btn {
+    width: 55px;
+    padding-left: 0;
+    justify-content: center;
+}
+
+#use-sensor-btn .battery-bar-container {
+    right: 8px;
+}
+
+#use-sensor-btn .icon {
+    margin-right: 10px;
+}
+
 .action-btn .icon {
     font-size: 24px;
     z-index: 2;
@@ -665,14 +842,19 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: none;
 }
 
+#use-sensor-btn:active {
+    transform: none !important;
+}
+
 .action-btn.active {
     background: transparent;
     border: none !important;
     /* 강제 적용 */
     box-shadow: none !important;
     animation: none;
-    padding: 0;
-    /* 패딩 변화 방지 */
+    animation: none;
+    padding-left: 10px;
+    /* 패딩 유지 */
 }
 
 #use-jump-btn {

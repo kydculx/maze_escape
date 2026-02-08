@@ -48,6 +48,11 @@ export class Player {
         // 손전등 및 충전 관련 상태
         this.flashlightTimer = 0;
         this.isFlashlightOn = false;
+
+        // 사운드 센서 관련 상태
+        this.sensorTimer = 0;
+        this.isSensorOn = false;
+
         this.idleTimer = 0; // 대기 시간 측정용 타이머
         this.flashlight = this._initFlashlight();
     }
@@ -196,6 +201,7 @@ export class Player {
             this.idleTimer = 0; // 움직임이 있으면 즉시 초기화
         }
 
+        // 5.3 손전등 배터리 소모 및 충전
         if (this.isFlashlightOn && this.flashlightTimer > 0) {
             // 켜져 있을 때: 배터리 소모
             this.flashlightTimer -= deltaTime;
@@ -220,6 +226,22 @@ export class Player {
             if (!this.isFlashlightOn && this.idleTimer >= flCfg.RECHARGE_DELAY && this.flashlightTimer < flCfg.DURATION) {
                 const rechargeRate = flCfg.DURATION / flCfg.RECHARGE_DURATION;
                 this.flashlightTimer = Math.min(this.flashlightTimer + rechargeRate * deltaTime, flCfg.DURATION);
+            }
+        }
+
+        // 5.4 사운드 센서 배터리 소모 및 충전
+        const sensorCfg = CONFIG.ITEMS.SENSOR;
+        if (this.isSensorOn) {
+            this.sensorTimer -= deltaTime;
+            if (this.sensorTimer <= 0) {
+                this.sensorTimer = 0;
+                this.isSensorOn = false; // 방전 시 꺼짐
+            }
+        } else {
+            // 자동 충전 로직: OFF 상태 + 대기 시간 충족
+            if (this.idleTimer >= sensorCfg.RECHARGE_DELAY && this.sensorTimer < sensorCfg.DURATION) {
+                const rechargeRate = sensorCfg.DURATION / sensorCfg.RECHARGE_DURATION;
+                this.sensorTimer = Math.min(this.sensorTimer + rechargeRate * deltaTime, sensorCfg.DURATION);
             }
         }
     }
@@ -367,7 +389,10 @@ export class Player {
         this.inventory.jumpCount = 99;
         this.inventory.trapCount = 99;
         this.inventory.teleportCount = 99;
+        this.inventory.hasSensor = true;
+
         this.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
+        this.sensorTimer = CONFIG.ITEMS.SENSOR.DURATION;
 
         // 탐험 상태 모두 해제
         if (this.mazeGen) this.mazeGen.revealAll();
@@ -407,7 +432,17 @@ export class Player {
                 break;
             case 'TELEPORT':
                 this.inventory.teleportCount++;
-                console.log("Teleport acquired!");
+                console.log("Teleport scroll acquired!");
+                break;
+            case 'SENSOR':
+                this.inventory.hasSensor = true;
+                this.sensorTimer = CONFIG.ITEMS.SENSOR.DURATION;
+                // 기존에 켜져있었다면 유지
+                if (!this.isSensorOn && this.sensorTimer > 0) {
+                    // 획득 시 자동 켜짐? or 수동? -> 플래시라이트처럼 일단 놔둠 (사용자 취향)
+                    // 여기서는 굳이 자동 켜짐 안 함
+                }
+                console.log("Sound sensor acquired/recharged!");
                 break;
         }
     }
@@ -422,6 +457,20 @@ export class Player {
         this.flashlight.intensity = this.isFlashlightOn ? CONFIG.ITEMS.FLASHLIGHT.INTENSITY : 0;
 
         if (this.sound) this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
+        return true;
+    }
+
+    /**
+     * 사운드 센서 온오프 (배터리 있을 때만)
+     */
+    toggleSensor() {
+        if (!this.inventory.hasSensor || this.sensorTimer <= 0) return false;
+
+        this.isSensorOn = !this.isSensorOn;
+        // 사운드 재생 (켜짐/꺼짐)
+        if (this.sound) {
+            this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
+        }
         return true;
     }
 

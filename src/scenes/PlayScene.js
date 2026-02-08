@@ -80,10 +80,6 @@ export class PlayScene extends BaseScene {
                 this.player.startJump(true);
                 this.ui.updateAll();
             },
-            onFlashlight: () => {
-                this.player.toggleFlashlight();
-                this.ui.updateAll();
-            },
             onMap: () => this.resetMaze(),
             onCheat: () => {
                 this.player.applyCheat();
@@ -104,18 +100,17 @@ export class PlayScene extends BaseScene {
                     if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
                 }
             },
+            onFlashlight: () => {
+                this.player.toggleFlashlight();
+                this.ui.updateAll();
+            },
+            onSensor: () => {
+                this.player.toggleSensor();
+                this.ui.updateAll();
+            },
             onPrevStage: () => {
-                if (this.stageManager.level > 1) {
-                    this.stageManager.level--;
-                    // 이전 스테이지는 크기를 줄임 (최소 크기 보장 필요)
-                    this.stageManager.mazeSize = Math.max(
-                        CONFIG.STAGE.INITIAL_SIZE,
-                        this.stageManager.mazeSize - CONFIG.STAGE.SIZE_INCREMENT
-                    );
-                    this.stageManager.resetStats();
-                    this.resetMaze();
-                    if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
-                }
+                this.stageManager.prevStage();
+                this.resetMaze();
             },
             onNextStage: () => {
                 this.stageManager.nextStage();
@@ -238,10 +233,78 @@ export class PlayScene extends BaseScene {
         if (this.itemManager) {
             this.itemManager.update(deltaTime);
             this.itemManager.checkCollisions(this.player.position, CONFIG.PLAYER.PLAYER_RADIUS, (item) => {
-                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
+                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.ITEM_PICKUP_SFX_URL, 0.6);
+
+                // 사운드 센서 아이템 처리
+                if (item.type === 'SENSOR') {
+                    // 효과는 Player에서 처리됨
+                }
+
                 this.player.applyItemEffect(item);
                 this.ui.updateAll();
             });
+        }
+
+        // 1.6.5 사운드 센서 로직 (360도 레이더)
+        if (this.player.isSensorOn) {
+            const blips = [];
+
+            if (this.monsterManager && this.monsterManager.monsters) {
+                const playerPos = this.player.group.position;
+                const playerRotation = this.player.group.rotation.y;
+                // 플레이어 회전값: Three.js에서 y축 회전은 반시계 방향이 양수일 수 있음 (확인 필요)
+                // 보통 -Math.atan2(dz, dx) - rotationY 로 계산
+
+                for (const zombie of this.monsterManager.monsters) {
+                    // 소리를 내고 있는 좀비만 감지
+                    if (!zombie.isMakingSound) continue;
+
+                    const maxAudioDist = CONFIG.MONSTERS.ZOMBIE.PATROL_AUDIO_MAX_DIST || CONFIG.MONSTERS.ZOMBIE.DETECTION_RANGE;
+                    const dist = zombie.position.distanceTo(playerPos);
+                    const distInTiles = dist / CONFIG.MAZE.WALL_THICKNESS;
+
+                    if (distInTiles <= maxAudioDist) {
+                        const dx = zombie.position.x - playerPos.x;
+                        const dz = zombie.position.z - playerPos.z;
+
+                        // 좀비의 절대 각도 (x, z 평면)
+                        // Math.atan2(z, x) -> 0도가 x축 양의 방향
+                        const angleToZombie = Math.atan2(dz, dx);
+
+                        // 플레이어 기준 상대 각도
+                        // 플레이어의 rotation.y가 바라보는 방향 (Three.js 기본: -Z축이 정면일 수 있음, 모델에 따라 다름)
+                        // 현재 1인칭 카메라 로직상: rotation.y = 0 -> -Z 방향 (북쪽) 가정 시
+
+                        // 상대 각도 계산: (좀비 각도) - (플레이어 각도)
+                        // 단, 좌표계에 따라 보정이 필요함. 
+                        // 일반적으로: relativeAngle = angleToZombie - playerRotation
+
+                        // 일단 단순 차이로 전달하고 UIManager에서 시각화하며 조정
+                        // 거리 비율 (0.0 ~ 1.0)
+                        const distRadio = Math.min(1.0, distInTiles / maxAudioDist);
+
+                        blips.push({
+                            dx: dx,
+                            dz: dz,
+                            dist: dist,
+                            rotation: playerRotation,
+                            maxDist: maxAudioDist * CONFIG.MAZE.WALL_THICKNESS
+                        });
+                    }
+                }
+            }
+
+            // 방전 임박 시 깜빡임 효과 (3초 전)
+            let isRadarVisible = true;
+            if (this.player.sensorTimer < CONFIG.ITEMS.SENSOR.FLICKER_THRESHOLD) {
+                // 빠르게 깜빡임 (Flashlight과 유사한 속도)
+                // Math.sin(Date.now() * 0.02) -> 주기 약 300ms
+                isRadarVisible = Math.sin(Date.now() * 0.02) > 0;
+            }
+
+            this.ui.updateRadar(blips, isRadarVisible);
+        } else {
+            this.ui.updateRadar([], false);
         }
 
         // 1.7 몬스터 업데이트
@@ -321,6 +384,20 @@ export class PlayScene extends BaseScene {
         // 4. 망치 사용 (E 키 또는 HUD 버튼)
         if (input.wasJustPressed('KeyE')) {
             this._useHammer();
+        }
+
+        // F키: 손전등 토글
+        if (input.wasJustPressed('KeyF')) {
+            if (this.player.toggleFlashlight()) {
+                this.ui.updateAll();
+            }
+        }
+
+        // T키: 사운드 센서 토글
+        if (input.wasJustPressed('KeyT')) {
+            if (this.player.toggleSensor()) {
+                this.ui.updateAll();
+            }
         }
 
         // 5. 스와이프 입력 처리

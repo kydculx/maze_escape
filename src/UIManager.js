@@ -19,7 +19,7 @@ export class UIManager {
             map: document.getElementById('random-map-btn'),
             trap: document.getElementById('use-trap-btn'),
             teleport: document.getElementById('use-teleport-btn'),
-            teleport: document.getElementById('use-teleport-btn'),
+            sensor: document.getElementById('use-sensor-btn'), // Added sensor element
             fullscreen: document.getElementById('fullscreen-btn'),
             prevStage: document.getElementById('prev-stage-btn'),
             nextStage: document.getElementById('next-stage-btn')
@@ -50,21 +50,54 @@ export class UIManager {
             this.elements.prevStage.disabled = this.stageManager.level <= 1;
         }
 
+        // 5. 손전등 배터리 바 업데이트
+        const flBtn = document.getElementById('use-flashlight-btn');
+        if (flBtn) {
+            if (this.player.inventory.hasFlashlight) {
+                flBtn.classList.remove('locked');
+                if (this.player.isFlashlightOn) flBtn.classList.add('active');
+                else flBtn.classList.remove('active');
 
+                // 배터리 바
+                const bar = flBtn.querySelector('.battery-bar-fill');
+                if (bar) {
+                    const ratio = this.player.flashlightTimer / CONFIG.ITEMS.FLASHLIGHT.DURATION;
+                    // bar.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+                    bar.style.height = `${Math.max(0, Math.min(100, ratio * 100))}%`;
 
-        // 3. 손전등 배터리 프로그레스 (세로 바)
-        if (this.elements.flashlight) {
-            const barFill = this.elements.flashlight.querySelector('.battery-bar-fill');
-            if (barFill && this.player) {
-                const percentage = (this.player.flashlightTimer / CONFIG.ITEMS.FLASHLIGHT.DURATION) * 100;
-                barFill.style.height = `${Math.min(100, Math.max(0, percentage))}%`;
-
-                // 배터리 부족 시 색상 변경
-                barFill.style.backgroundColor = (this.player.flashlightTimer < CONFIG.ITEMS.FLASHLIGHT.FLICKER_THRESHOLD)
-                    ? "#ff4444" : "#00ff00";
+                    // 색상 변경 (부족하면 빨강)
+                    if (ratio < 0.2) bar.style.backgroundColor = '#ff3333';
+                    else bar.style.backgroundColor = '#00ff00';
+                }
+            } else {
+                flBtn.classList.add('locked');
+                flBtn.classList.remove('active');
             }
         }
 
+        // 6. 사운드 센서 배터리 바 업데이트
+        const sensorBtn = document.getElementById('use-sensor-btn');
+        if (sensorBtn) {
+            if (this.player.inventory.hasSensor) {
+                sensorBtn.classList.remove('locked');
+                if (this.player.isSensorOn) sensorBtn.classList.add('active');
+                else sensorBtn.classList.remove('active');
+
+                // 배터리 바
+                const bar = sensorBtn.querySelector('.battery-bar-fill');
+                if (bar) {
+                    const ratio = this.player.sensorTimer / CONFIG.ITEMS.SENSOR.DURATION;
+                    // bar.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+                    bar.style.height = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+
+                    if (ratio < 0.2) bar.style.backgroundColor = '#ff3333';
+                    else bar.style.backgroundColor = '#00ff00'; // 손전등과 동일한 녹색
+                }
+            } else {
+                sensorBtn.classList.add('locked');
+                sensorBtn.classList.remove('active');
+            }
+        }
         // 4. 스테이지 시간 및 이동 수 표시
         const timeEl = document.getElementById('stat-time');
         const movesEl = document.getElementById('stat-moves');
@@ -139,6 +172,7 @@ export class UIManager {
         this._setupButton(this.elements.map, callbacks.onMap);
         this._setupButton(this.elements.trap, callbacks.onTrap);
         this._setupButton(this.elements.teleport, callbacks.onTeleport);
+        this._setupButton(this.elements.sensor, callbacks.onSensor); // Added sensor binding
 
         const cheatBtn = document.getElementById('cheat-btn');
         this._setupButton(cheatBtn, callbacks.onCheat);
@@ -185,17 +219,93 @@ export class UIManager {
     }
 
     /**
-     * 전체화면 토글
+     * 사운드 방향 지시기 업데이트
+     * @param {Object} dirs { top: boolean, bottom: boolean, left: boolean, right: boolean }
      */
-    toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-            });
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            }
+    /**
+     * 360도 레이더 업데이트
+     * @param {Array} blips Array of { dx, dz, dist, rotation, maxDist }
+     * @param {boolean} isActive 센서 활성화 여부
+     */
+    updateRadar(blips, isActive) {
+        const container = document.getElementById('radar-container');
+        if (!container) return;
+
+        // 센서가 꺼져있으면 숨김
+        if (!isActive) {
+            container.style.display = 'none';
+            return;
         }
+
+        // 센서가 켜져있으면 항상 표시
+        container.style.display = 'block';
+
+        // 기존 블립 제거 (매 프레임 재생성 방식 - 최적화 필요 시 풀링 사용)
+        const oldBlips = container.querySelectorAll('.radar-blip');
+        oldBlips.forEach(el => el.remove());
+
+        if (!blips || blips.length === 0) {
+            return;
+        }
+
+        const radius = 90; // 컨테이너 반지름 (100px) - 여유분
+
+        blips.forEach(blip => {
+            // Three.js (World Space): X=Right, Z=South, Y=Up.
+            // Player Rotation Y: CCW around Y axis.
+            // We want to rotate the relative vector (dx, dz) by -playerRotation to align with player's forward.
+            // Formula for rotating point (x, y) by theta:
+            // x' = x cos(theta) - y sin(theta)
+            // y' = x sin(theta) + y cos(theta)
+            // Here, theta = -playerRotation.
+            // Let's use the rotation formula derived from testing:
+            // rx = dx * cos(rot) - dz * sin(rot)  (Maps to Screen X)
+            // ry = dx * sin(rot) + dz * cos(rot)  (Maps to Screen Y)
+            // Wait, let's re-verify with positive rotation (Left Turn).
+            // If I turn Left 90 (rot = PI/2), North (0, -100) should be to my Right (+X).
+            // cos(90)=0, sin(90)=1.
+            // rx = 0*0 - (-100)*1 = 100. (Right). Correct.
+            // ry = 0*1 + (-100)*0 = 0. (Center Y). Correct.
+
+            const rot = blip.rotation;
+            const rx = blip.dx * Math.cos(rot) - blip.dz * Math.sin(rot);
+            const ry = blip.dx * Math.sin(rot) + blip.dz * Math.cos(rot);
+
+            // 거리 비율 고정 (0.9) - 방향만 표시
+            // 방향 벡터 정규화
+            const dist = Math.sqrt(rx * rx + ry * ry);
+            const normX = rx / dist;
+            const normY = ry / dist;
+
+            // 화면상 위치 (Center: 100, 100)
+            const screenX = 100 + normX * (0.9 * radius);
+            const screenY = 100 + normY * (0.9 * radius);
+
+            const el = document.createElement('div');
+            el.className = 'radar-blip';
+            el.style.left = `${screenX}px`;
+            el.style.top = `${screenY}px`;
+
+            // 화살표 회전 (중심에서 바깥쪽으로 향하게)
+            // atan2(y, x) -> 각도 (라디안)
+            // 0 (Right) -> 90 deg rotation (Point Right)
+            // -PI/2 (Up) -> 0 deg rotation (Point Up)
+            // Formula: angle * 180 / PI + 90
+
+            const angle = Math.atan2(normY, normX);
+            const deg = (angle * 180 / Math.PI) + 90;
+            el.style.transform = `translate(-50%, -50%) rotate(${deg}deg)`;
+
+            el.style.opacity = 1.0;
+
+            container.appendChild(el);
+
+            // 거리가 멀면 투명도 조절 or 크기 조절 (거리는 유지하되 위치만 고정?)
+            // 일단 다 선명하게 표시하거나, 거리에 따른 투명도만 남길 수도 있음.
+            // "위치가 표시되면 안 되고" -> 거리 정보 숨김. 투명도도 1로 고정.
+            el.style.opacity = 1.0;
+
+            container.appendChild(el);
+        });
     }
 }

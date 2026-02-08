@@ -238,7 +238,6 @@ export class Item {
                     torus.rotation.y = i * 0.5;
                     portalGroup.add(torus);
                 }
-
                 // 중앙 구체
                 const core = new THREE.Mesh(
                     new THREE.SphereGeometry(scale * 0.4, 16, 16),
@@ -251,6 +250,47 @@ export class Item {
                 portalGroup.add(core);
 
                 return portalGroup;
+            }
+            case 'SENSOR': {
+                // 사운드 센서 (안테나/레이더 접시 모양) 📡
+                const sensorGroup = new THREE.Group();
+
+                // 1. 베이스 (작은 박스)
+                const base = new THREE.Mesh(
+                    new THREE.BoxGeometry(scale * 0.8, scale * 0.4, scale * 0.8),
+                    new THREE.MeshStandardMaterial({ color: 0x333333 })
+                );
+                sensorGroup.add(base);
+
+                // 2. 기둥 (Cylinder)
+                const pole = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.1, scale * 0.1, scale * 0.8, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x888888 })
+                );
+                pole.position.y = scale * 0.6;
+                sensorGroup.add(pole);
+
+                // 3. 접시 (Sphere 잘린 모양 or Cone) - 여기선 Cone을 넓게 펼쳐서 접시처럼
+                const dish = new THREE.Mesh(
+                    new THREE.ConeGeometry(scale * 1.0, scale * 0.5, 32, 1, true), // openEnded
+                    new THREE.MeshStandardMaterial({ color: 0xeeeeee, side: THREE.DoubleSide })
+                );
+                dish.position.y = scale * 1.0;
+                dish.rotation.x = Math.PI / 4; // 45도 기울임
+                sensorGroup.add(dish);
+
+                // 4. 수신기 (접시 중앙의 작은 막대)
+                const receiver = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.05, scale * 0.05, scale * 0.6, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                );
+                // 접시와 같은 각도로 회전 후 위치 조정
+                receiver.position.y = scale * 1.0 + Math.sin(Math.PI / 4) * scale * 0.3;
+                receiver.position.z = Math.cos(Math.PI / 4) * scale * 0.3;
+                receiver.rotation.x = Math.PI / 4;
+                sensorGroup.add(receiver);
+
+                return sensorGroup;
             }
             default:
                 geo = new THREE.BoxGeometry(scale, scale, scale);

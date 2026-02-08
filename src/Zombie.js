@@ -69,66 +69,68 @@ export class Zombie extends Monster {
     }
 
     _initAudio() {
-        if (!this.sound) return;
-
+        // 사운드 매니저가 없어도 독립적인 오디오 객체 사용 시도
         const audioCfg = CONFIG.AUDIO;
 
-        // 1. 배회 사운드 (Patrol) - 1회성 (기존 유지)
-        // One-shot은 SoundManager.playSFX로 대체 가능하므로 멤버 변수 제거 고려 가능하나
-        // 기존 로직 유지
+        // 1. 배회 사운드 (Patrol) - 1회성
         this.patrolSFXUrl = audioCfg.ZOMBIE_PATROL_SFX;
 
-        // 2. 추적 사운드 (Tracking) - Web Audio loop 사용
-        this.trackSoundController = this.sound.playLoop(audioCfg.ZOMBIE_TRACK_SFX, 0);
+        // 2. 추적 사운드 (Tracking) - HTML Audio 사용 (안정성 확보)
+        this.trackAudio = new Audio(audioCfg.ZOMBIE_TRACK_SFX);
+        this.trackAudio.loop = true;
+        this.trackAudio.volume = 0;
+
+        // 사운드 관련
+        this.patrolSFXUrl = audioCfg.ZOMBIE_PATROL_SFX; // e.g. 'assets/sounds/zombie_moan.mp3'
+        this.trackSFXUrl = audioCfg.ZOMBIE_TRACK_SFX;   // e.g. 'assets/sounds/zombie_growl.mp3'
+        this.attackSFXUrl = audioCfg.ZOMBIE_ATTACK_SFX; // Assuming this exists in CONFIG.AUDIO
+
+        // 현재 소리 재생 여부 추적 (레이더 표시용)
+        this.soundCooldown = 0;
+
+        // 추적용 발소리/그르렁 소리 루프 (HTMLAudioElement)
+        this.trackAudio = new Audio(this.trackSFXUrl);
+        this.trackAudio.loop = true;
+        this.trackAudio.volume = 0;
     }
 
-
-
     _updateAudioVolumes(deltaTime) {
-        if (!this.sound || !this.trackSoundController) return;
+        // 사운드 객체가 없으면 아무것도 안 함
+        if (!this.trackAudio) return;
 
-        // 플레이어와의 거리 계산 (타일 단위)
+        // 플레이어와의 거리 계산
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
         const dist = this.position.distanceTo(this.lastPlayerPos || new THREE.Vector3());
-
-        // 타일 단위 거리 (올림 처리)
         const distInTiles = Math.ceil(dist / thickness);
 
-        // 볼륨 계산 (5단계: 1타일~5타일)
+        const isTracking = !this.isPatrolling && this.state === CONFIG.MONSTERS.STATES.MOVE;
+
+        // 볼륨 계산 (공통 5단계 적용)
         let targetVolume = 0;
+        const maxDist = CONFIG.MONSTERS.ZOMBIE.DETECTION_RANGE;
+        targetVolume = this._calculateVolume(distInTiles, maxDist);
 
-        if (distInTiles <= 5) {
-            targetVolume = (6 - distInTiles) * 0.2;
-            targetVolume = Math.max(0, Math.min(1, targetVolume));
-        } else {
-            targetVolume = 0;
+        // 글로벌 마스터 볼륨 적용 (SoundManager가 있다면)
+        let masterVolume = 1.0;
+        if (this.sound && typeof this.sound.masterVolume === 'number') {
+            masterVolume = this.sound.masterVolume;
         }
-
-        // 추적 모드 여부 확인
-        const isTracking = !this.isPatrolling && (this.state === CONFIG.MONSTERS.STATES.MOVE || this.isMovingTile);
 
         // 추적 사운드 제어
         if (isTracking && targetVolume > 0) {
-            // 소리재생이 필요한 상황
-            if (!this.trackSoundController.isPlaying) {
-                this.trackSoundController.play();
-                // play()는 비동기일 수 있으므로 즉시 볼륨 설정도 시도
-                this.trackSoundController.setVolume(targetVolume);
-            } else {
-                this.trackSoundController.setVolume(targetVolume);
+            // 재생 중이 아니면 재생
+            if (this.trackAudio.paused) {
+                this.trackAudio.play().catch(e => {
+                    // console.warn('Chase audio play failed (interaction required):', e);
+                });
             }
+            // 볼륨 부드럽게 적용 (선택) 혹은 즉시 적용
+            this.trackAudio.volume = Math.max(0, Math.min(1, targetVolume * masterVolume));
         } else {
-            // 소리 끔
-            if (this.trackSoundController.isPlaying) {
-                // 갑자기 끄면 어색하니까 볼륨을 0으로 줄이다가 stop()하거나,
-                // playLoop 컨트롤러 내부에서 volume 0처리를 함.
-                // 여기서는 명시적으로 0으로 설정
-                this.trackSoundController.setVolume(0);
-
-                // 또는 완전히 멈춤 (자원 절약)
-                if (targetVolume === 0 && this.trackSoundController.volume < 0.01) {
-                    this.trackSoundController.stop();
-                }
+            // 정지 (pause)
+            if (!this.trackAudio.paused) {
+                this.trackAudio.pause();
+                this.trackAudio.currentTime = 0; // 초기화
             }
         }
     }
@@ -261,8 +263,20 @@ export class Zombie extends Monster {
         if (this.state === states.MOVE || this.isMovingTile) {
             this._moveAlongPath(deltaTime);
         }
+    }
 
-        // 5. 사운드 볼륨/상태 업데이트
+    update(deltaTime, player) {
+        if (!this.group.visible) return;
+
+        this.animationTime += deltaTime;
+
+        // 사운드 쿨다운 감소
+        if (this.soundCooldown > 0) {
+            this.soundCooldown -= deltaTime;
+        }
+
+        this._updateAnimation(deltaTime);
+        this._updateLogic(deltaTime, player);
         this._updateAudioVolumes(deltaTime);
     }
 
@@ -354,7 +368,23 @@ export class Zombie extends Monster {
 
                 // 배회 시작 시 사운드 1회 재생
                 if (this.sound) {
-                    this.sound.playSFX(this.patrolSFXUrl, 0.5); // 거리기반 볼륨 계산 필요?
+                    // 거리 기반 볼륨 계산 (공통 5단계 적용)
+                    const maxDist = CONFIG.MONSTERS.ZOMBIE.PATROL_AUDIO_MAX_DIST || 5;
+                    let volume = 0;
+
+                    if (this.lastPlayerPos) {
+                        const dist = this.position.distanceTo(this.lastPlayerPos);
+                        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+                        const distInTiles = dist / thickness;
+
+                        volume = this._calculateVolume(distInTiles, maxDist);
+                    }
+
+                    if (volume > 0.01) {
+                        this.sound.playSFX(this.patrolSFXUrl, volume);
+                        // 사운드 재생 중으로 표시 (약 2.0초)
+                        this.soundCooldown = 2.0;
+                    }
                 }
             }
         } else {
@@ -430,10 +460,53 @@ export class Zombie extends Monster {
     }
 
     destroy() {
+        if (this.trackAudio) {
+            this.trackAudio.pause();
+            this.trackAudio = null;
+        }
         if (this.trackSoundController) {
             this.trackSoundController.stop();
             this.trackSoundController = null;
         }
         super.destroy();
+    }
+
+    /**
+     * 거리 기반 단계별 볼륨 계산
+     * - 거리는 타일 단위이며, 최대 거리(maxDist)만큼의 등분(단계)으로 나눔
+     * - 예: maxDist=5 -> 5단계 (20%씩 감소)
+     * - 예: maxDist=10 -> 10단계 (10%씩 감소)
+     */
+    _calculateVolume(distInTiles, maxDist) {
+        if (distInTiles > maxDist) return 0;
+
+        // 0.1~1.0 -> 1단계
+        // 1.1~2.0 -> 2단계
+        // ...
+        const step = Math.ceil(distInTiles);
+
+        // 최대 거리보다 작거나 같으면 해당 단계의 볼륨 반환
+        // 1단계: (max - 0) / max = 1.0
+        // 2단계: (max - 1) / max
+        // ...
+        // 5단계(max=5): (5 - 4) / 5 = 0.2
+        const volume = (maxDist - (step - 1)) / maxDist;
+
+        return Math.max(0, volume);
+    }
+
+    /**
+     * 현재 소리를 내고 있는지 여부 반환 (레이더용)
+     */
+    get isMakingSound() {
+        // 1. 일회성 SFX 재생 중 (쿨다운)
+        if (this.soundCooldown > 0) return true;
+
+        // 2. 추적 사운드 루프 재생 중 (volume > 0)
+        if (this.trackAudio && !this.trackAudio.paused && this.trackAudio.volume > 0) {
+            return true;
+        }
+
+        return false;
     }
 }

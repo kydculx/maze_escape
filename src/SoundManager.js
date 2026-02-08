@@ -73,35 +73,46 @@ export class SoundManager {
             gainNode: null,
             url: url,
             isPlaying: false,
+            isLoading: false, // 로딩 중 플래그 추가
             volume: initialVolume,
+            shouldStop: false, // 로딩 중 정지 요청 플래그
 
             // 볼륨 설정 메서드
             setVolume: (v) => {
                 controller.volume = v;
                 if (controller.gainNode && controller.isPlaying) {
-                    // 부드러운 볼륨 전환 (Click 방지)
-                    controller.gainNode.gain.setTargetAtTime(v, this.context.currentTime, 0.1);
+                    try {
+                        // 부드러운 볼륨 전환 (Click 방지)
+                        controller.gainNode.gain.setTargetAtTime(v * this.masterVolume, this.context.currentTime, 0.1);
+                    } catch (e) {
+                        // Context가 닫혔거나 에러 발생 시 무시
+                    }
                 }
-                // 볼륨이 0이면 소스 중지 (CPU 절약) 로직은 복잡해지므로
-                // 간단하게 Gain만 0으로 유지하거나, 좀비 로직에서 handle.stop()을 호출하게 유도
             },
 
             // 재생 시작
             play: async () => {
-                if (controller.isPlaying) return;
+                if (controller.isPlaying || controller.isLoading) return;
+
+                controller.isLoading = true;
+                controller.shouldStop = false;
 
                 let buffer = this.buffers.get(url);
                 if (!buffer) {
                     buffer = await this.loadSound(url);
                 }
-                if (!buffer) return;
+
+                // 로딩 완료 후 상태 확인 (그 사이에 stop 요청이 있었는지)
+                controller.isLoading = false;
+                if (controller.shouldStop || !buffer) return;
 
                 const source = this.context.createBufferSource();
                 source.buffer = buffer;
                 source.loop = true;
 
                 const gainNode = this.context.createGain();
-                gainNode.gain.value = controller.volume;
+                // 초기 볼륨 설정 (마스터 볼륨 적용)
+                gainNode.gain.value = controller.volume * this.masterVolume;
 
                 source.connect(gainNode);
                 gainNode.connect(this.context.destination);
@@ -115,6 +126,11 @@ export class SoundManager {
 
             // 재생 중지
             stop: () => {
+                // 로딩 중이었다면 정지 플래그 설정
+                if (controller.isLoading) {
+                    controller.shouldStop = true;
+                }
+
                 if (controller.source) {
                     try {
                         controller.source.stop();

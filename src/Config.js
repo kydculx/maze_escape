@@ -13,7 +13,7 @@ export const PLAYER_ACTION_STATES = {
 export const CONFIG = {
     // [1] 플레이어 설정 (Player Settings)
     PLAYER: {
-        MOVE_DURATION: 0.5,       // 한 칸 이동 시 소요되는 시간 (초)
+        MOVE_DURATION: 0.7,       // 한 칸 이동 시 소요되는 시간 (초)
         ROTATION_DURATION: 0.3,   // 90도 회전 시 소요되는 시간 (초)
         PLAYER_RADIUS: 0.15,      // 플레이어 충돌 판정 반지름
         JUMP_HEIGHT: 5.0,         // 기본 점프 높이
@@ -103,7 +103,8 @@ export const CONFIG = {
             MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15 },       // 지도 아이템 외형 설정
             HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 },  // 망치 아이템 외형 설정
             TRAP: { TYPE: 'TRAP', COLOR: 0xff0000, SCALE: 0.15 },      // 함정 아이템 외형 설정 (빨강)
-            TELEPORT: { TYPE: 'TELEPORT', COLOR: 0x8800ff, SCALE: 0.15 } // 텔레포트 아이템 외형 설정 (보라)
+            TELEPORT: { TYPE: 'TELEPORT', COLOR: 0x8800ff, SCALE: 0.15 }, // 텔레포트 아이템 외형 설정 (보라)
+            SENSOR: { TYPE: 'SENSOR', COLOR: 0x00ffff, SCALE: 0.15 }   // 사운드 센서 아이템 (청록)
         },
         // 지도 관련 세부 설정
         MAP: {
@@ -134,6 +135,14 @@ export const CONFIG = {
         // 점프 강화 관련 설정
         JUMP_BOOST: {
             MULTIPLIER: 1 // 특수 점프 시의 높이 배율
+        },
+        // 사운드 센서 관련 설정
+        SENSOR: {
+            DURATION: 30.0, // 30초
+            RECHARGE_DELAY: 3.0, // 사용 중지 후 3초 뒤 충전 시작
+            RECHARGE_DURATION: 5.0, // 5초만에 완충
+            FLICKER_THRESHOLD: 3.0, // 방전 3초 전 깜빡임
+            COLOR: 0x00ffff
         },
         // 손전등 관련 세부 설정
         FLASHLIGHT: {
@@ -178,7 +187,7 @@ export const CONFIG = {
         ZOMBIE: {
             SPEED: 1.5,                // 이동 속도 (미사용 예정 - MOVE_DURATION으로 대체 가능)
             MOVE_DURATION: 2,        // 한 칸 이동 대략 시간 (초)
-            DETECTION_RANGE: 3,        // 플레이어 감지 범위 (타일)
+            DETECTION_RANGE: 3,        // 플레이어 감지 범위 및 사운드 청취 범위 (타일)
             IDLE_SWAY_SPEED: 1,        // 대기 시 흔들림 속도
             IDLE_SWAY_AMPLITUDE: 0.1,  // 대기 시 흔들림 크기
             WALK_BOB_SPEED: 2,        // 이동 시 움찔거리는 속도
@@ -189,7 +198,8 @@ export const CONFIG = {
             PATROL_RADIUS: 3,          // 배회 반경 (타일)
             PATROL_WAIT_MIN: 0.5,      // 배회 목적지 도착 후 최소 대기 시간 (초)
             PATROL_WAIT_MAX: 2.0,      // 배회 목적지 도착 후 최대 대기 시간 (초)
-            SAFE_SPAWN_DISTANCE: 10     // 플레이어(입구)와의 최소 스폰 안전 거리 (타일)
+            SAFE_SPAWN_DISTANCE: 10,    // 플레이어(입구)와의 최소 스폰 안전 거리 (타일)
+            PATROL_AUDIO_MAX_DIST: 10    // 배회(어슬렁) 사운드가 들리는 최대 거리 (타일)
         }
     }
 };

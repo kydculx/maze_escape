@@ -93,28 +93,6 @@ export class Minimap {
             this._drawLabel(ctx, 'G', exit.x * cellW + cellW / 2, exit.y * cellH + cellH / 2, cellW);
         }
 
-        // 3.8 몬스터 표시
-        if (monsters && monsters.length > 0) {
-            ctx.fillStyle = CONFIG.ITEMS.MAP.COLORS.MONSTER || '#ff3333';
-            monsters.forEach(monster => {
-                const mx = Math.floor((monster.position.x - offsetX) / thickness);
-                const my = Math.floor((monster.position.z - offsetZ) / thickness);
-
-                // 미로 범위 내에 있고 + 탐험된 구역의 좀비만 표시
-                if (mx >= 0 && mx < mazeWidth && my >= 0 && my < mazeHeight) {
-                    if (explored[my][mx]) {
-                        const markerSize = cellW * 0.6;
-                        ctx.fillRect(
-                            mx * cellW + (cellW - markerSize) / 2,
-                            my * cellH + (cellH - markerSize) / 2,
-                            markerSize,
-                            markerSize
-                        );
-                    }
-                }
-            });
-        }
-
         // 4. 플레이어 아이콘 표시
         const px = gridX * cellW;
         const py = gridY * cellH;
