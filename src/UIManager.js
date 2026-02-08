@@ -18,8 +18,13 @@ export class UIManager {
             minimap: document.getElementById('minimap-container'),
             map: document.getElementById('random-map-btn'),
             trap: document.getElementById('use-trap-btn'),
-            teleport: document.getElementById('use-teleport-btn')
+            teleport: document.getElementById('use-teleport-btn'),
+            fullscreen: document.getElementById('fullscreen-btn')
         };
+
+        if (this.elements.fullscreen) {
+            this.elements.fullscreen.addEventListener('click', () => this.toggleFullscreen());
+        }
     }
 
     /**
@@ -168,5 +173,20 @@ export class UIManager {
         element.addEventListener('touchcancel', () => {
             element.classList.remove('pressed');
         });
+    }
+
+    /**
+     * 전체화면 토글
+     */
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
     }
 }

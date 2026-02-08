@@ -198,6 +198,8 @@ export class SoundManager {
             gainNode.connect(this.context.destination);
             source.start(0);
         } else {
+            // 사용자 인터랙션이 없어 초기화되지 않았다면 오디오 자동 재생 정책으로 차단됨
+            if (!this.initialized) return;
             this._playSFXFallback(url, volume);
         }
     }
