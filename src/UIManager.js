@@ -19,7 +19,10 @@ export class UIManager {
             map: document.getElementById('random-map-btn'),
             trap: document.getElementById('use-trap-btn'),
             teleport: document.getElementById('use-teleport-btn'),
-            fullscreen: document.getElementById('fullscreen-btn')
+            teleport: document.getElementById('use-teleport-btn'),
+            fullscreen: document.getElementById('fullscreen-btn'),
+            prevStage: document.getElementById('prev-stage-btn'),
+            nextStage: document.getElementById('next-stage-btn')
         };
 
         if (this.elements.fullscreen) {
@@ -40,7 +43,12 @@ export class UIManager {
      */
     updateHUD() {
         // 1. 스테이지 표시
+        // 1. 스테이지 표시 및 버튼 상태
         if (this.elements.stage) this.elements.stage.textContent = this.stageManager.level;
+
+        if (this.elements.prevStage) {
+            this.elements.prevStage.disabled = this.stageManager.level <= 1;
+        }
 
 
 
@@ -134,6 +142,9 @@ export class UIManager {
 
         const cheatBtn = document.getElementById('cheat-btn');
         this._setupButton(cheatBtn, callbacks.onCheat);
+
+        this._setupButton(this.elements.prevStage, callbacks.onPrevStage);
+        this._setupButton(this.elements.nextStage, callbacks.onNextStage);
     }
 
     /**

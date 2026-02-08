@@ -181,8 +181,8 @@ export const CONFIG = {
             DETECTION_RANGE: 3,        // 플레이어 감지 범위 (타일)
             IDLE_SWAY_SPEED: 1,        // 대기 시 흔들림 속도
             IDLE_SWAY_AMPLITUDE: 0.1,  // 대기 시 흔들림 크기
-            WALK_BOB_SPEED: 3,        // 이동 시 움찔거리는 속도
-            WALK_BOB_AMPLITUDE: 0.05,  // 이동 시 움찔거리는 크기
+            WALK_BOB_SPEED: 2,        // 이동 시 움찔거리는 속도
+            WALK_BOB_AMPLITUDE: 0.2,  // 이동 시 움찔거리는 크기
             MODEL_SCALE: 0.3,          // 모델 크기
             COLOR: 0x77aa77,           // 좀비 기본 색상 (창백한 초록)
             PATH_RECALC_INTERVAL: 1, // 길찾기 경로 갱신 간격 (초)

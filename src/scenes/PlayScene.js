@@ -103,6 +103,24 @@ export class PlayScene extends BaseScene {
                     this.ui.updateAll();
                     if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
                 }
+            },
+            onPrevStage: () => {
+                if (this.stageManager.level > 1) {
+                    this.stageManager.level--;
+                    // 이전 스테이지는 크기를 줄임 (최소 크기 보장 필요)
+                    this.stageManager.mazeSize = Math.max(
+                        CONFIG.STAGE.INITIAL_SIZE,
+                        this.stageManager.mazeSize - CONFIG.STAGE.SIZE_INCREMENT
+                    );
+                    this.stageManager.resetStats();
+                    this.resetMaze();
+                    if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+                }
+            },
+            onNextStage: () => {
+                this.stageManager.nextStage();
+                this.resetMaze();
+                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
             }
         });
 

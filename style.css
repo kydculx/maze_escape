@@ -447,15 +447,47 @@ input[type="range"]::-webkit-slider-thumb {
     z-index: 100;
 }
 
-#hud-stage {
-    min-width: 100px;
+#top-hud #hud-stage {
+    min-width: 120px;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-bottom: 3px solid #00ffff;
-    padding: 6px 16px;
-    border-radius: 8px;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    padding: 6px 0;
+}
+
+.stage-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0 10px;
+    pointer-events: auto;
+    /* 클릭 가능하도록 설정 */
+}
+
+.nav-btn:hover:not(:disabled) {
+    color: #00ffff;
+    transform: scale(1.2);
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.nav-btn:disabled {
+    color: rgba(255, 255, 255, 0.1);
+    cursor: default;
+    pointer-events: none;
 }
 
 #hud-stats-row {

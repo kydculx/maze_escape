@@ -26,107 +26,231 @@ export class Item {
 
         switch (this.type) {
             case 'JUMP': {
-                // 점프 아이템 (스프링 컨셉: 층층이 쌓인 고리들)
-                const springGroup = new THREE.Group();
-                const ringCount = 5;
-                for (let i = 0; i < ringCount; i++) {
-                    const ringGeo = new THREE.TorusGeometry(scale, scale * 0.15, 8, 24);
-                    const ringMat = new THREE.MeshStandardMaterial({
-                        color: color,
-                        emissive: color,
-                        emissiveIntensity: 0.5 + (i * 0.1)
-                    });
-                    const ring = new THREE.Mesh(ringGeo, ringMat);
-                    ring.rotation.x = Math.PI / 2;
-                    ring.position.y = (i * scale * 0.5) - (scale);
-                    springGroup.add(ring);
+                // 로켓 모양 (🚀)
+                const rocketGroup = new THREE.Group();
+
+                // 몸통
+                const bodyGeo = new THREE.CylinderGeometry(scale * 0.5, scale * 0.5, scale * 2, 12);
+                const bodyMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.5 });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.rotation.z = Math.PI / 4; // 45도 기울기
+                rocketGroup.add(body);
+
+                // 코 (빨강)
+                const noseGeo = new THREE.ConeGeometry(scale * 0.5, scale * 0.8, 12);
+                const noseMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+                const nose = new THREE.Mesh(noseGeo, noseMat);
+                nose.position.y = scale; // 몸통 위
+                // 회전 및 위치 조정 (몸통 기준)
+                nose.rotation.z = Math.PI / 4;
+                nose.position.set(scale * 0.7, scale * 0.7, 0);
+                rocketGroup.add(nose);
+
+                // 날개 (3개)
+                const finGeo = new THREE.BoxGeometry(scale * 0.8, scale * 0.5, scale * 0.1);
+                const finMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+                for (let i = 0; i < 3; i++) {
+                    const fin = new THREE.Mesh(finGeo, finMat);
+                    fin.position.set(-scale * 0.5, -scale * 0.5, 0);
+                    // 날개 배치 로직은 복잡하니 단순화: 몸통 하단에 박스 배치
                 }
-                return springGroup;
+                // 심플 로켓: 몸통 + 코 + 창문
+                const windowGeo = new THREE.CylinderGeometry(scale * 0.2, scale * 0.2, scale * 0.1, 8);
+                const windowMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 0.5 });
+                const win = new THREE.Mesh(windowGeo, windowMat);
+                win.rotation.x = Math.PI / 2;
+                win.position.set(0, 0, scale * 0.45); // 앞쪽으로 튀어나옴
+                // 로켓 전체 회전 그룹에 추가하기 위해 별도 처리 대신 단순화
+
+                // 다시 작성: 그룹 내에서 로컬 좌표로 조립
+                rocketGroup.clear();
+
+                // 로켓 컨테이너 (기울기 적용용)
+                const rocket = new THREE.Group();
+                rocket.rotation.z = Math.PI / 4;
+
+                const rBody = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.4, scale * 0.4, scale * 1.5, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff })
+                );
+                rocket.add(rBody);
+
+                const rNose = new THREE.Mesh(
+                    new THREE.ConeGeometry(scale * 0.4, scale * 0.6, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                );
+                rNose.position.y = scale * 0.75 + scale * 0.3;
+                rocket.add(rNose);
+
+                const rFinGeo = new THREE.BoxGeometry(scale * 0.4, scale * 0.8, scale * 0.05);
+                const rFinMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+
+                const fin1 = new THREE.Mesh(rFinGeo, rFinMat);
+                fin1.position.set(0, -scale * 0.5, 0);
+                fin1.rotation.y = 0;
+                rocket.add(fin1);
+
+                const fin2 = new THREE.Mesh(rFinGeo, rFinMat);
+                fin2.position.set(0, -scale * 0.5, 0);
+                fin2.rotation.y = Math.PI / 2;
+                rocket.add(fin2);
+
+                const rWin = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 0.45, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x00ffff })
+                );
+                rWin.rotation.x = Math.PI / 2;
+                rWin.position.y = scale * 0.2;
+                rocket.add(rWin);
+
+                rocketGroup.add(rocket);
+                return rocketGroup;
             }
             case 'FLASHLIGHT': {
-                // 손전등 모양 (실린더 + 박스 조합)
+                // 손전등 (검은 몸체 + 노란 렌즈)
                 const group = new THREE.Group();
-                const bodyGeo = new THREE.CylinderGeometry(scale * 0.4, scale * 0.4, scale * 2, 12);
-                const bodyMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                // 몸통
+                const body = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.3, scale * 0.3, scale * 1.5, 12),
+                    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.5 })
+                );
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
 
-                const headGeo = new THREE.CylinderGeometry(scale * 0.6, scale * 0.4, scale * 0.6, 12);
-                const headMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.9 });
-                const head = new THREE.Mesh(headGeo, headMat);
+                // 헤드 (약간 커짐)
+                const head = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.5, scale * 0.3, scale * 0.5, 12),
+                    new THREE.MeshStandardMaterial({ color: 0x333333 })
+                );
                 head.rotation.z = Math.PI / 2;
-                head.position.x = scale;
+                head.position.x = scale * 0.75 + scale * 0.25;
                 group.add(head);
 
-                const lensGeo = new THREE.CircleGeometry(scale * 0.5, 12);
-                const lensMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                const lens = new THREE.Mesh(lensGeo, lensMat);
+                // 렌즈 (발광)
+                const lens = new THREE.Mesh(
+                    new THREE.CircleGeometry(scale * 0.4, 12),
+                    new THREE.MeshBasicMaterial({ color: 0xffffaa })
+                );
                 lens.rotation.y = Math.PI / 2;
-                lens.position.x = scale + 0.31 * scale;
+                lens.position.x = scale * 1.0 + scale * 0.26;
                 group.add(lens);
 
                 return group;
             }
             case 'MAP': {
-                // 지도 모양 (둘둘 말린 종이/스크롤)
+                // 지도 (돌돌 말린 종이 + 리본)
                 const mapGroup = new THREE.Group();
-                const scrollGeo = new THREE.CylinderGeometry(scale * 0.3, scale * 0.3, scale * 1.5, 12);
-                const scrollMat = new THREE.MeshStandardMaterial({ color: 0xf5deb3 }); // 파피루스 색
-                const scroll = new THREE.Mesh(scrollGeo, scrollMat);
+                // 종이
+                const scroll = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.3, scale * 0.3, scale * 1.5, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xf5deb3, roughness: 0.8 })
+                );
                 scroll.rotation.z = Math.PI / 2;
                 mapGroup.add(scroll);
 
-                const bandGeo = new THREE.TorusGeometry(scale * 0.32, scale * 0.05, 8, 16);
-                const bandMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-                const band = new THREE.Mesh(bandGeo, bandMat);
+                // 리본 (빨강)
+                const band = new THREE.Mesh(
+                    new THREE.TorusGeometry(scale * 0.31, scale * 0.05, 8, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                );
                 band.rotation.y = Math.PI / 2;
                 mapGroup.add(band);
                 return mapGroup;
             }
             case 'HAMMER': {
-                // 망치 모양
+                // 망치 (나무 손잡이 + 묵직한 쇠머리)
                 const hamGroup = new THREE.Group();
-                const handleGeo = new THREE.CylinderGeometry(scale * 0.2, scale * 0.2, scale * 2, 8);
-                const handleMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-                const handle = new THREE.Mesh(handleGeo, handleMat);
+                // 손잡이
+                const handle = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 1.8, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x8b4513 })
+                );
                 hamGroup.add(handle);
 
-                const headGeo = new THREE.BoxGeometry(scale * 1.2, scale * 0.6, scale * 0.6);
-                const headMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8 });
-                const head = new THREE.Mesh(headGeo, headMat);
-                head.position.y = scale;
+                // 머리 (Box)
+                const head = new THREE.Mesh(
+                    new THREE.BoxGeometry(scale * 1.2, scale * 0.6, scale * 0.6),
+                    new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.6, roughness: 0.3 })
+                );
+                head.position.y = scale * 0.7;
                 hamGroup.add(head);
+
+                // 회전 (아이콘처럼 비스듬히)
+                hamGroup.rotation.z = -Math.PI / 4;
                 return hamGroup;
             }
             case 'TRAP': {
-                // 함정 모양 (Bear Trap 스타일 - 뾰족한 이빨이 있는 원형)
-                const trapGroup = new THREE.Group();
+                // 거미줄 모양 (🕸️)
+                const webGroup = new THREE.Group();
 
-                // 베이스 판
-                const baseGeo = new THREE.CylinderGeometry(scale, scale, scale * 0.1, 16);
-                const baseMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.7 });
-                const base = new THREE.Mesh(baseGeo, baseMat);
-                base.position.y = 0;
-                trapGroup.add(base);
+                // 방사형 선 (십자 + 대각선)
+                const lineGeo = new THREE.BoxGeometry(scale * 2.5, scale * 0.05, scale * 0.05);
+                const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
 
-                // 이빨 (Torus를 반으로 잘라 세움)
-                const teethGeo = new THREE.TorusGeometry(scale * 0.9, scale * 0.1, 8, 16, Math.PI);
-                const teethMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+                for (let i = 0; i < 4; i++) {
+                    const line = new THREE.Mesh(lineGeo, lineMat);
+                    line.rotation.y = (Math.PI / 4) * i;
+                    webGroup.add(line);
+                }
 
-                const leftTeeth = new THREE.Mesh(teethGeo, teethMat);
-                leftTeeth.rotation.x = -Math.PI / 2;
-                leftTeeth.rotation.z = Math.PI / 2; // 세우기
-                leftTeeth.position.y = scale * 0.1;
-                trapGroup.add(leftTeeth);
+                // 동심원 (고리)
+                const ringMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
+                for (let i = 1; i <= 3; i++) {
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(scale * 0.4 * i, scale * 0.03, 4, 16),
+                        ringMat
+                    );
+                    ring.rotation.x = Math.PI / 2;
+                    webGroup.add(ring);
+                }
 
-                const rightTeeth = new THREE.Mesh(teethGeo, teethMat);
-                rightTeeth.rotation.x = -Math.PI / 2;
-                rightTeeth.rotation.z = -Math.PI / 2; // 반대쪽
-                rightTeeth.position.y = scale * 0.1;
-                trapGroup.add(rightTeeth);
+                // 바닥에 눕히기
+                // webGroup.rotation.x = -Math.PI / 2; // 이미 Torus가 누워있고 Box는 y축 회전함 -> Box는 서있는 상태?
+                // BoxGeometry 기본은 x,y,z. rotation.y 하면 수평면상에서 회전.
+                // 하지만 현재 아이템은 공중에 떠서 돔. 
+                // 거미줄은 수직으로 세우는게 아이콘처럼 잘 보일듯.
 
-                return trapGroup;
+                // 아이콘(🕸️)처럼 보이게 세우자.
+                webGroup.rotation.z = Math.PI / 4; // 약간 기울기
+
+                return webGroup;
+            }
+            case 'TELEPORT': {
+                // 포털/소용돌이 모양 (🌀/🔮)
+                const portalGroup = new THREE.Group();
+
+                // 소용돌이 파티클 느낌의 고리들
+                const spiralMat = new THREE.MeshStandardMaterial({
+                    color: 0xaa00ff,
+                    emissive: 0xaa00ff,
+                    emissiveIntensity: 0.8,
+                    transparent: true,
+                    opacity: 0.7
+                });
+
+                for (let i = 0; i < 5; i++) {
+                    const torus = new THREE.Mesh(
+                        new THREE.TorusGeometry(scale * (0.5 + i * 0.2), scale * 0.05, 8, 16),
+                        spiralMat
+                    );
+                    // 각 고리를 조금씩 틀어서 소용돌이 느낌
+                    torus.rotation.x = Math.PI / 2;
+                    torus.rotation.y = i * 0.5;
+                    portalGroup.add(torus);
+                }
+
+                // 중앙 구체
+                const core = new THREE.Mesh(
+                    new THREE.SphereGeometry(scale * 0.4, 16, 16),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x00ffff,
+                        emissive: 0x00ffff,
+                        emissiveIntensity: 1
+                    })
+                );
+                portalGroup.add(core);
+
+                return portalGroup;
             }
             default:
                 geo = new THREE.BoxGeometry(scale, scale, scale);
