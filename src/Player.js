@@ -40,7 +40,8 @@ export class Player {
             hasMap: false,
             hasFlashlight: false,
             hammerCount: 0,
-            jumpCount: 0
+            jumpCount: 0,
+            trapCount: 0
         };
 
         // 손전등 및 충전 관련 상태
@@ -285,6 +286,18 @@ export class Player {
     }
 
     /**
+     * 함정 설치 시도
+     * @returns {THREE.Vector3|null} 설치 위치 반환 (실패 시 null)
+     */
+    placeTrap() {
+        if (this.inventory.trapCount <= 0 || this.isMoving || this.isJumping) return null;
+
+        this.inventory.trapCount--;
+        console.log("Placing trap...");
+        return this.group.position.clone();
+    }
+
+    /**
      * 치트: 모든 아이템 획득 및 수량 최대화
      */
     applyCheat() {
@@ -292,6 +305,7 @@ export class Player {
         this.inventory.hasFlashlight = true;
         this.inventory.hammerCount = 99;
         this.inventory.jumpCount = 99;
+        this.inventory.trapCount = 99;
         this.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
 
         // 탐험 상태 모두 해제
@@ -325,6 +339,10 @@ export class Player {
             case 'HAMMER':
                 this.inventory.hammerCount++;
                 console.log("Hammer acquired!");
+                break;
+            case 'TRAP':
+                this.inventory.trapCount++;
+                console.log("Trap acquired!");
                 break;
         }
     }

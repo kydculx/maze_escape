@@ -28,9 +28,44 @@ export class Zombie extends Monster {
         this.targetTilePos = new THREE.Vector3();
         this.lastPathCalcTime = 0;
 
-        // 사운드 관련
         this.sound = options.sound;
         this._initAudio();
+
+        // 상태 이상 (Freeze)
+        this.isFrozen = false;
+        this.freezeTimer = 0;
+        this.originalColor = new THREE.Color(CONFIG.MONSTERS.ZOMBIE.COLOR);
+        this.frozenColor = new THREE.Color(0x00ffff); // 얼었을 때 색상 (하늘색)
+    }
+
+    freeze(duration) {
+        this.isFrozen = true;
+        this.freezeTimer = duration;
+
+        // 시각적 피드백: 색상 변경
+        this._setBodyColor(this.frozenColor);
+
+        // 이동 멈춤
+        // this.setState(CONFIG.MONSTERS.STATES.IDLE); // 상태를 강제로 바꾸면 로직이 꼬일 수 있으니 플래그로 제어
+    }
+
+    _setBodyColor(color) {
+        if (!this.model) return;
+        this.model.traverse(child => {
+            if (child.isMesh && child.material) {
+                // 원래 색상을 보존하고 싶다면 복잡해지는데, 
+                // 여기서는 단순하게 전체를 틴트하거나, 
+                // CharacterBuilder에서 생성한 재질을 공유하지 않는다고 가정하고 변경.
+                // 편의상 emissive를 사용하여 얼음 느낌을 냄
+                if (color.equals(this.frozenColor)) {
+                    child.material.emissive.setHex(0x0088ff);
+                    child.material.emissiveIntensity = 0.5;
+                } else {
+                    child.material.emissive.setHex(0x000000);
+                    child.material.emissiveIntensity = 0;
+                }
+            }
+        });
     }
 
     _initAudio() {
@@ -127,6 +162,8 @@ export class Zombie extends Monster {
     }
 
     _updateAnimation(deltaTime) {
+        if (this.isFrozen) return; // 얼어있으면 애니메이션 정지
+
         const config = CONFIG.MONSTERS.ZOMBIE;
         const states = CONFIG.MONSTERS.STATES;
 
@@ -169,8 +206,20 @@ export class Zombie extends Monster {
 
     _updateLogic(deltaTime, player) {
         if (!player) return;
-        this.lastPlayerPos = player.group.position;
 
+        // 0. 상태 이상(빙결) 체크
+        if (this.isFrozen) {
+            this.freezeTimer -= deltaTime;
+            if (this.freezeTimer <= 0) {
+                this.isFrozen = false;
+                this._setBodyColor(this.originalColor); // 원상 복구
+            } else {
+                // 얼어있는 동안에는 로직(이동/추적) 정지
+                return;
+            }
+        }
+
+        this.lastPlayerPos = player.group.position;
         const config = CONFIG.MONSTERS.ZOMBIE;
         const states = CONFIG.MONSTERS.STATES;
 

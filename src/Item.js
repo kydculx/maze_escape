@@ -99,6 +99,35 @@ export class Item {
                 hamGroup.add(head);
                 return hamGroup;
             }
+            case 'TRAP': {
+                // 함정 모양 (Bear Trap 스타일 - 뾰족한 이빨이 있는 원형)
+                const trapGroup = new THREE.Group();
+
+                // 베이스 판
+                const baseGeo = new THREE.CylinderGeometry(scale, scale, scale * 0.1, 16);
+                const baseMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.7 });
+                const base = new THREE.Mesh(baseGeo, baseMat);
+                base.position.y = 0;
+                trapGroup.add(base);
+
+                // 이빨 (Torus를 반으로 잘라 세움)
+                const teethGeo = new THREE.TorusGeometry(scale * 0.9, scale * 0.1, 8, 16, Math.PI);
+                const teethMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+
+                const leftTeeth = new THREE.Mesh(teethGeo, teethMat);
+                leftTeeth.rotation.x = -Math.PI / 2;
+                leftTeeth.rotation.z = Math.PI / 2; // 세우기
+                leftTeeth.position.y = scale * 0.1;
+                trapGroup.add(leftTeeth);
+
+                const rightTeeth = new THREE.Mesh(teethGeo, teethMat);
+                rightTeeth.rotation.x = -Math.PI / 2;
+                rightTeeth.rotation.z = -Math.PI / 2; // 반대쪽
+                rightTeeth.position.y = scale * 0.1;
+                trapGroup.add(rightTeeth);
+
+                return trapGroup;
+            }
             default:
                 geo = new THREE.BoxGeometry(scale, scale, scale);
                 mat = new THREE.MeshStandardMaterial({ color: 0xffffff });

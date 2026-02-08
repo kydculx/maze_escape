@@ -587,6 +587,18 @@ input[type="range"]::-webkit-slider-thumb {
     animation: pulse-border 1.5s infinite;
 }
 
+#use-jump-btn {
+    background: rgba(50, 50, 255, 0.5);
+}
+
+#use-hammer-btn {
+    background: rgba(255, 100, 50, 0.5);
+}
+
+#use-trap-btn {
+    background: rgba(255, 0, 0, 0.5);
+}
+
 .action-btn.locked {
     opacity: 0.3;
     cursor: not-allowed;

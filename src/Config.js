@@ -53,8 +53,8 @@ export const CONFIG = {
             MENU_AMBIENT: { COLOR: 0xffffff, INTENSITY: 0.05 },
             MENU_POINT: { COLOR: 0xffffff, INTENSITY: 1, POSITION: { x: 5, y: 5, z: 5 } },
             // 실제 게임 플레이 조명
-            AMBIENT_INTENSITY: 0.005,  // 전체적인 환경 광도
-            SUN_INTENSITY: 0.005        // 태양광(직사광) 강도
+            AMBIENT_INTENSITY: 0.05,  // 전체적인 환경 광도
+            SUN_INTENSITY: 0.02        // 태양광(직사광) 강도
         }
     },
 
@@ -101,7 +101,8 @@ export const CONFIG = {
             JUMP: { TYPE: 'JUMP', COLOR: 0xFFFF00, SCALE: 0.12 },      // 점프 아이템 외형 설정
             FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1 }, // 손전등 아이템 외형 설정
             MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15 },       // 지도 아이템 외형 설정
-            HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 }  // 망치 아이템 외형 설정
+            HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 },  // 망치 아이템 외형 설정
+            TRAP: { TYPE: 'TRAP', COLOR: 0xff0000, SCALE: 0.15 }       // 함정 아이템 외형 설정 (빨강)
         },
         // 지도 관련 세부 설정
         MAP: {
@@ -119,6 +120,11 @@ export const CONFIG = {
         HAMMER: {
             CAN_BREAK_BOUNDARY: false,   // 최외곽 경계 벽 파괴 가능 여부
             CAN_BREAK_THICK_WALLS: false // 두 겹 이상의 두꺼운 벽 파괴 가능 여부
+        },
+        // 함정 관련 세부 설정
+        TRAP: {
+            FREEZE_DURATION: 5.0,     // 좀비 정지 시간 (초)
+            TRIGGER_RADIUS: 0.5       // 함정 발동 반경 (타일 단위 아님, 월드 좌표 기준)
         },
         // 점프 강화 관련 설정
         JUMP_BOOST: {

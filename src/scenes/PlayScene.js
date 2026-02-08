@@ -10,6 +10,7 @@ import { CameraController } from '../CameraController.js';
 import { ItemManager } from '../ItemManager.js';
 import { StageManager } from '../StageManager.js';
 import { MonsterManager } from '../MonsterManager.js';
+import { TrapManager } from '../TrapManager.js';
 
 /**
  * 게임 플레이 장면 클래스 (Orchestrator)
@@ -64,6 +65,8 @@ export class PlayScene extends BaseScene {
         this.itemManager = new ItemManager(this.scene, this.mazeGen, CONFIG.ITEMS);
         this.itemManager.spawnItems();
 
+        this.trapManager = new TrapManager(this.scene);
+
         this.minimap = new Minimap();
         this.stageManager = new StageManager();
         this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound);
@@ -85,6 +88,14 @@ export class PlayScene extends BaseScene {
             onCheat: () => {
                 this.player.applyCheat();
                 this.ui.updateAll();
+            },
+            onTrap: () => {
+                const pos = this.player.placeTrap();
+                if (pos) {
+                    this.trapManager.placeTrap(pos);
+                    this.ui.updateAll();
+                    if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+                }
             }
         });
 
@@ -211,6 +222,11 @@ export class PlayScene extends BaseScene {
         // 1.7 몬스터 업데이트
         if (this.monsterManager) {
             this.monsterManager.update(deltaTime, this.player);
+        }
+
+        // 1.8 함정 업데이트
+        if (this.trapManager && this.monsterManager) {
+            this.trapManager.update(deltaTime, this.monsterManager.monsters);
         }
 
         // UI 상태 업데이트
@@ -449,7 +465,12 @@ export class PlayScene extends BaseScene {
         if (this.monsterManager) {
             this.monsterManager.mazeGen = this.mazeGen;
             this.monsterManager.clear();
+            this.monsterManager.clear();
             this.monsterManager.spawnZombies(5 + this.stageManager.level);
+        }
+
+        if (this.trapManager) {
+            this.trapManager.clear();
         }
 
         setTimeout(() => {
@@ -478,6 +499,9 @@ export class PlayScene extends BaseScene {
         }
         if (this.itemManager) {
             this.itemManager.clearItems();
+        }
+        if (this.trapManager) {
+            this.trapManager.clear();
         }
         super.dispose();
     }

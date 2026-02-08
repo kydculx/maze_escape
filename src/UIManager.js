@@ -16,7 +16,8 @@ export class UIManager {
             jump: document.getElementById('use-jump-btn'),
             flashlight: document.getElementById('use-flashlight-btn'),
             minimap: document.getElementById('minimap-container'),
-            map: document.getElementById('random-map-btn')
+            map: document.getElementById('random-map-btn'),
+            trap: document.getElementById('use-trap-btn')
         };
     }
 
@@ -98,6 +99,14 @@ export class UIManager {
             this.elements.flashlight.classList.toggle('locked', !canUse);
             this.elements.flashlight.classList.toggle('active', this.player.isFlashlightOn);
         }
+
+        // 트랩
+        if (this.elements.trap) {
+            const count = this.player.inventory.trapCount;
+            const countEl = this.elements.trap.querySelector('.count');
+            if (countEl) countEl.textContent = count;
+            this.elements.trap.classList.toggle('locked', count <= 0);
+        }
     }
 
     /**
@@ -108,6 +117,7 @@ export class UIManager {
         this._setupButton(this.elements.jump, callbacks.onJump);
         this._setupButton(this.elements.flashlight, callbacks.onFlashlight);
         this._setupButton(this.elements.map, callbacks.onMap);
+        this._setupButton(this.elements.trap, callbacks.onTrap);
 
         const cheatBtn = document.getElementById('cheat-btn');
         this._setupButton(cheatBtn, callbacks.onCheat);
