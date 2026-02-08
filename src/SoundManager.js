@@ -29,7 +29,9 @@ export class SoundManager {
 
         // Context Resume (모바일 등에서 필요)
         if (this.context.state === 'suspended') {
-            this.context.resume();
+            this.context.resume().then(() => {
+                console.log('AudioContext resumed!');
+            }).catch(e => console.error('AudioContext resume failed:', e));
         }
 
         // 대기 중이던 BGM이 있다면 재생 시도

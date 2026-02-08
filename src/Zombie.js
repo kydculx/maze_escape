@@ -112,8 +112,11 @@ export class Zombie extends Monster {
             // 소리재생이 필요한 상황
             if (!this.trackSoundController.isPlaying) {
                 this.trackSoundController.play();
+                // play()는 비동기일 수 있으므로 즉시 볼륨 설정도 시도
+                this.trackSoundController.setVolume(targetVolume);
+            } else {
+                this.trackSoundController.setVolume(targetVolume);
             }
-            this.trackSoundController.setVolume(targetVolume);
         } else {
             // 소리 끔
             if (this.trackSoundController.isPlaying) {

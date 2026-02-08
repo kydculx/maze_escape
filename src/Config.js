@@ -102,7 +102,8 @@ export const CONFIG = {
             FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1 }, // 손전등 아이템 외형 설정
             MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15 },       // 지도 아이템 외형 설정
             HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 },  // 망치 아이템 외형 설정
-            TRAP: { TYPE: 'TRAP', COLOR: 0xff0000, SCALE: 0.15 }       // 함정 아이템 외형 설정 (빨강)
+            TRAP: { TYPE: 'TRAP', COLOR: 0xff0000, SCALE: 0.15 },      // 함정 아이템 외형 설정 (빨강)
+            TELEPORT: { TYPE: 'TELEPORT', COLOR: 0x8800ff, SCALE: 0.15 } // 텔레포트 아이템 외형 설정 (보라)
         },
         // 지도 관련 세부 설정
         MAP: {
@@ -125,6 +126,10 @@ export const CONFIG = {
         TRAP: {
             FREEZE_DURATION: 5.0,     // 좀비 정지 시간 (초)
             TRIGGER_RADIUS: 0.5       // 함정 발동 반경 (타일 단위 아님, 월드 좌표 기준)
+        },
+        // 텔레포트 관련 세부 설정
+        TELEPORT: {
+            RADIUS: 3                 // 순간이동 반경 (타일 단위)
         },
         // 점프 강화 관련 설정
         JUMP_BOOST: {

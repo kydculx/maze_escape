@@ -17,7 +17,8 @@ export class UIManager {
             flashlight: document.getElementById('use-flashlight-btn'),
             minimap: document.getElementById('minimap-container'),
             map: document.getElementById('random-map-btn'),
-            trap: document.getElementById('use-trap-btn')
+            trap: document.getElementById('use-trap-btn'),
+            teleport: document.getElementById('use-teleport-btn')
         };
     }
 
@@ -107,6 +108,14 @@ export class UIManager {
             if (countEl) countEl.textContent = count;
             this.elements.trap.classList.toggle('locked', count <= 0);
         }
+
+        // 텔레포트
+        if (this.elements.teleport) {
+            const count = this.player.inventory.teleportCount;
+            const countEl = this.elements.teleport.querySelector('.count');
+            if (countEl) countEl.textContent = count;
+            this.elements.teleport.classList.toggle('locked', count <= 0);
+        }
     }
 
     /**
@@ -118,6 +127,7 @@ export class UIManager {
         this._setupButton(this.elements.flashlight, callbacks.onFlashlight);
         this._setupButton(this.elements.map, callbacks.onMap);
         this._setupButton(this.elements.trap, callbacks.onTrap);
+        this._setupButton(this.elements.teleport, callbacks.onTeleport);
 
         const cheatBtn = document.getElementById('cheat-btn');
         this._setupButton(cheatBtn, callbacks.onCheat);

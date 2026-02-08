@@ -96,6 +96,13 @@ export class PlayScene extends BaseScene {
                     this.ui.updateAll();
                     if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
                 }
+            },
+            onTeleport: () => {
+                const success = this.player.useTeleport();
+                if (success) {
+                    this.ui.updateAll();
+                    if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
+                }
             }
         });
 

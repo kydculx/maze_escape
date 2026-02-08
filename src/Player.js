@@ -41,7 +41,8 @@ export class Player {
             hasFlashlight: false,
             hammerCount: 0,
             jumpCount: 0,
-            trapCount: 0
+            trapCount: 0,
+            teleportCount: 0
         };
 
         // 손전등 및 충전 관련 상태
@@ -298,6 +299,65 @@ export class Player {
     }
 
     /**
+     * 텔레포트 사용
+     * @returns {boolean} 성공 여부
+     */
+    useTeleport() {
+        if (this.inventory.teleportCount <= 0) return false;
+
+        const radius = CONFIG.ITEMS.TELEPORT.RADIUS;
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const width = this.mazeGen.width;
+        const height = this.mazeGen.height;
+
+        // 현재 그리드 위치
+        const offsetX = -(width * thickness) / 2;
+        const offsetZ = -(height * thickness) / 2;
+        const cx = Math.round((this.group.position.x - offsetX - thickness / 2) / thickness);
+        const cy = Math.round((this.group.position.z - offsetZ - thickness / 2) / thickness);
+
+        // 반경 내 이동 가능한 빈 타일 찾기
+        const candidates = [];
+        for (let y = cy - radius; y <= cy + radius; y++) {
+            for (let x = cx - radius; x <= cx + radius; x++) {
+                // 맵 범위 체크
+                if (x >= 0 && x < width && y >= 0 && y < height) {
+                    // 현재 위치 제외
+                    if (x === cx && y === cy) continue;
+                    // 벽이 아닌 곳 (0: 길)
+                    if (this.mazeGen.grid[y][x] === 0) {
+                        // 거리 체크 (맨해튼 거리 or 유클리드 거리? 여기서는 타일 거리로 단순화)
+                        const dist = Math.abs(x - cx) + Math.abs(y - cy);
+                        if (dist <= radius) {
+                            candidates.push({ x, y });
+                        }
+                    }
+                }
+            }
+        }
+
+        if (candidates.length === 0) {
+            console.warn("No valid teleport target found!");
+            return false;
+        }
+
+        // 랜덤 선택
+        const target = candidates[Math.floor(Math.random() * candidates.length)];
+
+        // 위치 이동
+        const targetX = offsetX + target.x * thickness + thickness / 2;
+        const targetZ = offsetZ + target.y * thickness + thickness / 2;
+
+        this.group.position.set(targetX, 0.01, targetZ);
+
+        // 아이템 소모
+        this.inventory.teleportCount--;
+        console.log(`Teleported to [${target.x}, ${target.y}]`);
+
+        return true;
+    }
+
+    /**
      * 치트: 모든 아이템 획득 및 수량 최대화
      */
     applyCheat() {
@@ -306,6 +366,7 @@ export class Player {
         this.inventory.hammerCount = 99;
         this.inventory.jumpCount = 99;
         this.inventory.trapCount = 99;
+        this.inventory.teleportCount = 99;
         this.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
 
         // 탐험 상태 모두 해제
@@ -343,6 +404,10 @@ export class Player {
             case 'TRAP':
                 this.inventory.trapCount++;
                 console.log("Trap acquired!");
+                break;
+            case 'TELEPORT':
+                this.inventory.teleportCount++;
+                console.log("Teleport acquired!");
                 break;
         }
     }
