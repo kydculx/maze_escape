@@ -12,7 +12,7 @@ import { PlayScene } from './src/scenes/PlayScene.js';
 class Game {
     constructor() {
         // 1. 핵심 모듈 초기화
-        this.state = new GameState(STATES.PLAYING); // 즉시 게임 시작 상태로 변경
+        this.state = new GameState(STATES.SPLASH); // 스플래시 화면부터 시작
         this.input = new InputHandler();
         this.sound = new SoundManager();
         this.sceneManager = new SceneManager(this);
@@ -30,7 +30,7 @@ class Game {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         // 3. 초기 장면 설정
-        this.sceneManager.setScene(STATES.PLAYING); // 즉시 인게임 장면 설정
+        this.sceneManager.setScene(STATES.SPLASH); // 스플래시 화면부터 시작
 
         // 브라우저 정책상 사용자 상호작용 후 재생 가능하므로 이벤트 리스너 등록
         const initAudio = () => {
