@@ -126,6 +126,7 @@ class Game {
             // 게임 HUD 표시
             document.getElementById('ui-overlay').style.display = 'block';
             document.getElementById('item-actions').style.display = 'flex';
+            document.getElementById('cheat-hud').style.display = 'block';
         }
     }
 
