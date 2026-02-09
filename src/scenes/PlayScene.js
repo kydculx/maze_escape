@@ -502,7 +502,7 @@ export class PlayScene extends BaseScene {
                     this.ui.updateAll();
 
                     if (this.game.sound) {
-                        this.game.sound.playSFX(CONFIG.AUDIO.ITEM_PICKUP_SFX_URL, 0.6);
+                        this.game.sound.playSFX(CONFIG.AUDIO.HAMMER_SFX_URL, 0.6);
                     }
                 } else {
                     console.warn(`ACTION FAIL: No wall found at [${tx}, ${ty}] (Value: ${targetVal})`);
