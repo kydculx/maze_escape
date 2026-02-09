@@ -53,6 +53,7 @@ export const ENGINE_CONFIG = {
         ITEM_PICKUP_SFX_URL: 'audio/eff_itemget.mp3',
         ZOMBIE_PATROL_SFX: 'audio/eff_zombie_1.mp3',
         ZOMBIE_TRACK_SFX: 'audio/eff_zombie_2.mp3',
+        FLASHLIGHT_SWITCH_SFX_URL: 'audio/eff_flashlight_switch.mp3',
         DEFAULT_BGM_VOLUME: 0.4
     }
 };

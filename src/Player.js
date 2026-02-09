@@ -456,7 +456,7 @@ export class Player {
         this.isFlashlightOn = !this.isFlashlightOn;
         this.flashlight.intensity = this.isFlashlightOn ? CONFIG.ITEMS.FLASHLIGHT.INTENSITY : 0;
 
-        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
+        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.FLASHLIGHT_SWITCH_SFX_URL, 0.5);
         return true;
     }
 
