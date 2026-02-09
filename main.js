@@ -115,7 +115,7 @@ class Game {
      * @param {string} targetState - 전환할 게임 상태
      */
     handleMenuSelection(targetState) {
-        this.sound.playSFX(CONFIG.AUDIO.FOOTSTEP_SFX_URL);
+        this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
 
         if (targetState === STATES.PLAYING) {
             this.state.set(STATES.PLAYING);
