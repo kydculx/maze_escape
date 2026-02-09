@@ -1,13 +1,25 @@
 /**
  * 게임 사운드를 총괄 관리하는 클래스
  */
+import { CONFIG } from './Config.js';
+import { SaveManager } from './SaveManager.js';
+
 export class SoundManager {
     constructor() {
         this.bgm = null;
         this.sfxMap = new Map();
         this.masterVolume = 1.0;
+
+        // 저장된 볼륨 설정 로드
+        const savedSettings = SaveManager.loadSettings();
+        console.log('[SoundManager] Loaded settings from localStorage:', savedSettings);
+        this.bgmVolume = savedSettings.bgmVolume;
+        this.sfxVolume = savedSettings.sfxVolume;
+        console.log('[SoundManager] BGM Volume:', this.bgmVolume, 'SFX Volume:', this.sfxVolume);
+
         this.enabled = true;
         this.initialized = false;
+        this.currentBGMBaseVolume = 0.5; // 현재 재생 중인 BGM의 기본 볼륨 저장
 
         // Web Audio API Context
         this.context = null;
@@ -165,7 +177,8 @@ export class SoundManager {
 
         this.bgm = new Audio(url);
         this.bgm.loop = true;
-        this.bgm.volume = volume * this.masterVolume;
+        this.currentBGMBaseVolume = volume; // 기본 볼륨 저장
+        this.bgm.volume = volume * this.bgmVolume * this.masterVolume;
 
         // 이미 상호작용이 있었다면 바로 재생, 아니면 대기 (init()에서 재생됨)
         if (this.initialized) {
@@ -208,7 +221,7 @@ export class SoundManager {
             const source = this.context.createBufferSource();
             source.buffer = buffer;
             const gainNode = this.context.createGain();
-            gainNode.gain.value = volume * this.masterVolume;
+            gainNode.gain.value = volume * this.sfxVolume * this.masterVolume;
 
             source.connect(gainNode);
             gainNode.connect(this.context.destination);
@@ -222,7 +235,7 @@ export class SoundManager {
 
     _playSFXFallback(url, volume) {
         const sfx = new Audio(url);
-        sfx.volume = volume * this.masterVolume;
+        sfx.volume = volume * this.sfxVolume * this.masterVolume;
         sfx.play().catch(error => {
             console.warn('SFX play failed:', error);
         });
@@ -234,8 +247,37 @@ export class SoundManager {
      */
     setMasterVolume(volume) {
         this.masterVolume = Math.max(0, Math.min(1, volume));
+        this._updateBGMVolume();
+    }
+
+    /**
+     * BGM 볼륨 설정 (0~1)
+     */
+    setBGMVolume(volume) {
+        this.bgmVolume = Math.max(0, Math.min(1, volume));
+        this._updateBGMVolume();
+        // 볼륨 변경 시 저장
+        console.log('[SoundManager] Saving BGM volume:', this.bgmVolume);
+        SaveManager.saveSettings(this.bgmVolume, this.sfxVolume);
+    }
+
+    /**
+     * SFX 볼륨 설정 (0~1)
+     */
+    setSFXVolume(volume) {
+        this.sfxVolume = Math.max(0, Math.min(1, volume));
+        // 볼륨 변경 시 저장
+        console.log('[SoundManager] Saving SFX volume:', this.sfxVolume);
+        SaveManager.saveSettings(this.bgmVolume, this.sfxVolume);
+    }
+
+    /**
+     * 현재 재생 중인 BGM 볼륨 업데이트
+     */
+    _updateBGMVolume() {
         if (this.bgm) {
-            this.bgm.volume = 0.5 * this.masterVolume; // 기존 BGM 볼륨 업데이트 예시
+            // 저장된 기본 볼륨 * BGM 볼륨 설정 * 마스터 볼륨
+            this.bgm.volume = this.currentBGMBaseVolume * this.bgmVolume * this.masterVolume;
         }
     }
 

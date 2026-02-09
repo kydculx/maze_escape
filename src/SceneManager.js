@@ -21,8 +21,9 @@ export class SceneManager {
     /**
      * 상태에 따라 장면 교체
      * @param {string} state - 갱신할 상태
+     * @param {Object} progress - 저장된 게임 진행 상황 (선택적)
      */
-    setScene(state) {
+    setScene(state, progress = null) {
         console.log(`[SceneManager] Setting scene to: ${state}`);
 
         if (this.currentScene) {
@@ -33,7 +34,12 @@ export class SceneManager {
         const SceneClass = this.scenes[state];
         if (SceneClass) {
             console.log(`[SceneManager] Creating new scene: ${SceneClass.name}`);
-            this.currentScene = new SceneClass(this.game);
+            // PlayScene인 경우 progress 전달
+            if (state === STATES.PLAYING && progress) {
+                this.currentScene = new SceneClass(this.game, progress);
+            } else {
+                this.currentScene = new SceneClass(this.game);
+            }
         } else {
             console.error(`[SceneManager] No scene found for state: ${state}`);
         }

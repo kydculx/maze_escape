@@ -30,7 +30,15 @@ export class UIManager {
             resumeBtn: document.getElementById('close-menu-btn'),
             restartBtn: document.getElementById('restart-btn'),
             mainMenuBtn: document.getElementById('main-menu-btn'),
-            disguiseOverlay: document.getElementById('disguise-overlay')
+            disguiseOverlay: document.getElementById('disguise-overlay'),
+            // Settings elements
+            settingsPopup: document.getElementById('settings-popup'),
+            closeSettingsBtn: document.getElementById('close-settings-btn'),
+            settingsOkBtn: document.getElementById('settings-ok-btn'),
+            bgmSlider: document.getElementById('bgm-volume-slider'),
+            sfxSlider: document.getElementById('sfx-volume-slider'),
+            bgmVal: document.getElementById('bgm-volume-val'),
+            sfxVal: document.getElementById('sfx-volume-val')
         };
 
 
@@ -149,6 +157,59 @@ export class UIManager {
     hideMenu() {
         if (this.elements.menuPopup) {
             this.elements.menuPopup.classList.add('hidden');
+        }
+    }
+
+    /**
+     * 설정 메뉴 초기화
+     */
+    initSettings(soundManager) {
+        if (!this.elements.settingsPopup) return;
+
+        // 현재 볼륨 값으로 슬라이더 초기화
+        const currentBGM = Math.round(soundManager.bgmVolume * 100);
+        const currentSFX = Math.round(soundManager.sfxVolume * 100);
+
+        this.elements.bgmSlider.value = currentBGM;
+        this.elements.bgmVal.textContent = `${currentBGM}%`;
+        this.elements.sfxSlider.value = currentSFX;
+        this.elements.sfxVal.textContent = `${currentSFX}%`;
+
+        console.log('[UIManager] Initialized settings UI - BGM:', currentBGM, '% SFX:', currentSFX, '%');
+
+        const updateBGM = () => {
+            const val = this.elements.bgmSlider.value;
+            this.elements.bgmVal.textContent = `${val}%`;
+            soundManager.setBGMVolume(val / 100);
+        };
+
+        const updateSFX = () => {
+            const val = this.elements.sfxSlider.value;
+            this.elements.sfxVal.textContent = `${val}%`;
+            soundManager.setSFXVolume(val / 100);
+        };
+
+        this.elements.bgmSlider.addEventListener('input', updateBGM);
+        this.elements.sfxSlider.addEventListener('input', updateSFX);
+
+        this._setupButton(this.elements.closeSettingsBtn, () => this.hideSettings());
+        this._setupButton(this.elements.settingsOkBtn, () => {
+            soundManager.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            this.hideSettings();
+        });
+    }
+
+    showSettings() {
+        if (this.elements.settingsPopup) {
+            this.elements.settingsPopup.classList.remove('hidden');
+            this.elements.settingsPopup.style.display = 'flex';
+        }
+    }
+
+    hideSettings() {
+        if (this.elements.settingsPopup) {
+            this.elements.settingsPopup.classList.add('hidden');
+            this.elements.settingsPopup.style.display = 'none';
         }
     }
 

@@ -12,14 +12,16 @@ import { ItemManager } from '../ItemManager.js';
 import { StageManager } from '../StageManager.js';
 import { MonsterManager } from '../MonsterManager.js';
 import { TrapManager } from '../TrapManager.js';
+import { SaveManager } from '../SaveManager.js';
 
 /**
  * 게임 플레이 장면 클래스 (Orchestrator)
  */
 export class PlayScene extends BaseScene {
-    constructor(game) {
+    constructor(game, progress = null) {
         super(game);
         console.log('[PlayScene] Constructor called');
+        this.savedProgress = progress; // 저장된 진행 상황 보관
         this.init();
     }
 
@@ -56,6 +58,18 @@ export class PlayScene extends BaseScene {
 
         // 3. StageManager 먼저 초기화 (미로 크기 결정을 위해)
         this.stageManager = new StageManager();
+
+        // 저장된 진행 상황이 있으면 해당 스테이지로 시작
+        if (this.savedProgress) {
+            this.stageManager.level = this.savedProgress.highestStage;
+            // 레벨에 맞는 미로 크기 계산
+            this.stageManager.mazeSize = Math.min(
+                CONFIG.STAGE.INITIAL_SIZE + (this.savedProgress.highestStage - 1) * CONFIG.STAGE.SIZE_INCREMENT,
+                CONFIG.STAGE.MAX_SIZE
+            );
+            console.log(`[PlayScene] Loading saved stage: ${this.savedProgress.highestStage}, maze size: ${this.stageManager.mazeSize}`);
+        }
+
         this.minimap = new Minimap();
 
         // 4. 미로 로직 및 뷰 초기화 (StageManager의 mazeSize 사용)
@@ -79,6 +93,12 @@ export class PlayScene extends BaseScene {
 
         const initialAngle = this._calculateInitialAngle();
         this.player.reset(startPos, initialAngle);
+
+        // 저장된 아이템 로드
+        if (this.savedProgress && this.savedProgress.items) {
+            this._loadSavedItems(this.savedProgress.items);
+            console.log('[PlayScene] Loaded saved items:', this.savedProgress.items);
+        }
 
         // 6. 카메라 및 매니저들
         this.cameraController = new CameraController(this.player, this.scene);
@@ -152,6 +172,12 @@ export class PlayScene extends BaseScene {
             },
             onNextStage: () => {
                 this.stageManager.nextStage();
+
+                // 새로운 최고 스테이지 도달 시 저장
+                const currentItems = this._getCurrentItems();
+                SaveManager.saveProgress(this.stageManager.level, currentItems);
+                console.log(`[PlayScene] Progress saved: Stage ${this.stageManager.level}`);
+
                 this.resetMaze();
                 if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
             },
@@ -187,13 +213,19 @@ export class PlayScene extends BaseScene {
                     this.game.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
                 }
 
-                // Hide Game UI
+                // UI 정리
                 document.getElementById('ui-overlay').style.display = 'none';
                 document.getElementById('item-actions').style.display = 'none';
                 document.getElementById('cheat-hud').style.display = 'none';
                 document.getElementById('minimap-container').style.display = 'none';
                 document.getElementById('radar-container').style.display = 'none';
                 document.getElementById('disguise-overlay').style.display = 'none';
+
+                // Continue 버튼 상태 업데이트
+                if (this.game.updateContinueButton) {
+                    this.game.updateContinueButton();
+                    console.log('[PlayScene] Updated Continue button state');
+                }
 
                 // Show Main Menu
                 const mainMenu = document.getElementById('main-menu-screen');
@@ -204,6 +236,9 @@ export class PlayScene extends BaseScene {
                 }
             }
         });
+
+        // 설정 창 초기화
+        this.ui.initSettings(this.game.sound);
 
         // Override UIManager internal toggle logic to hook into pause system
         const originalToggleMenu = this.ui.toggleMenu.bind(this.ui);
@@ -716,6 +751,11 @@ export class PlayScene extends BaseScene {
         // 스테이지 매니저 업데이트
         this.stageManager.nextStage();
 
+        // 게임 진행 상황 저장 (실제 스테이지 클리어 시)
+        const currentItems = this._getCurrentItems();
+        SaveManager.saveProgress(this.stageManager.level, currentItems);
+        console.log(`[PlayScene] Stage cleared! Progress saved: Stage ${this.stageManager.level}`);
+
         // 플레이어 상태 일부 초기화 (지도 등)
         this.stageManager.preparePlayerForNextStage(this.player);
 
@@ -733,6 +773,74 @@ export class PlayScene extends BaseScene {
     /**
      * 레벨에 따라 사용 가능한 미로 모양 목록 반환
      */
+    /**
+     * 저장된 아이템을 플레이어 인벤토리에 로드
+     * @param {Object} items - 저장된 아이템 데이터
+     */
+    _loadSavedItems(items) {
+        if (!this.player) return;
+
+        // 아이템 매핑: SaveManager의 키 -> Player inventory 키
+        const itemMapping = {
+            flashlight: 'hasFlashlight',
+            sensor: 'hasSensor',
+            battery: 'jumpCount',
+            speedBoost: 'hammerCount',
+            wallHack: 'hammerCount', // wallHack은 hammer로 통합
+            teleport: 'teleportCount',
+            zombieDisguise: 'disguiseCount'
+        };
+
+        for (const [saveKey, inventoryKey] of Object.entries(itemMapping)) {
+            if (items[saveKey] !== undefined) {
+                if (inventoryKey.startsWith('has')) {
+                    // boolean 타입 아이템
+                    this.player.inventory[inventoryKey] = items[saveKey] > 0;
+                } else {
+                    // count 타입 아이템
+                    this.player.inventory[inventoryKey] = items[saveKey];
+                }
+            }
+        }
+
+        // 플래시라이트/센서 상태 반영
+        if (this.player.inventory.hasFlashlight) {
+            this.player.flashlightOn = true;
+            // 손전등 상태는 UI에서 자동으로 업데이트됨
+        }
+        if (this.player.inventory.hasSensor) {
+            this.player.sensorOn = true;
+        }
+    }
+
+    /**
+     * 현재 플레이어 인벤토리를 SaveManager 형식으로 반환
+     * @returns {Object} 저장할 아이템 데이터
+     */
+    _getCurrentItems() {
+        if (!this.player) {
+            return {
+                flashlight: 0,
+                sensor: 0,
+                battery: 0,
+                speedBoost: 0,
+                wallHack: 0,
+                teleport: 0,
+                zombieDisguise: 0
+            };
+        }
+
+        return {
+            flashlight: this.player.inventory.hasFlashlight ? 1 : 0,
+            sensor: this.player.inventory.hasSensor ? 1 : 0,
+            battery: this.player.inventory.jumpCount || 0,
+            speedBoost: this.player.inventory.hammerCount || 0,
+            wallHack: 0, // wallHack은 hammer로 통합됨
+            teleport: this.player.inventory.teleportCount || 0,
+            zombieDisguise: this.player.inventory.disguiseCount || 0
+        };
+    }
+
     _getAvailableShapes(level) {
         const pool = ['RECTANGLE'];
         if (level >= 2) pool.push('DIAMOND', 'CIRCLE', 'TRIANGLE');

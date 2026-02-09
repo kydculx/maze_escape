@@ -3,6 +3,7 @@ import { InputHandler } from './src/InputHandler.js';
 import { GameState, STATES } from './src/GameState.js';
 import { SceneManager } from './src/SceneManager.js';
 import { SoundManager } from './src/SoundManager.js';
+import { SaveManager } from './src/SaveManager.js';
 import { CONFIG } from './src/Config.js';
 import { PlayScene } from './src/scenes/PlayScene.js';
 
@@ -80,15 +81,24 @@ class Game {
             }
         });
 
+        // 저장된 진행 상황 확인 및 Continue 버튼 활성화
+        this.updateContinueButton();
+
         // 2. 메인 메뉴 - 각 버튼 기능 연동
         // 새 게임 (New Game)
         document.getElementById('new-game-button').addEventListener('click', () => {
+            // 진행 상황 초기화
+            SaveManager.clearProgress();
             this.handleMenuSelection(STATES.PLAYING);
         });
 
         // 이어하기 (Continue)
         document.getElementById('continue-button').addEventListener('click', () => {
-            alert('이어하기 기능을 준비 중입니다.');
+            if (SaveManager.hasProgress()) {
+                const progress = SaveManager.loadProgress();
+                // 저장된 스테이지와 아이템으로 게임 시작
+                this.handleMenuSelection(STATES.PLAYING, progress);
+            }
         });
 
         // 랭킹 (Rankings)
@@ -98,10 +108,71 @@ class Game {
         });
 
         // 설정 (Settings)
+        const settingsPopup = document.getElementById('settings-popup');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        const settingsOkBtn = document.getElementById('settings-ok-btn');
+        const bgmSlider = document.getElementById('bgm-volume-slider');
+        const sfxSlider = document.getElementById('sfx-volume-slider');
+        const bgmVal = document.getElementById('bgm-volume-val');
+        const sfxVal = document.getElementById('sfx-volume-val');
+
+        // 설정 버튼 클릭 시 팝업 열기
         document.getElementById('settings-button').addEventListener('click', () => {
             this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
-            alert('설정 메뉴입니다.');
+            if (settingsPopup) {
+                // 현재 볼륨 값으로 슬라이더 초기화
+                const currentBGM = Math.round(this.sound.bgmVolume * 100);
+                const currentSFX = Math.round(this.sound.sfxVolume * 100);
+
+                bgmSlider.value = currentBGM;
+                bgmVal.textContent = `${currentBGM}%`;
+                sfxSlider.value = currentSFX;
+                sfxVal.textContent = `${currentSFX}%`;
+
+                console.log('[Main] Opening settings - BGM:', currentBGM, '% SFX:', currentSFX, '%');
+
+                settingsPopup.classList.remove('hidden');
+                settingsPopup.style.display = 'flex';
+            }
         });
+
+        // 볼륨 슬라이더 이벤트
+        if (bgmSlider) {
+            bgmSlider.addEventListener('input', () => {
+                const val = bgmSlider.value;
+                bgmVal.textContent = `${val}%`;
+                this.sound.setBGMVolume(val / 100);
+            });
+        }
+
+        if (sfxSlider) {
+            sfxSlider.addEventListener('input', () => {
+                const val = sfxSlider.value;
+                sfxVal.textContent = `${val}%`;
+                this.sound.setSFXVolume(val / 100);
+            });
+        }
+
+        // 설정 팝업 닫기 버튼들
+        if (closeSettingsBtn) {
+            closeSettingsBtn.addEventListener('click', () => {
+                this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+                if (settingsPopup) {
+                    settingsPopup.classList.add('hidden');
+                    settingsPopup.style.display = 'none';
+                }
+            });
+        }
+
+        if (settingsOkBtn) {
+            settingsOkBtn.addEventListener('click', () => {
+                this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+                if (settingsPopup) {
+                    settingsPopup.classList.add('hidden');
+                    settingsPopup.style.display = 'none';
+                }
+            });
+        }
 
         // 도움말 (Help)
         const helpPopup = document.getElementById('help-popup');
@@ -127,22 +198,59 @@ class Game {
     }
 
     /**
+     * Continue 버튼 활성화/비활성화
+     */
+    updateContinueButton() {
+        const continueBtn = document.getElementById('continue-button');
+        if (SaveManager.hasProgress()) {
+            continueBtn.classList.remove('disabled');
+            continueBtn.disabled = false;
+        } else {
+            continueBtn.classList.add('disabled');
+            continueBtn.disabled = true;
+        }
+    }
+
+    /**
      * 공통 메뉴 선택 로직 처리
      * @param {string} targetState - 전환할 게임 상태
+     * @param {Object} progress - 저장된 게임 진행 상황 (선택적)
      */
-    handleMenuSelection(targetState) {
+    handleMenuSelection(targetState, progress = null) {
         this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
 
         if (targetState === STATES.PLAYING) {
             this.state.set(STATES.PLAYING);
-            this.sceneManager.setScene(STATES.PLAYING);
+            this.sceneManager.setScene(STATES.PLAYING, progress); // progress 전달
             this.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
             document.getElementById('main-menu-screen').classList.add('hidden');
 
             // 게임 HUD 표시
-            document.getElementById('ui-overlay').style.display = 'block';
-            document.getElementById('item-actions').style.display = 'flex';
-            document.getElementById('cheat-hud').style.display = 'block';
+            const uiOverlay = document.getElementById('ui-overlay');
+            const itemActions = document.getElementById('item-actions');
+            const cheatHud = document.getElementById('cheat-hud');
+
+            console.log('[Game] Showing UI elements');
+            console.log('[Game] ui-overlay:', uiOverlay);
+            console.log('[Game] item-actions:', itemActions);
+            console.log('[Game] cheat-hud:', cheatHud);
+
+            if (uiOverlay) uiOverlay.style.display = 'block';
+            if (itemActions) {
+                itemActions.style.display = 'flex';
+                console.log('[Game] item-actions display set to flex');
+            } else {
+                console.error('[Game] item-actions element not found!');
+            }
+            if (cheatHud) {
+                cheatHud.style.display = 'block';
+                console.log('[Game] cheat-hud display set to block');
+            } else {
+                console.error('[Game] cheat-hud element not found!');
+            }
+
+            // 실제 버튼들의 기능 연동은 PlayScene 내의 UIManager가 담당하도록 위임
+            // (PlayScene.js에서 this.ui.initSettings(this.game.sound) 호출)
         }
     }
 

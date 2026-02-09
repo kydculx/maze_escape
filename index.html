@@ -126,6 +126,38 @@
         </div>
     </div>
 
+    <!-- 설정 팝업 -->
+    <div id="settings-popup" class="ui-popup hidden">
+        <div class="popup-content settings-content">
+            <div class="popup-header">
+                <h2>SETTINGS</h2>
+                <button id="close-settings-btn" class="close-btn">&times;</button>
+            </div>
+
+            <div class="popup-body settings-body">
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>배경 음악 (BGM)</span>
+                        <span id="bgm-volume-val" class="val-label">100%</span>
+                    </div>
+                    <input type="range" id="bgm-volume-slider" min="0" max="100" value="100">
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>효과음 (SFX)</span>
+                        <span id="sfx-volume-val" class="val-label">100%</span>
+                    </div>
+                    <input type="range" id="sfx-volume-slider" min="0" max="100" value="100">
+                </div>
+            </div>
+
+            <div class="settings-footer">
+                <button id="settings-ok-btn" class="ui-btn">확인</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 메인 메뉴 화면 오버레이 -->
     <div id="main-menu-screen" class="ui-popup hidden">
         <div class="ui-popup-content">
