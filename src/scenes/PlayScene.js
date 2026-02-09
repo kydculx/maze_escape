@@ -149,42 +149,48 @@ export class PlayScene extends BaseScene {
     }
 
     resetMaze() {
-        // StageManager의 미로 크기 사용 (Config.js 반영)
-        const newWidth = this.stageManager.mazeSize;
-        const newHeight = this.stageManager.mazeSize;
+        this._rebuildMaze();
+        console.log(`Maze reset: ${this.stageManager.mazeSize}x${this.stageManager.mazeSize}`);
+    }
 
-        this.mazeGen = new MazeGenerator(newWidth, newHeight);
+    /**
+     * 미로 재생성 공통 로직 (resetMaze, _gotoNextStage에서 사용)
+     */
+    _rebuildMaze() {
+        const size = this.stageManager.mazeSize;
+        this.mazeGen = new MazeGenerator(size, size);
 
-        const availableShapes = this._getAvailableShapes(this.stageManager ? this.stageManager.level : 1);
+        // 레벨에 따라 모양 결정
+        const availableShapes = this._getAvailableShapes(this.stageManager.level);
         const shape = availableShapes[Math.floor(Math.random() * availableShapes.length)];
         this.mazeGen.applyShapeMask(shape);
-
         this.mazeGen.generateData();
 
+        // 뷰 갱신
         this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
         this._refreshFloorMesh();
 
+        // 플레이어 위치 초기화
         const startPos = this.mazeGen.getStartWorldPosition(CONFIG.MAZE);
         const initialAngle = this._calculateInitialAngle();
         this.player.mazeGen = this.mazeGen;
         this.player.reset(startPos, initialAngle);
 
+        // 매니저 동기화
+        this.ui.mazeGen = this.mazeGen;
         if (this.itemManager) {
             this.itemManager.mazeGen = this.mazeGen;
             this.itemManager.spawnItems();
         }
-
         if (this.monsterManager) {
             this.monsterManager.mazeGen = this.mazeGen;
             this.monsterManager.clear();
-            this.monsterManager.spawnZombies(5 + (this.stageManager ? this.stageManager.level : 1));
+            this.monsterManager.spawnZombies(5 + this.stageManager.level);
         }
-
-        // UI에 새 미로 데이터 연결 및 갱신
-        this.ui.mazeGen = this.mazeGen;
+        if (this.trapManager) {
+            this.trapManager.clear();
+        }
         this.ui.updateAll();
-
-        console.log(`Maze reset: ${newWidth}x${newHeight}`);
     }
 
 
@@ -539,46 +545,8 @@ export class PlayScene extends BaseScene {
         // 플레이어 상태 일부 초기화 (지도 등)
         this.stageManager.preparePlayerForNextStage(this.player);
 
-        // 새로운 미로 생성
-        const nextSize = this.stageManager.mazeSize;
-        this.mazeGen = new MazeGenerator(nextSize, nextSize);
-
-        // 레벨에 따라 모양 결정
-        const availableShapes = this._getAvailableShapes(this.stageManager.level);
-        const shape = availableShapes[Math.floor(Math.random() * availableShapes.length)];
-
-        this.mazeGen.applyShapeMask(shape);
-        this.mazeGen.generateData();
-
-        // 씬 갱신 (MazeView 위임)
-        this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
-        this._refreshFloorMesh();
-
-        // 플레이어 위치 초기화
-        const startPos = this.mazeGen.getStartWorldPosition(CONFIG.MAZE);
-        const initialAngle = this._calculateInitialAngle();
-        this.player.mazeGen = this.mazeGen;
-        this.player.reset(startPos, initialAngle);
-
-        // UI 데이터 동기화
-        this.ui.mazeGen = this.mazeGen;
-        this.ui.updateAll();
-
-        // 아이템 및 몬스터 재배치
-        if (this.itemManager) {
-            this.itemManager.mazeGen = this.mazeGen;
-            this.itemManager.spawnItems();
-        }
-
-        if (this.monsterManager) {
-            this.monsterManager.mazeGen = this.mazeGen;
-            this.monsterManager.clear();
-            this.monsterManager.spawnZombies(5 + this.stageManager.level);
-        }
-
-        if (this.trapManager) {
-            this.trapManager.clear();
-        }
+        // 미로 재생성 (공통 로직 사용)
+        this._rebuildMaze();
 
         setTimeout(() => {
             this._isTransitioning = false;
