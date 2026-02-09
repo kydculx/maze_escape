@@ -61,13 +61,13 @@ export const GAME_CONFIG = {
         },
 
         TYPES: {
-            JUMP: { TYPE: 'JUMP', COLOR: 0xFFFF00, SCALE: 0.12 },
-            FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1 },
-            MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15 },
-            HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15 },
-            TRAP: { TYPE: 'TRAP', COLOR: 0xff0000, SCALE: 0.15 },
-            TELEPORT: { TYPE: 'TELEPORT', COLOR: 0x8800ff, SCALE: 0.15 },
-            SENSOR: { TYPE: 'SENSOR', COLOR: 0x00ffff, SCALE: 0.15 }
+            JUMP: { TYPE: 'JUMP', COLOR: 0xFFFF00, SCALE: 0.12, CONSUMABLE: true },
+            FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1, CONSUMABLE: false },
+            MAP: { TYPE: 'MAP', COLOR: 0xffaa00, SCALE: 0.15, CONSUMABLE: false },
+            HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.15, CONSUMABLE: true },
+            TRAP: { TYPE: 'TRAP', COLOR: 0xff0000, SCALE: 0.15, CONSUMABLE: true },
+            TELEPORT: { TYPE: 'TELEPORT', COLOR: 0x8800ff, SCALE: 0.15, CONSUMABLE: true },
+            SENSOR: { TYPE: 'SENSOR', COLOR: 0x00ffff, SCALE: 0.15, CONSUMABLE: false }
         },
         // 지도 관련 세부 설정
         MAP: {

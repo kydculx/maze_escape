@@ -56,10 +56,31 @@ export class ItemManager {
         const offsetX = -(this.mazeGen.width * thickness) / 2;
         const offsetZ = -(this.mazeGen.height * thickness) / 2;
 
+        // 비소모성 아이템 추적 (맵당 1개씩만)
+        const spawnedNonConsumables = new Set();
+
         for (let i = 0; i < spawnCount; i++) {
             const cell = emptyCells[i];
-            const typeKey = unlockedItemTypes[Math.floor(Math.random() * unlockedItemTypes.length)];
+
+            // 사용 가능한 아이템 중 선택 (비소모성은 이미 생성된 것 제외)
+            const availableTypes = unlockedItemTypes.filter(typeKey => {
+                const itemConfig = this.config.TYPES[typeKey];
+                const isConsumable = itemConfig.CONSUMABLE ?? true; // 기본값은 소모성
+
+                // 소모성이면 항상 가능, 비소모성이면 아직 생성 안 된 것만
+                return isConsumable || !spawnedNonConsumables.has(typeKey);
+            });
+
+            // 사용 가능한 아이템이 없으면 건너뛰기
+            if (availableTypes.length === 0) continue;
+
+            const typeKey = availableTypes[Math.floor(Math.random() * availableTypes.length)];
             const visualConfig = this.config.TYPES[typeKey];
+
+            // 비소모성이면 추적 목록에 추가
+            if (!visualConfig.CONSUMABLE) {
+                spawnedNonConsumables.add(typeKey);
+            }
 
             const item = new Item(typeKey, this.config, visualConfig);
 
@@ -71,7 +92,7 @@ export class ItemManager {
             this.itemGroup.add(item.group);
         }
 
-        console.log(`${spawnCount} items spawned.`);
+        console.log(`${this.items.length} items spawned (${spawnedNonConsumables.size} unique non-consumables).`);
     }
 
     update(time) {
