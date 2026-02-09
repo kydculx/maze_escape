@@ -249,4 +249,30 @@ export class SoundManager {
             this.stopBGM();
         }
     }
+
+    /**
+     * 일시정지: 모든 사운드 중단 (Context Suspend & Element Pause)
+     */
+    pauseAll() {
+        if (this.context && this.context.state === 'running') {
+            this.context.suspend();
+        }
+        if (this.bgm && !this.bgm.paused) {
+            this.bgm.pause();
+            this.bgm.wasPlayingBeforePause = true; // 플래그 저장
+        }
+    }
+
+    /**
+     * 재개: 사운드 다시 재생
+     */
+    resumeAll() {
+        if (this.context && this.context.state === 'suspended') {
+            this.context.resume();
+        }
+        if (this.bgm && this.bgm.wasPlayingBeforePause) {
+            this.bgm.play().catch(() => { });
+            this.bgm.wasPlayingBeforePause = false;
+        }
+    }
 }

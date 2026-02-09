@@ -14,6 +14,7 @@ export const STATES = {
 export class GameState {
     constructor(initialState = STATES.INTRO) {
         this.current = initialState;
+        this.isPaused = false;
     }
 
     /**
@@ -36,5 +37,25 @@ export class GameState {
      */
     is(state) {
         return this.current === state;
+    }
+
+    /**
+     * 게임 일시 정지
+     */
+    pauseGame() {
+        if (!this.isPaused && this.current === STATES.PLAYING) {
+            this.isPaused = true;
+            console.log("Game Paused");
+        }
+    }
+
+    /**
+     * 게임 재개
+     */
+    resumeGame() {
+        if (this.isPaused) {
+            this.isPaused = false;
+            console.log("Game Resumed");
+        }
     }
 }

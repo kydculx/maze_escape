@@ -25,6 +25,24 @@ export class PlayScene extends BaseScene {
 
     init() {
         this._initScene();
+
+        // Visibility Change Handler (Auto-pause on background)
+        this._onVisibilityChange = () => {
+            if (document.hidden && this.game.state.is(STATES.PLAYING)) {
+                // If game goes to background while playing, show menu (which pauses game)
+                if (this.ui) this.ui.showMenu();
+                // Trigger pause logic via UI toggle
+                // Since showMenu just removing 'hidden' class, we need to ensure pause is triggered.
+                // Our modified UI.toggleMenu handles pause when menu is visible.
+                // But showMenu() might not trigger the toggle logic directly if we just called it.
+                // Let's explicitly pause if we show menu.
+                if (this.ui && !this.ui.elements.menuPopup.classList.contains('hidden')) {
+                    this.game.state.pauseGame();
+                    if (this.game.sound) this.game.sound.pauseAll();
+                }
+            }
+        };
+        document.addEventListener('visibilitychange', this._onVisibilityChange);
     }
 
     _initScene() {
@@ -128,11 +146,15 @@ export class PlayScene extends BaseScene {
             },
             onNextStage: () => {
                 this.stageManager.nextStage();
+                this.stageManager.nextStage();
                 this.resetMaze();
                 if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
             },
             onRestart: () => {
                 console.log("Restarting current stage...");
+                this.game.state.resumeGame(); // Ensure game is running
+                if (this.game.sound) this.game.sound.resumeAll();
+
                 // Restore player state to start of stage
                 if (this.player) this.player.restoreCheckpoint();
                 // Reset stage stats (time, moves) - managed by StageManager or here?
@@ -141,10 +163,14 @@ export class PlayScene extends BaseScene {
                 this.stageManager.resetStats();
 
                 this.resetMaze();
+                this.resetMaze();
                 if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
             },
             onMainMenu: () => {
                 console.log("Going to Main Menu...");
+                this.game.state.resumeGame(); // Reset pause state
+                if (this.game.sound) this.game.sound.resumeAll();
+
                 if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
 
                 // Switch scene and state
@@ -165,6 +191,27 @@ export class PlayScene extends BaseScene {
                 }
             }
         });
+
+        // Override UIManager internal toggle logic to hook into pause system
+        const originalToggleMenu = this.ui.toggleMenu.bind(this.ui);
+        this.ui.toggleMenu = () => {
+            originalToggleMenu();
+            const isMenuVisible = !this.ui.elements.menuPopup.classList.contains('hidden');
+            if (isMenuVisible) {
+                this.game.state.pauseGame();
+                if (this.game.sound) this.game.sound.pauseAll();
+            } else {
+                this.game.state.resumeGame();
+                if (this.game.sound) this.game.sound.resumeAll();
+            }
+        };
+
+        const originalHideMenu = this.ui.hideMenu.bind(this.ui);
+        this.ui.hideMenu = () => {
+            originalHideMenu();
+            this.game.state.resumeGame();
+            if (this.game.sound) this.game.sound.resumeAll();
+        };
 
         this.ui.updateAll();
     }
@@ -274,6 +321,11 @@ export class PlayScene extends BaseScene {
     }
 
     update(dt) {
+        // 일시정지 상태 체크
+        if (this.game.state.isPaused) {
+            return;
+        }
+
         const deltaTime = Math.min(dt, 0.1);
         const input = this.game.input;
 
@@ -693,5 +745,6 @@ export class PlayScene extends BaseScene {
             this.trapManager.clear();
         }
         super.dispose();
+        document.removeEventListener('visibilitychange', this._onVisibilityChange);
     }
 }
