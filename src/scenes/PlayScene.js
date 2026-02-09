@@ -35,11 +35,15 @@ export class PlayScene extends BaseScene {
         // 2. 조명 추가
         this._initLights();
 
-        // 3. 미로 로직 및 뷰 초기화
-        this.mazeGen = new MazeGenerator(CONFIG.MAZE.DEFAULT_WIDTH, CONFIG.MAZE.DEFAULT_HEIGHT);
+        // 3. StageManager 먼저 초기화 (미로 크기 결정을 위해)
+        this.stageManager = new StageManager();
+        this.minimap = new Minimap();
+
+        // 4. 미로 로직 및 뷰 초기화 (StageManager의 mazeSize 사용)
+        this.mazeGen = new MazeGenerator(this.stageManager.mazeSize, this.stageManager.mazeSize);
 
         // 모양 결정 (레벨 기반 가용 모양 중 선택)
-        const availableShapes = this._getAvailableShapes(1);
+        const availableShapes = this._getAvailableShapes(this.stageManager.level);
         const shape = CONFIG.MAZE.SHAPE && availableShapes.includes(CONFIG.MAZE.SHAPE)
             ? CONFIG.MAZE.SHAPE
             : availableShapes[Math.floor(Math.random() * availableShapes.length)];
@@ -50,14 +54,14 @@ export class PlayScene extends BaseScene {
         this.mazeView = new MazeView(this.scene);
         this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
 
-        // 4. 플레이어 초기화
+        // 5. 플레이어 초기화
         const startPos = this.mazeGen.getStartWorldPosition(CONFIG.MAZE);
         this.player = new Player(this.scene, this.mazeGen, this.game.sound);
 
         const initialAngle = this._calculateInitialAngle();
         this.player.reset(startPos, initialAngle);
 
-        // 5. 카메라 및 매니저들
+        // 6. 카메라 및 매니저들
         this.cameraController = new CameraController(this.player, this.scene);
         this.camera = this.cameraController.camera;
 
@@ -68,8 +72,6 @@ export class PlayScene extends BaseScene {
 
         this.trapManager = new TrapManager(this.scene);
 
-        this.minimap = new Minimap();
-        this.stageManager = new StageManager();
         this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound);
 
         // 레벨에 따른 좀비 생성 (레벨 1-5: 0마리, 이후 5레벨마다 +1, 최대 10마리)
