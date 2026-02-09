@@ -185,7 +185,7 @@ export class PlayScene extends BaseScene {
         if (this.monsterManager) {
             this.monsterManager.mazeGen = this.mazeGen;
             this.monsterManager.clear();
-            this.monsterManager.spawnZombies(5 + Math.floor(this.stageManager.level / 5));
+            this.monsterManager.spawnZombies(Math.max(0, Math.floor((this.stageManager.level - 1) / 5)));
         }
         if (this.trapManager) {
             this.trapManager.clear();
