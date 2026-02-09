@@ -71,7 +71,10 @@ export class PlayScene extends BaseScene {
         this.minimap = new Minimap();
         this.stageManager = new StageManager();
         this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound);
-        this.monsterManager.spawnZombies(5);
+
+        // 레벨에 따른 좀비 생성 (레벨 1-5: 0마리, 이후 5레벨마다 +1, 최대 10마리)
+        const zombieCount = Math.min(10, Math.max(0, Math.floor((this.stageManager.level - 1) / 5)));
+        this.monsterManager.spawnZombies(zombieCount, this.stageManager.level);
 
         // 6. UI 매니저 초기화 및 바인딩
         this.ui = new UIManager(this.player, this.mazeGen, this.stageManager);
