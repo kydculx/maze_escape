@@ -469,7 +469,7 @@ export class Player {
         this.isSensorOn = !this.isSensorOn;
         // 사운드 재생 (켜짐/꺼짐)
         if (this.sound) {
-            this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.5);
+            this.sound.playSFX(CONFIG.AUDIO.SENSOR_TOGGLE_SFX_URL, 0.5);
         }
         return true;
     }

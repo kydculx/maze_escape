@@ -54,6 +54,7 @@ export const ENGINE_CONFIG = {
         ZOMBIE_PATROL_SFX: 'audio/eff_zombie_1.mp3',
         ZOMBIE_TRACK_SFX: 'audio/eff_zombie_2.mp3',
         FLASHLIGHT_SWITCH_SFX_URL: 'audio/eff_flashlight_switch.mp3',
+        SENSOR_TOGGLE_SFX_URL: 'audio/eff_radar_ping.mp3',
         DEFAULT_BGM_VOLUME: 0.4
     }
 };
