@@ -56,6 +56,7 @@ export const ENGINE_CONFIG = {
         FLASHLIGHT_SWITCH_SFX_URL: 'audio/eff_flashlight_switch.mp3',
         SENSOR_TOGGLE_SFX_URL: 'audio/eff_sensor_switch.mp3',
         TELEPORT_SFX_URL: 'audio/eff_teleport.mp3',
+        HAMMER_SFX_URL: 'audio/eff_hammer_smash.mp3',
         DEFAULT_BGM_VOLUME: 0.4
     }
 };
