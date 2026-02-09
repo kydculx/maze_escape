@@ -471,6 +471,8 @@ body {
     right: 20px;
     z-index: 1000;
     pointer-events: auto;
+    display: none;
+    /* 기본적으로 숨김 (게임 시작 시에만 표시) */
 }
 
 #cheat-btn,
