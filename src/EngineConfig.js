@@ -47,14 +47,15 @@ export const ENGINE_CONFIG = {
     // [4] 사운드 리소스 및 설정 (Audio Assets)
     AUDIO: {
         BGM_URL: 'audio/bgm_background.mp3',
-        CLICK_SFX_URL: 'audio/eff_teleport.mp3',
+        CLICK_SFX_URL: 'audio/eff_click.mp3',
         FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3',
         JUMP_SFX_URL: 'audio/eff_jump.wav',
         ITEM_PICKUP_SFX_URL: 'audio/eff_itemget.mp3',
         ZOMBIE_PATROL_SFX: 'audio/eff_zombie_1.mp3',
         ZOMBIE_TRACK_SFX: 'audio/eff_zombie_2.mp3',
         FLASHLIGHT_SWITCH_SFX_URL: 'audio/eff_flashlight_switch.mp3',
-        SENSOR_TOGGLE_SFX_URL: 'audio/eff_radar_ping.mp3',
+        SENSOR_TOGGLE_SFX_URL: 'audio/eff_sensor_switch.mp3',
+        TELEPORT_SFX_URL: 'audio/eff_teleport.mp3',
         DEFAULT_BGM_VOLUME: 0.4
     }
 };

@@ -456,7 +456,7 @@ export class Player {
         this.isFlashlightOn = !this.isFlashlightOn;
         this.flashlight.intensity = this.isFlashlightOn ? CONFIG.ITEMS.FLASHLIGHT.INTENSITY : 0;
 
-        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.FLASHLIGHT_SWITCH_SFX_URL, 0.5);
+        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.FLASHLIGHT_SWITCH_SFX_URL);
         return true;
     }
 
@@ -469,7 +469,7 @@ export class Player {
         this.isSensorOn = !this.isSensorOn;
         // 사운드 재생 (켜짐/꺼짐)
         if (this.sound) {
-            this.sound.playSFX(CONFIG.AUDIO.SENSOR_TOGGLE_SFX_URL, 0.5);
+            this.sound.playSFX(CONFIG.AUDIO.SENSOR_TOGGLE_SFX_URL);
         }
         return true;
     }
