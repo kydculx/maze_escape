@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Item } from './Item.js';
+import { CONFIG } from './Config.js';
 
 /**
  * 미로 내 아이템의 생성, 관리, 충돌을 제어하는 클래스
@@ -37,7 +38,7 @@ export class ItemManager {
         const spawnCount = Math.min(this.config.SPAWN_COUNT, emptyCells.length);
         const itemTypes = Object.keys(this.config.TYPES);
 
-        const thickness = 1.5; // CONFIG.MAZE.WALL_THICKNESS (하드코딩 피하려면 config 전달 필요)
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
         const offsetX = -(this.mazeGen.width * thickness) / 2;
         const offsetZ = -(this.mazeGen.height * thickness) / 2;
 
