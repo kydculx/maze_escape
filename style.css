@@ -220,6 +220,8 @@ body {
     pointer-events: none;
     /* UI 요소 외에는 클릭 통과 */
     z-index: 100;
+    display: none;
+    /* 기본적으로 숨김 (게임 시작 시에만 표시) */
 }
 
 #ui-overlay>* {
@@ -698,7 +700,8 @@ input[type="range"]::-webkit-slider-thumb {
     position: absolute;
     bottom: 20px;
     left: 20px;
-    display: flex;
+    display: none;
+    /* 기본적으로 숨김 (게임 시작 시에만 표시) */
     flex-direction: column;
     gap: 15px;
     pointer-events: auto;

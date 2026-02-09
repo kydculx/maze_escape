@@ -122,6 +122,10 @@ class Game {
             this.sceneManager.setScene(STATES.PLAYING);
             this.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
             document.getElementById('main-menu-screen').classList.add('hidden');
+
+            // 게임 HUD 표시
+            document.getElementById('ui-overlay').style.display = 'block';
+            document.getElementById('item-actions').style.display = 'flex';
         }
     }
 
