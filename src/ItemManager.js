@@ -100,6 +100,75 @@ export class ItemManager {
         console.log(`${this.items.length} items spawned (${spawnedNonConsumables.size} unique non-consumables).`);
     }
 
+    /**
+     * 플레이어 주변 빈 공간에 사용 가능한 모든 아이템을 소환 (치트용)
+     */
+    spawnNearbyItems(playerPos, level = 1) {
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const width = this.mazeGen.width;
+        const height = this.mazeGen.height;
+        const offsetX = -(width * thickness) / 2;
+        const offsetZ = -(height * thickness) / 2;
+
+        // 플레이어의 현재 그리드 좌표
+        const px = Math.floor((playerPos.x - offsetX) / thickness);
+        const py = Math.floor((playerPos.z - offsetZ) / thickness);
+
+        // 현재 레벨에서 사용 가능한 아이템 타입 추출
+        const allItemTypes = Object.keys(this.config.TYPES);
+        const unlockedTypes = allItemTypes.filter(typeKey => {
+            const unlockLevel = this.config.UNLOCK_LEVELS?.[typeKey] ?? 1;
+            return level >= unlockLevel;
+        });
+
+        // 주변 빈 칸 탐색 (플레이어 위치부터 나선형 혹은 반경 확장식으로 8방향 우선)
+        const candidates = [];
+        const radius = 3; // 반경 3칸까지 탐색
+
+        for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+                if (dx === 0 && dy === 0) continue; // 플레이어 위치 제외
+                const tx = px + dx;
+                const ty = py + dy;
+
+                if (tx >= 0 && tx < width && ty >= 0 && ty < height) {
+                    // 길(0)이어야 함
+                    if (this.mazeGen.grid[ty][tx] === 0) {
+                        // 기존 아이템과 겹치는지 체크
+                        const isOccupied = this.items.some(item => {
+                            const ix = Math.floor((item.group.position.x - offsetX) / thickness);
+                            const iy = Math.floor((item.group.position.z - offsetZ) / thickness);
+                            return ix === tx && iy === ty;
+                        });
+
+                        if (!isOccupied) {
+                            candidates.push({ x: tx, y: ty, dist: dx * dx + dy * dy });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 거리순으로 정렬
+        candidates.sort((a, b) => a.dist - b.dist);
+
+        // 사용 가능한 칸에 아이템 하나씩 배치
+        unlockedTypes.forEach((typeKey, index) => {
+            if (index < candidates.length) {
+                const cell = candidates[index];
+                const visualConfig = this.config.TYPES[typeKey];
+                const item = new Item(typeKey, this.config, visualConfig);
+
+                item.group.position.x = offsetX + (cell.x * thickness) + thickness / 2;
+                item.group.position.z = offsetZ + (cell.y * thickness) + thickness / 2;
+
+                this.items.push(item);
+                this.itemGroup.add(item.group);
+                console.log(`Cheat: Spawned ${typeKey} at [${cell.x}, ${cell.y}]`);
+            }
+        });
+    }
+
     update(time) {
         this.items.forEach(item => item.update(time));
     }

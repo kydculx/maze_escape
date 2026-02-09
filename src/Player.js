@@ -420,26 +420,6 @@ export class Player {
         return true;
     }
 
-    /**
-     * 치트: 모든 아이템 획득 및 수량 최대화
-     */
-    applyCheat() {
-        this.inventory.hasMap = true;
-        this.inventory.hasFlashlight = true;
-        this.inventory.hammerCount = 99;
-        this.inventory.jumpCount = 99;
-        this.inventory.trapCount = 99;
-        this.inventory.teleportCount = 99;
-        this.inventory.hasSensor = true;
-
-        this.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
-        this.sensorTimer = CONFIG.ITEMS.SENSOR.DURATION;
-
-        // 탐험 상태 모두 해제
-        if (this.mazeGen) this.mazeGen.revealAll();
-
-        console.log("Cheat activated: All items maximized and map revealed!");
-    }
 
     /**
      * 아이템 효과 적용

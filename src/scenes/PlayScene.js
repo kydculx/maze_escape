@@ -114,7 +114,9 @@ export class PlayScene extends BaseScene {
             },
             onMap: () => this.resetMaze(),
             onCheat: () => {
-                this.player.applyCheat();
+                if (this.itemManager) {
+                    this.itemManager.spawnNearbyItems(this.player.position, this.stageManager.level);
+                }
                 this.ui.updateAll();
             },
             onTrap: () => {

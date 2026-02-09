@@ -14,7 +14,8 @@ export class Item {
         this.group.add(this.mesh);
 
         // 애니메이션용 변수
-        this.baseY = 0.3; // 바닥에서 약간 띄움
+        this.baseY = 0.4; // 바닥에서 확실히 띄움
+        this.elapsedTime = 0; // 누적 시간
         this.animationOffset = Math.random() * Math.PI * 2;
         this.group.position.y = this.baseY;
     }
@@ -111,25 +112,34 @@ export class Item {
                 const group = new THREE.Group();
                 // 몸통
                 const body = new THREE.Mesh(
-                    new THREE.CylinderGeometry(scale * 0.3, scale * 0.3, scale * 1.5, 12),
-                    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.5 })
+                    new THREE.CylinderGeometry(scale * 0.4, scale * 0.4, scale * 1.5, 12),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x333333,
+                        metalness: 0.5,
+                        emissive: 0x222222 // 어두운 곳에서도 실루엣은 보이게
+                    })
                 );
                 body.rotation.z = Math.PI / 2;
+                body.castShadow = true;
                 group.add(body);
 
                 // 헤드 (약간 커짐)
                 const head = new THREE.Mesh(
-                    new THREE.CylinderGeometry(scale * 0.5, scale * 0.3, scale * 0.5, 12),
-                    new THREE.MeshStandardMaterial({ color: 0x333333 })
+                    new THREE.CylinderGeometry(scale * 0.6, scale * 0.4, scale * 0.5, 12),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x444444,
+                        emissive: 0x111111
+                    })
                 );
                 head.rotation.z = Math.PI / 2;
                 head.position.x = scale * 0.75 + scale * 0.25;
+                head.castShadow = true;
                 group.add(head);
 
                 // 렌즈 (발광)
                 const lens = new THREE.Mesh(
-                    new THREE.CircleGeometry(scale * 0.4, 12),
-                    new THREE.MeshBasicMaterial({ color: 0xffffaa })
+                    new THREE.CircleGeometry(scale * 0.5, 12),
+                    new THREE.MeshBasicMaterial({ color: 0xffffaa, side: THREE.DoubleSide })
                 );
                 lens.rotation.y = Math.PI / 2;
                 lens.position.x = scale * 1.0 + scale * 0.26;
@@ -142,18 +152,27 @@ export class Item {
                 const mapGroup = new THREE.Group();
                 // 종이
                 const scroll = new THREE.Mesh(
-                    new THREE.CylinderGeometry(scale * 0.3, scale * 0.3, scale * 1.5, 12),
-                    new THREE.MeshStandardMaterial({ color: 0xf5deb3, roughness: 0.8 })
+                    new THREE.CylinderGeometry(scale * 0.4, scale * 0.4, scale * 1.8, 12),
+                    new THREE.MeshStandardMaterial({
+                        color: 0xf5deb3,
+                        roughness: 0.8,
+                        emissive: 0x332211 // 약간의 은은한 광택
+                    })
                 );
                 scroll.rotation.z = Math.PI / 2;
+                scroll.castShadow = true;
                 mapGroup.add(scroll);
 
                 // 리본 (빨강)
                 const band = new THREE.Mesh(
-                    new THREE.TorusGeometry(scale * 0.31, scale * 0.05, 8, 16),
-                    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                    new THREE.TorusGeometry(scale * 0.41, scale * 0.08, 8, 16),
+                    new THREE.MeshStandardMaterial({
+                        color: 0xff0000,
+                        emissive: 0x660000
+                    })
                 );
                 band.rotation.y = Math.PI / 2;
+                band.castShadow = true;
                 mapGroup.add(band);
                 return mapGroup;
             }
@@ -162,17 +181,27 @@ export class Item {
                 const hamGroup = new THREE.Group();
                 // 손잡이
                 const handle = new THREE.Mesh(
-                    new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 1.8, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x8b4513 })
+                    new THREE.CylinderGeometry(scale * 0.2, scale * 0.2, scale * 1.8, 8),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x8b4513,
+                        emissive: 0x331a07
+                    })
                 );
+                handle.castShadow = true;
                 hamGroup.add(handle);
 
                 // 머리 (Box)
                 const head = new THREE.Mesh(
-                    new THREE.BoxGeometry(scale * 1.2, scale * 0.6, scale * 0.6),
-                    new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.6, roughness: 0.3 })
+                    new THREE.BoxGeometry(scale * 1.2, scale * 0.7, scale * 0.7),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x777777,
+                        metalness: 0.6,
+                        roughness: 0.3,
+                        emissive: 0x222222
+                    })
                 );
                 head.position.y = scale * 0.7;
+                head.castShadow = true;
                 hamGroup.add(head);
 
                 // 회전 (아이콘처럼 비스듬히)
@@ -184,35 +213,41 @@ export class Item {
                 const webGroup = new THREE.Group();
 
                 // 방사형 선 (십자 + 대각선)
-                const lineGeo = new THREE.BoxGeometry(scale * 2.5, scale * 0.05, scale * 0.05);
-                const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+                const lineGeo = new THREE.BoxGeometry(scale * 2.5, scale * 0.08, scale * 0.08);
+                const lineMat = new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.9,
+                    emissive: 0xffffff,
+                    emissiveIntensity: 0.5
+                });
 
                 for (let i = 0; i < 4; i++) {
                     const line = new THREE.Mesh(lineGeo, lineMat);
                     line.rotation.y = (Math.PI / 4) * i;
+                    line.castShadow = true;
                     webGroup.add(line);
                 }
 
                 // 동심원 (고리)
-                const ringMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
+                const ringMat = new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.7,
+                    emissive: 0xffffff,
+                    emissiveIntensity: 0.3
+                });
                 for (let i = 1; i <= 3; i++) {
                     const ring = new THREE.Mesh(
-                        new THREE.TorusGeometry(scale * 0.4 * i, scale * 0.03, 4, 16),
+                        new THREE.TorusGeometry(scale * 0.4 * i, scale * 0.04, 4, 16),
                         ringMat
                     );
                     ring.rotation.x = Math.PI / 2;
+                    ring.castShadow = true;
                     webGroup.add(ring);
                 }
 
-                // 바닥에 눕히기
-                // webGroup.rotation.x = -Math.PI / 2; // 이미 Torus가 누워있고 Box는 y축 회전함 -> Box는 서있는 상태?
-                // BoxGeometry 기본은 x,y,z. rotation.y 하면 수평면상에서 회전.
-                // 하지만 현재 아이템은 공중에 떠서 돔. 
-                // 거미줄은 수직으로 세우는게 아이콘처럼 잘 보일듯.
-
-                // 아이콘(🕸️)처럼 보이게 세우자.
                 webGroup.rotation.z = Math.PI / 4; // 약간 기울기
-
                 return webGroup;
             }
             case 'TELEPORT': {
@@ -223,30 +258,31 @@ export class Item {
                 const spiralMat = new THREE.MeshStandardMaterial({
                     color: 0xaa00ff,
                     emissive: 0xaa00ff,
-                    emissiveIntensity: 0.8,
+                    emissiveIntensity: 1.0, // 더 강렬하게
                     transparent: true,
-                    opacity: 0.7
+                    opacity: 0.8
                 });
 
                 for (let i = 0; i < 5; i++) {
                     const torus = new THREE.Mesh(
-                        new THREE.TorusGeometry(scale * (0.5 + i * 0.2), scale * 0.05, 8, 16),
+                        new THREE.TorusGeometry(scale * (0.5 + i * 0.2), scale * 0.06, 8, 16),
                         spiralMat
                     );
-                    // 각 고리를 조금씩 틀어서 소용돌이 느낌
                     torus.rotation.x = Math.PI / 2;
                     torus.rotation.y = i * 0.5;
+                    torus.castShadow = true;
                     portalGroup.add(torus);
                 }
                 // 중앙 구체
                 const core = new THREE.Mesh(
-                    new THREE.SphereGeometry(scale * 0.4, 16, 16),
+                    new THREE.SphereGeometry(scale * 0.5, 16, 16),
                     new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x00ffff,
-                        emissiveIntensity: 1
+                        emissiveIntensity: 1.5 // 더 밝게
                     })
                 );
+                core.castShadow = true;
                 portalGroup.add(core);
 
                 return portalGroup;
@@ -257,37 +293,54 @@ export class Item {
 
                 // 1. 베이스 (작은 박스)
                 const base = new THREE.Mesh(
-                    new THREE.BoxGeometry(scale * 0.8, scale * 0.4, scale * 0.8),
-                    new THREE.MeshStandardMaterial({ color: 0x333333 })
+                    new THREE.BoxGeometry(scale * 1.0, scale * 0.5, scale * 1.0),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x333333,
+                        emissive: 0x111111 // 어둠속 실루엣
+                    })
                 );
+                base.castShadow = true;
                 sensorGroup.add(base);
 
                 // 2. 기둥 (Cylinder)
                 const pole = new THREE.Mesh(
-                    new THREE.CylinderGeometry(scale * 0.1, scale * 0.1, scale * 0.8, 8),
-                    new THREE.MeshStandardMaterial({ color: 0x888888 })
+                    new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 1.0, 8),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x888888,
+                        emissive: 0x222222
+                    })
                 );
                 pole.position.y = scale * 0.6;
+                pole.castShadow = true;
                 sensorGroup.add(pole);
 
                 // 3. 접시 (Sphere 잘린 모양 or Cone) - 여기선 Cone을 넓게 펼쳐서 접시처럼
                 const dish = new THREE.Mesh(
-                    new THREE.ConeGeometry(scale * 1.0, scale * 0.5, 32, 1, true), // openEnded
-                    new THREE.MeshStandardMaterial({ color: 0xeeeeee, side: THREE.DoubleSide })
+                    new THREE.ConeGeometry(scale * 1.2, scale * 0.6, 32, 1, true), // openEnded
+                    new THREE.MeshStandardMaterial({
+                        color: 0xeeeeee,
+                        side: THREE.DoubleSide,
+                        emissive: 0x444444 // 접시는 밝게
+                    })
                 );
-                dish.position.y = scale * 1.0;
+                dish.position.y = scale * 1.2;
                 dish.rotation.x = Math.PI / 4; // 45도 기울임
+                dish.castShadow = true;
                 sensorGroup.add(dish);
 
-                // 4. 수신기 (접시 중앙의 작은 막대)
+                // 4. 수신기 (접시 중앙ของ 작은 막대)
                 const receiver = new THREE.Mesh(
-                    new THREE.CylinderGeometry(scale * 0.05, scale * 0.05, scale * 0.6, 8),
-                    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                    new THREE.CylinderGeometry(scale * 0.05, scale * 0.05, scale * 0.8, 8),
+                    new THREE.MeshStandardMaterial({
+                        color: 0xff0000,
+                        emissive: 0xff0000,
+                        emissiveIntensity: 0.5
+                    })
                 );
-                // 접시와 같은 각도로 회전 후 위치 조정
-                receiver.position.y = scale * 1.0 + Math.sin(Math.PI / 4) * scale * 0.3;
-                receiver.position.z = Math.cos(Math.PI / 4) * scale * 0.3;
+                receiver.position.y = scale * 1.2 + Math.sin(Math.PI / 4) * scale * 0.4;
+                receiver.position.z = Math.cos(Math.PI / 4) * scale * 0.4;
                 receiver.rotation.x = Math.PI / 4;
+                receiver.castShadow = true;
                 sensorGroup.add(receiver);
 
                 return sensorGroup;
@@ -302,14 +355,16 @@ export class Item {
         return mesh;
     }
 
-    update(time) {
+    update(deltaTime) {
+        this.elapsedTime += deltaTime;
+
         // 1. 회전 애니메이션
-        this.mesh.rotation.y += 0.02;
-        this.mesh.rotation.z += 0.01;
+        this.mesh.rotation.y += 1.2 * deltaTime;
+        this.mesh.rotation.z += 0.6 * deltaTime;
 
         // 2. 부유 애니메이션 (Bobbing)
-        const t = time + this.animationOffset;
-        this.group.position.y = this.baseY + Math.sin(t * 2) * 0.05;
+        const t = this.elapsedTime + this.animationOffset;
+        this.group.position.y = this.baseY + Math.sin(t * 2) * 0.08;
     }
 
     dispose() {
