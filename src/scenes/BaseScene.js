@@ -28,8 +28,37 @@ export class BaseScene {
      * 리소스 해제 로직
      */
     dispose() {
-        // 지오메트리, 마테리얼 등 해제
+        // 씬의 모든 객체를 순회하며 리소스 해제
+        this.scene.traverse((object) => {
+            if (object.geometry) {
+                object.geometry.dispose();
+            }
+            if (object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(material => {
+                        this._disposeMaterial(material);
+                    });
+                } else {
+                    this._disposeMaterial(object.material);
+                }
+            }
+        });
+
+        // 씬 완전히 비우기
         this.scene.clear();
+    }
+
+    /**
+     * 머티리얼 리소스 해제
+     */
+    _disposeMaterial(material) {
+        if (material.map) material.map.dispose();
+        if (material.lightMap) material.lightMap.dispose();
+        if (material.bumpMap) material.bumpMap.dispose();
+        if (material.normalMap) material.normalMap.dispose();
+        if (material.specularMap) material.specularMap.dispose();
+        if (material.envMap) material.envMap.dispose();
+        material.dispose();
     }
 
     /**
