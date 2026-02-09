@@ -155,6 +155,8 @@ export const CONFIG = {
             ANGLE: Math.PI / 7,       // 빛의 조사 각도 (라디안)
             PENUMBRA: 1,              // 빛 가장자리의 부드러움 정도 (0~1)
             FLICKER_THRESHOLD: 3.0,    // 깜빡임 시작 기준 배터리 잔량 시간 (초)
+            COLOR: 0xffffff,           // 빛 색상 (흰색)
+            FOG_TRANSITION_SPEED: 2.0,  // 손전등 온오프 시 안개 거리 전환 속도
             POSITION_OFFSET: { x: 0, y: 0.5, z: 0 }, // 플레이어 위치 기준 손전등 배치 오프셋
             TARGET_OFFSET: { x: 0, y: 0.5, z: -1 },   // 손전등이 조준하는 방향 오프셋
             MOVEMENT: {

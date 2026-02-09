@@ -317,9 +317,10 @@ export class PlayScene extends BaseScene {
         // 1.9 안개 거리 동적 조정 (손전등 상태에 따라)
         if (this.scene.fog) {
             const fogCfg = CONFIG.ENVIRONMENT.FOG;
+            const flCfg = CONFIG.ITEMS.FLASHLIGHT;
             const targetFar = this.player.isFlashlightOn ? fogCfg.FAR_FLASHLIGHT : fogCfg.FAR;
             // 부드럽게 전환 (Lerp)
-            this.scene.fog.far += (targetFar - this.scene.fog.far) * deltaTime * 2;
+            this.scene.fog.far += (targetFar - this.scene.fog.far) * deltaTime * flCfg.FOG_TRANSITION_SPEED;
         }
 
         // UI 상태 업데이트
