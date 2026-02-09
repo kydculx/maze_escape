@@ -733,19 +733,7 @@ input[type="range"]::-webkit-slider-thumb {
     display: none;
 }
 
-/* Item Action Buttons (Left Side Vertical) */
-#item-actions {
-    position: absolute;
-    bottom: 5px;
-    left: 0px;
-    /* 더 왼쪽으로 이동 */
-    display: flex;
-    flex-direction: column-reverse;
-    /* 최신 획득/자주 쓰는걸 아래로 배치하거나 취향껏 */
-    gap: 10px;
-    pointer-events: auto;
-    z-index: 100;
-}
+
 
 .action-btn {
     width: auto;
