@@ -46,7 +46,8 @@ export const CONFIG = {
         FOG: {
             COLOR: 0x000000,          // 안개 색상 (검정색은 어둠을 표현)
             NEAR: 0,                  // 안개가 시작되는 거리
-            FAR: 4                    // 안개로 인해 아무것도 보이지 않게 되는 거리
+            FAR: 3,                   // 기본 안개 거리 (손전등 OFF)
+            FAR_FLASHLIGHT: 5         // 손전등 ON 시 안개 거리 (10으로 설정하여 더 멀리 보이게)
         },
         LIGHTING: {
             // 메뉴/스플래시 화면용 조명
@@ -125,8 +126,8 @@ export const CONFIG = {
         },
         // 함정 관련 세부 설정
         TRAP: {
-            FREEZE_DURATION: 5.0,     // 좀비 정지 시간 (초)
-            TRIGGER_RADIUS: 0.5       // 함정 발동 반경 (타일 단위 아님, 월드 좌표 기준)
+            FREEZE_DURATION: 3.0,     // 좀비 정지 시간 (초)
+            TRIGGER_RADIUS: 0.1       // 함정 발동 반경 (타일 단위 아님, 월드 좌표 기준)
         },
         // 텔레포트 관련 세부 설정
         TELEPORT: {
@@ -150,7 +151,7 @@ export const CONFIG = {
             RECHARGE_DURATION: 30.0,  // 완충에 소요되는 시간 (초, 대기 및 OFF 시)
             RECHARGE_DELAY: 3.0,     // 충전이 시작되기 위한 최소 대기 시간 (초)
             INTENSITY: 50,            // 빛의 밝기 (강도)
-            DISTANCE: 4,              // 빛이 도달하는 최대 거리
+            DISTANCE: 5,              // 빛이 도달하는 최대 거리
             ANGLE: Math.PI / 7,       // 빛의 조사 각도 (라디안)
             PENUMBRA: 1,              // 빛 가장자리의 부드러움 정도 (0~1)
             FLICKER_THRESHOLD: 3.0,    // 깜빡임 시작 기준 배터리 잔량 시간 (초)
@@ -167,8 +168,8 @@ export const CONFIG = {
     // [8] 스테이지 성장 설정 (Stage Settings)
     STAGE: {
         INITIAL_LEVEL: 1,             // 시작 레벨
-        INITIAL_SIZE: 11,             // 시작 미로 크기 (11x11)
-        SIZE_INCREMENT: 2,            // 레벨업 시 증가할 미로 크기
+        INITIAL_SIZE: 5,             // 시작 미로 크기 (11x11)
+        SIZE_INCREMENT: 1,            // 레벨업 시 증가할 미로 크기
         MAX_SIZE: 31                  // 최대 미로 크기 제한
     },
 
@@ -187,7 +188,7 @@ export const CONFIG = {
         ZOMBIE: {
             SPEED: 1.5,                // 이동 속도 (미사용 예정 - MOVE_DURATION으로 대체 가능)
             MOVE_DURATION: 2,        // 한 칸 이동 대략 시간 (초)
-            DETECTION_RANGE: 3,        // 플레이어 감지 범위 및 사운드 청취 범위 (타일)
+            DETECTION_RANGE: 2,        // 플레이어 감지 범위 및 사운드 청취 범위 (타일)
             IDLE_SWAY_SPEED: 1,        // 대기 시 흔들림 속도
             IDLE_SWAY_AMPLITUDE: 0.1,  // 대기 시 흔들림 크기
             WALK_BOB_SPEED: 2,        // 이동 시 움찔거리는 속도

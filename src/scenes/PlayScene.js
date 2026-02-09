@@ -149,12 +149,9 @@ export class PlayScene extends BaseScene {
     }
 
     resetMaze() {
-        const getRandomOdd = (min, max) => {
-            let n = Math.floor(Math.random() * (max - min + 1)) + min;
-            return n % 2 === 0 ? n + 1 : n;
-        };
-        const newWidth = getRandomOdd(11, 25);
-        const newHeight = getRandomOdd(11, 25);
+        // StageManager의 미로 크기 사용 (Config.js 반영)
+        const newWidth = this.stageManager.mazeSize;
+        const newHeight = this.stageManager.mazeSize;
 
         this.mazeGen = new MazeGenerator(newWidth, newHeight);
 
@@ -315,6 +312,14 @@ export class PlayScene extends BaseScene {
         // 1.8 함정 업데이트
         if (this.trapManager && this.monsterManager) {
             this.trapManager.update(deltaTime, this.monsterManager.monsters);
+        }
+
+        // 1.9 안개 거리 동적 조정 (손전등 상태에 따라)
+        if (this.scene.fog) {
+            const fogCfg = CONFIG.ENVIRONMENT.FOG;
+            const targetFar = this.player.isFlashlightOn ? fogCfg.FAR_FLASHLIGHT : fogCfg.FAR;
+            // 부드럽게 전환 (Lerp)
+            this.scene.fog.far += (targetFar - this.scene.fog.far) * deltaTime * 2;
         }
 
         // UI 상태 업데이트

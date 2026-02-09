@@ -344,18 +344,7 @@ body {
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
-/* 레이더 중심 플레이어 표시 */
-.radar-player {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 10px;
-    height: 10px;
-    background-color: #00ffff;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 10px #00ffff;
-}
+/* 레이더 중심 플레이어 표시 제거됨 */
 
 /* 좀비 위치 표시 (블립) - 방향 표시용 삼각형 */
 .radar-blip {

@@ -32,6 +32,28 @@ export class StageManager {
     }
 
     /**
+     * 이전 스테이지로 복귀
+     */
+    prevStage() {
+        if (this.level <= 1) return;
+
+        this.level--;
+        // 미로 크기 감소 (최소치 5 보장)
+        this.mazeSize = Math.max(
+            this.mazeSize - CONFIG.STAGE.SIZE_INCREMENT,
+            CONFIG.STAGE.INITIAL_SIZE
+        );
+
+        this.resetStats();
+
+        console.log(`Returning to Stage ${this.level} (Size: ${this.mazeSize})`);
+        return {
+            level: this.level,
+            mazeSize: this.mazeSize
+        };
+    }
+
+    /**
      * 스테이지 통계 초기화
      */
     resetStats() {
