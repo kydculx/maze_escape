@@ -376,6 +376,9 @@ export class Player {
         this.inventory.teleportCount--;
         console.log(`Teleported to [${target.x}, ${target.y}]`);
 
+        // 텔레포트 사운드 재생
+        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.TELEPORT_SFX_URL);
+
         return true;
     }
 
