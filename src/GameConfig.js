@@ -57,7 +57,8 @@ export const GAME_CONFIG = {
             HAMMER: 16,      // 레벨 16부터 망치 등장
             TRAP: 21,        // 레벨 21부터 함정 등장
             TELEPORT: 26,    // 레벨 26부터 텔레포트 등장
-            MAP: 1           // 레벨 1부터 (지도는 항상 가능)
+            MAP: 1,          // 레벨 1부터 (지도는 항상 가능)
+            ZOMBIE_DISGUISE: 6 // 레벨 6부터 좀비 위장 등장
         },
 
         TYPES: {
@@ -67,7 +68,8 @@ export const GAME_CONFIG = {
             HAMMER: { TYPE: 'HAMMER', COLOR: 0x888888, SCALE: 0.2, CONSUMABLE: true },
             TRAP: { TYPE: 'TRAP', COLOR: 0xff0000, SCALE: 0.2, CONSUMABLE: true },
             TELEPORT: { TYPE: 'TELEPORT', COLOR: 0x8800ff, SCALE: 0.2, CONSUMABLE: true },
-            SENSOR: { TYPE: 'SENSOR', COLOR: 0x00ffff, SCALE: 0.2, CONSUMABLE: false }
+            SENSOR: { TYPE: 'SENSOR', COLOR: 0x00ffff, SCALE: 0.2, CONSUMABLE: false },
+            ZOMBIE_DISGUISE: { TYPE: 'ZOMBIE_DISGUISE', COLOR: 0x44aa44, SCALE: 0.2, CONSUMABLE: true }
         },
         // 지도 관련 세부 설정
         MAP: {
@@ -106,6 +108,12 @@ export const GAME_CONFIG = {
             RECHARGE_DURATION: 5.0,
             FLICKER_THRESHOLD: 3.0,
             COLOR: 0x00ffff
+        },
+        // 좀비 위장 관련 설정
+        ZOMBIE_DISGUISE: {
+            DURATION: 10.0,
+            SPEED_FACTOR: 0.5,
+            COLOR: 0x44aa44
         },
         // 손전등 관련 세부 설정
         FLASHLIGHT: {

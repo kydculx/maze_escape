@@ -43,7 +43,8 @@ export class Player {
             hammerCount: 0,
             jumpCount: 0,
             trapCount: 0,
-            teleportCount: 0
+            teleportCount: 0,
+            disguiseCount: 0
         };
 
         // Snapshot for retry
@@ -58,6 +59,8 @@ export class Player {
         this.isSensorOn = false;
 
         this.idleTimer = 0; // 대기 시간 측정용 타이머
+        this.disguiseTimer = 0; // 좀비 위장 지속시간 타이머
+
         this.flashlight = this._initFlashlight();
     }
 
@@ -68,7 +71,8 @@ export class Player {
         this.checkpointState = {
             inventory: { ...this.inventory },
             flashlightTimer: this.flashlightTimer,
-            sensorTimer: this.sensorTimer
+            sensorTimer: this.sensorTimer,
+            disguiseTimer: this.disguiseTimer
         };
         console.log("Player checkpoint saved:", this.checkpointState);
     }
@@ -82,6 +86,7 @@ export class Player {
         this.inventory = { ...this.checkpointState.inventory };
         this.flashlightTimer = this.checkpointState.flashlightTimer;
         this.sensorTimer = this.checkpointState.sensorTimer;
+        this.disguiseTimer = this.checkpointState.disguiseTimer;
 
         // Reset active states
         this.isFlashlightOn = false;
@@ -278,6 +283,15 @@ export class Player {
                 this.sensorTimer = Math.min(this.sensorTimer + rechargeRate * deltaTime, sensorCfg.DURATION);
             }
         }
+
+        // 5.5 좀비 위장 타이머 관리
+        if (this.disguiseTimer > 0) {
+            this.disguiseTimer -= deltaTime;
+            if (this.disguiseTimer <= 0) {
+                this.disguiseTimer = 0;
+                console.log("Zombie disguise expired");
+            }
+        }
     }
 
     startMove(stepDir) {
@@ -294,7 +308,8 @@ export class Player {
             this.targetPos.copy(nextPos);
 
             // 이동 소요 시간
-            this.moveDuration = CONFIG.PLAYER.MOVE_DURATION;
+            const baseDuration = CONFIG.PLAYER.MOVE_DURATION;
+            this.moveDuration = this.isDisguised ? baseDuration / CONFIG.ITEMS.ZOMBIE_DISGUISE.SPEED_FACTOR : baseDuration;
             return true;
         }
         return false;
@@ -465,6 +480,10 @@ export class Player {
                 }
                 console.log("Sound sensor acquired/recharged!");
                 break;
+            case 'ZOMBIE_DISGUISE':
+                this.inventory.disguiseCount++;
+                console.log("Zombie disguise acquired!");
+                break;
         }
     }
 
@@ -493,6 +512,24 @@ export class Player {
             this.sound.playSFX(CONFIG.AUDIO.SENSOR_TOGGLE_SFX_URL);
         }
         return true;
+    }
+
+    /**
+     * 좀비 위장 아이템 사용
+     */
+    useDisguise() {
+        if (this.inventory.disguiseCount <= 0 || this.disguiseTimer > 0) return false;
+
+        this.inventory.disguiseCount--;
+        this.disguiseTimer = CONFIG.ITEMS.ZOMBIE_DISGUISE.DURATION;
+        console.log("Zombie disguise activated! Speed halved.");
+
+        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
+        return true;
+    }
+
+    get isDisguised() {
+        return this.disguiseTimer > 0;
     }
 
     checkCollision(x, z) {

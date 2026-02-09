@@ -19,6 +19,7 @@ export class UIManager {
             map: document.getElementById('random-map-btn'),
             trap: document.getElementById('use-trap-btn'),
             teleport: document.getElementById('use-teleport-btn'),
+            disguise: document.getElementById('use-disguise-btn'),
             sensor: document.getElementById('use-sensor-btn'), // Added sensor element
             fullscreen: document.getElementById('fullscreen-btn'),
             prevStage: document.getElementById('prev-stage-btn'),
@@ -28,7 +29,8 @@ export class UIManager {
             menuPopup: document.getElementById('ingame-menu-popup'),
             resumeBtn: document.getElementById('close-menu-btn'),
             restartBtn: document.getElementById('restart-btn'),
-            mainMenuBtn: document.getElementById('main-menu-btn')
+            mainMenuBtn: document.getElementById('main-menu-btn'),
+            disguiseOverlay: document.getElementById('disguise-overlay')
         };
 
 
@@ -120,6 +122,11 @@ export class UIManager {
         if (this.elements.minimap) {
             this.elements.minimap.style.display = this.player.inventory.hasMap ? 'block' : 'none';
         }
+
+        // 6. 좀비 위장 오버레이
+        if (this.elements.disguiseOverlay) {
+            this.elements.disguiseOverlay.classList.toggle('active', this.player.isDisguised);
+        }
     }
 
     /**
@@ -187,6 +194,18 @@ export class UIManager {
             if (countEl) countEl.textContent = count.toString().padStart(2, '0');
             this.elements.teleport.classList.toggle('locked', count <= 0);
         }
+
+        // 좀비 위장
+        if (this.elements.disguise) {
+            const count = this.player.inventory.disguiseCount;
+            const countEl = this.elements.disguise.querySelector('.count');
+            if (countEl) countEl.textContent = count.toString().padStart(2, '0');
+
+            // 사용 중일 때 활성화 상태 표시 (깜빡임 효과 등)
+            const isUsing = this.player.isDisguised;
+            this.elements.disguise.classList.toggle('active', isUsing);
+            this.elements.disguise.classList.toggle('locked', count <= 0 && !isUsing);
+        }
     }
 
     /**
@@ -206,6 +225,7 @@ export class UIManager {
         this._setupButton(this.elements.map, callbacks.onMap);
         this._setupButton(this.elements.trap, callbacks.onTrap);
         this._setupButton(this.elements.teleport, callbacks.onTeleport);
+        this._setupButton(this.elements.disguise, callbacks.onDisguise);
         this._setupButton(this.elements.sensor, callbacks.onSensor); // Added sensor binding
 
         const cheatBtn = document.getElementById('cheat-btn');

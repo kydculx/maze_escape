@@ -142,6 +142,10 @@ export class PlayScene extends BaseScene {
                 this.player.toggleSensor();
                 this.ui.updateAll();
             },
+            onDisguise: () => {
+                const success = this.player.useDisguise();
+                if (success) this.ui.updateAll();
+            },
             onPrevStage: () => {
                 this.stageManager.prevStage();
                 this.resetMaze();
@@ -164,7 +168,10 @@ export class PlayScene extends BaseScene {
                 this.stageManager.resetStats();
 
                 this.resetMaze();
-                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+                if (this.game.sound) {
+                    this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+                    this.game.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+                }
             },
             onMainMenu: () => {
                 console.log("Going to Main Menu...");
@@ -176,11 +183,17 @@ export class PlayScene extends BaseScene {
                 // Switch scene and state
                 this.game.sceneManager.setScene(STATES.MAIN_MENU);
                 this.game.state.set(STATES.MAIN_MENU);
+                if (this.game.sound) {
+                    this.game.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+                }
 
                 // Hide Game UI
                 document.getElementById('ui-overlay').style.display = 'none';
                 document.getElementById('item-actions').style.display = 'none';
                 document.getElementById('cheat-hud').style.display = 'none';
+                document.getElementById('minimap-container').style.display = 'none';
+                document.getElementById('radar-container').style.display = 'none';
+                document.getElementById('disguise-overlay').style.display = 'none';
 
                 // Show Main Menu
                 const mainMenu = document.getElementById('main-menu-screen');
@@ -538,6 +551,13 @@ export class PlayScene extends BaseScene {
         // F키: 손전등 토글
         if (input.wasJustPressed('KeyF')) {
             if (this.player.toggleFlashlight()) {
+                this.ui.updateAll();
+            }
+        }
+
+        // G키: 좀비 위장 사용
+        if (input.wasJustPressed('KeyG')) {
+            if (this.player.useDisguise()) {
                 this.ui.updateAll();
             }
         }

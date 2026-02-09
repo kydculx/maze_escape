@@ -12,6 +12,7 @@
 <body>
     <!-- 3D 게임이 렌더링될 캔버스 컨테이너 -->
     <canvas id="game-canvas"></canvas>
+    <div id="disguise-overlay"></div>
 
     <!-- 미니맵 HUD -->
     <div id="minimap-container">
@@ -111,6 +112,10 @@
             <span class="icon">🔮</span>
             <span class="count">0</span>
         </div>
+        <div id="use-disguise-btn" class="action-btn locked" title="좀비 위장 (10초)">
+            <span class="icon">🧟</span>
+            <span class="count">0</span>
+        </div>
     </div>
 
     <!-- 스플래시 화면 오버레이 -->
@@ -161,6 +166,7 @@
                                 <li><span class="key">E</span> : 망치 🔨</li>
                                 <li><span class="key">Q</span> : 순간이동 🔮</li>
                                 <li><span class="key">R</span> : 함정 🕸️</li>
+                                <li><span class="key">G</span> : 좀비 위장 🧟</li>
                             </ul>
                         </div>
                         <div class="control-column">
@@ -227,6 +233,13 @@
                             <div class="info">
                                 <strong>지도 (Map)</strong>
                                 <p>미로 전체 구조를 확인합니다.</p>
+                            </div>
+                        </div>
+                        <div class="item-card">
+                            <span class="icon">🧟</span>
+                            <div class="info">
+                                <strong>좀비 위장 (Disguise)</strong>
+                                <p>10초간 좀비가 나를 못 보지만, 속도가 절반이 됩니다.</p>
                             </div>
                         </div>
                     </div>

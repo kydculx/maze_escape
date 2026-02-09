@@ -231,8 +231,11 @@ export class Zombie extends Monster {
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
         const distInCells = dist / thickness;
 
-        // 2. 플레이어 감지 시 최우선 추적
-        if (distInCells <= config.DETECTION_RANGE) {
+        // 2. 플레이어 인식 체크 (위장 상태면 무시)
+        const isPlayerHidden = player.isDisguised;
+
+        // 2.1 플레이어 감지 시 최우선 추적
+        if (!isPlayerHidden && distInCells <= config.DETECTION_RANGE) {
             this.isPatrolling = false; // 배회 종료
             this.patrolTarget = null;
 
@@ -246,7 +249,7 @@ export class Zombie extends Monster {
                 this.lastPathCalcTime = this.animationTime;
             }
         }
-        // 3. 플레이어 감지가 안 될 때의 자율 행동 (IDLE or PATROL)
+        // 3. 플레이어 감지가 안 될 때(혹은 위장 중일 때)의 자율 행동 (IDLE or PATROL)
         else if (!this.isMovingTile) { // 이동 중이 아닐 때만 자율 행동 판단
             if (this.state === states.IDLE) {
                 this.patrolWaitTimer -= deltaTime;
@@ -262,7 +265,7 @@ export class Zombie extends Monster {
                     this.patrolWaitTimer = config.PATROL_WAIT_MIN + Math.random() * (config.PATROL_WAIT_MAX - config.PATROL_WAIT_MIN);
                 }
             } else {
-                // 추적 중이었으나 플레이어가 멀어진 경우
+                // 추적 중이었으나 플레이어가 멀어지거나 위장한 경우
                 this.setState(states.IDLE);
                 this.isPatrolling = false;
                 this.patrolWaitTimer = Math.random() * 2; // 즉시 배회하지 않도록 약간의 대기

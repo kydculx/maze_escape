@@ -372,6 +372,37 @@ body {
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 }
 
+/* 좀비 위장 오버레이 */
+#disguise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 90;
+    /* 캔버스 위, HUD 아래 */
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    background: radial-gradient(circle, transparent 40%, rgba(0, 150, 0, 0.2) 70%, rgba(0, 50, 0, 0.4) 100%);
+    box-shadow: inset 0 0 100px rgba(0, 255, 0, 0.1);
+}
+
+#disguise-overlay.active {
+    opacity: 1;
+    animation: disguise-pulse 3s infinite alternate;
+}
+
+@keyframes disguise-pulse {
+    0% {
+        box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.1);
+    }
+
+    100% {
+        box-shadow: inset 0 0 150px rgba(0, 255, 0, 0.2);
+    }
+}
+
 /* 360도 사운드 레이더 */
 #radar-container {
     position: absolute;

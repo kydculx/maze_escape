@@ -345,6 +345,43 @@ export class Item {
 
                 return sensorGroup;
             }
+            case 'ZOMBIE_DISGUISE': {
+                // 좀비 위장 (좀비 머리 같은 초록색 가면/박스) 🧟
+                const disguiseGroup = new THREE.Group();
+
+                // 1. 머리 (좀비랑 비슷한 초록색 박스)
+                const head = new THREE.Mesh(
+                    new THREE.BoxGeometry(scale * 1.2, scale * 1.2, scale * 1.2),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x558855,
+                        emissive: 0x224422
+                    })
+                );
+                head.castShadow = true;
+                disguiseGroup.add(head);
+
+                // 2. 눈 (흐리멍텅한 흰색)
+                const eyeGeo = new THREE.PlaneGeometry(scale * 0.3, scale * 0.15);
+                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee, side: THREE.DoubleSide });
+
+                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+                leftEye.position.set(-scale * 0.25, scale * 0.2, scale * 0.61);
+                disguiseGroup.add(leftEye);
+
+                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+                rightEye.position.set(scale * 0.25, scale * 0.2, scale * 0.61);
+                disguiseGroup.add(rightEye);
+
+                // 3. 입 (검은색)
+                const mouth = new THREE.Mesh(
+                    new THREE.PlaneGeometry(scale * 0.6, scale * 0.1),
+                    new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.DoubleSide })
+                );
+                mouth.position.set(0, -scale * 0.3, scale * 0.61);
+                disguiseGroup.add(mouth);
+
+                return disguiseGroup;
+            }
             default:
                 geo = new THREE.BoxGeometry(scale, scale, scale);
                 mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
