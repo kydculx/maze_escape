@@ -148,7 +148,6 @@ export class PlayScene extends BaseScene {
             },
             onNextStage: () => {
                 this.stageManager.nextStage();
-                this.stageManager.nextStage();
                 this.resetMaze();
                 if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
             },
@@ -164,7 +163,6 @@ export class PlayScene extends BaseScene {
                 // For now, let's reset stage specific stats in StageManager
                 this.stageManager.resetStats();
 
-                this.resetMaze();
                 this.resetMaze();
                 if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
             },
