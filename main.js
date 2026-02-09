@@ -51,8 +51,8 @@ class Game {
         // 4. UI 및 이벤트 등록
         this.initUI();
 
-        // 초기 UI 숨김 처리 (스플래시 및 메인메뉴)
-        document.getElementById('splash-screen').classList.add('hidden');
+        // 스플래시 화면은 HTML에서 기본으로 표시됨
+        // 메인 메뉴는 숨김 상태로 시작
         document.getElementById('main-menu-screen').classList.add('hidden');
 
         window.addEventListener('resize', () => this.onResize());
