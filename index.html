@@ -52,10 +52,24 @@
 
 
 
-    <!-- 우측 상단 치트 버튼 -->
+    <!-- 우측 상단 메뉴 버튼 -->
     <div id="cheat-hud">
+        <button id="menu-btn" title="메뉴">☰</button>
+        <!-- 기존 치트 버튼 잠시 주석 처리 또는 유지 (사용자가 요청하지 않았으므로 유지하되 메뉴 버튼 추가) -->
         <button id="fullscreen-btn" title="전체화면">⛶</button>
         <button id="cheat-btn" title="치트 실행">😈</button>
+    </div>
+
+    <!-- 인게임 메뉴 팝업 -->
+    <div id="ingame-menu-popup" class="ui-popup hidden">
+        <div class="ui-popup-content">
+            <h2>PAUSE</h2>
+            <div class="menu-options">
+                <button id="restart-btn" class="ui-btn">RESTART</button>
+                <button id="main-menu-btn" class="ui-btn">MAIN MENU</button>
+                <button id="close-menu-btn" class="ui-btn">RESUME</button>
+            </div>
+        </div>
     </div>
 
     <div id="game-hud">
@@ -108,17 +122,115 @@
     </div>
 
     <!-- 메인 메뉴 화면 오버레이 -->
-    <div id="main-menu-screen" class="hidden">
-        <div class="content">
+    <div id="main-menu-screen" class="ui-popup hidden">
+        <div class="ui-popup-content">
             <h2>MAIN MENU</h2>
             <div class="menu-options">
                 <!-- 게임 UI (HUD) -->
 
-                <button id="new-game-button">NEW GAME</button>
-                <button id="continue-button" class="disabled">CONTINUE</button>
-                <button id="rankings-button">RANKINGS</button>
-                <button id="settings-button">SETTINGS</button>
-                <button id="help-button">HELP</button>
+                <button id="new-game-button" class="ui-btn">NEW GAME</button>
+                <button id="continue-button" class="ui-btn disabled">CONTINUE</button>
+                <button id="rankings-button" class="ui-btn">RANKINGS</button>
+                <button id="settings-button" class="ui-btn">SETTINGS</button>
+                <button id="help-button" class="ui-btn">HELP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 도움말 팝업 (Help Popup) -->
+    <div id="help-popup" class="ui-popup hidden">
+        <div class="popup-content"> <!-- Keeps specific class for internal layout override -->
+            <div class="popup-header">
+                <h2>게임 가이드</h2>
+                <button id="close-help-btn" class="close-btn">&times;</button>
+            </div>
+
+            <div class="popup-body">
+                <!-- 조작 방법 섹션 -->
+                <section class="help-section">
+                    <h3>🎮 조작 방법</h3>
+                    <div class="control-group">
+                        <div class="control-column">
+                            <h4>PC (키보드)</h4>
+                            <ul>
+                                <li><span class="key">↑</span><span class="key">↓</span> : 전진 / 후진</li>
+                                <li><span class="key">←</span><span class="key">→</span> : 시점 회전</li>
+                                <li><span class="key">Space</span> : 점프 🚀</li>
+                                <li><span class="key">F</span> : 손전등 🔦</li>
+                                <li><span class="key">T</span> : 센서 📡</li>
+                                <li><span class="key">E</span> : 망치 🔨</li>
+                                <li><span class="key">Q</span> : 순간이동 🔮</li>
+                                <li><span class="key">R</span> : 함정 🕸️</li>
+                            </ul>
+                        </div>
+                        <div class="control-column">
+                            <h4>모바일 (터치)</h4>
+                            <ul>
+                                <li><span class="gesture">스와이프 ↕</span> : 전진 / 후진</li>
+                                <li><span class="gesture">스와이프 ↔</span> : 시점 회전</li>
+                                <li><span class="gesture">UI 터치</span> : 아이템 사용</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="divider">
+
+                <!-- 아이템 가이드 섹션 -->
+                <section class="help-section">
+                    <h3>🎒 아이템 가이드</h3>
+                    <div class="item-grid">
+                        <div class="item-card">
+                            <span class="icon">🔦</span>
+                            <div class="info">
+                                <strong>손전등 (Flashlight)</strong>
+                                <p>어두운 곳을 밝힙니다. 끄면 자동 충전됩니다.</p>
+                            </div>
+                        </div>
+                        <div class="item-card">
+                            <span class="icon">📡</span>
+                            <div class="info">
+                                <strong>센서 (Sensor)</strong>
+                                <p>주변 좀비를 감지합니다. 끄면 자동 충전됩니다.</p>
+                            </div>
+                        </div>
+                        <div class="item-card">
+                            <span class="icon">🚀</span>
+                            <div class="info">
+                                <strong>점프 (Jump)</strong>
+                                <p>제자리에서 높이 뛰어올라 미로를 내려다봅니다.</p>
+                            </div>
+                        </div>
+                        <div class="item-card">
+                            <span class="icon">🔨</span>
+                            <div class="info">
+                                <strong>망치 (Hammer)</strong>
+                                <p>얇은 벽을 부숴 지름길을 만듭니다.</p>
+                            </div>
+                        </div>
+                        <div class="item-card">
+                            <span class="icon">🔮</span>
+                            <div class="info">
+                                <strong>순간이동 (Teleport)</strong>
+                                <p>무작위 안전한 장소로 순간이동합니다.</p>
+                            </div>
+                        </div>
+                        <div class="item-card">
+                            <span class="icon">🕸️</span>
+                            <div class="info">
+                                <strong>함정 (Trap)</strong>
+                                <p>바닥에 설치하여 밟은 좀비를 얼립니다.</p>
+                            </div>
+                        </div>
+                        <div class="item-card">
+                            <span class="icon">🗺️</span>
+                            <div class="info">
+                                <strong>지도 (Map)</strong>
+                                <p>미로 전체 구조를 확인합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

@@ -22,12 +22,16 @@ export class UIManager {
             sensor: document.getElementById('use-sensor-btn'), // Added sensor element
             fullscreen: document.getElementById('fullscreen-btn'),
             prevStage: document.getElementById('prev-stage-btn'),
-            nextStage: document.getElementById('next-stage-btn')
+            nextStage: document.getElementById('next-stage-btn'),
+            // Menu elements
+            menuBtn: document.getElementById('menu-btn'),
+            menuPopup: document.getElementById('ingame-menu-popup'),
+            resumeBtn: document.getElementById('close-menu-btn'),
+            restartBtn: document.getElementById('restart-btn'),
+            mainMenuBtn: document.getElementById('main-menu-btn')
         };
 
-        if (this.elements.fullscreen) {
-            this.elements.fullscreen.addEventListener('click', () => this.toggleFullscreen());
-        }
+
     }
 
     /**
@@ -119,6 +123,29 @@ export class UIManager {
     }
 
     /**
+     * 메뉴 토글
+     */
+    toggleMenu() {
+        if (this.elements.menuPopup) {
+            const isHidden = this.elements.menuPopup.classList.contains('hidden');
+            if (isHidden) this.showMenu();
+            else this.hideMenu();
+        }
+    }
+
+    showMenu() {
+        if (this.elements.menuPopup) {
+            this.elements.menuPopup.classList.remove('hidden');
+        }
+    }
+
+    hideMenu() {
+        if (this.elements.menuPopup) {
+            this.elements.menuPopup.classList.add('hidden');
+        }
+    }
+
+    /**
      * 아이템 버튼 활성/비활성 상태 갱신
      */
     updateItemButtons() {
@@ -165,7 +192,14 @@ export class UIManager {
     /**
      * 버튼 이벤트 리스너 바인딩 (터치 대응)
      */
+    /**
+     * 버튼 이벤트 리스너 바인딩 (터치 대응)
+     */
     bindButtons(callbacks) {
+        console.log("UIManager: Binding buttons...");
+        // Clear previous bindings if any
+        this.unbindButtons();
+
         this._setupButton(this.elements.hammer, callbacks.onHammer);
         this._setupButton(this.elements.jump, callbacks.onJump);
         this._setupButton(this.elements.flashlight, callbacks.onFlashlight);
@@ -178,43 +212,80 @@ export class UIManager {
         this._setupButton(cheatBtn, callbacks.onCheat);
 
         this._setupButton(this.elements.prevStage, callbacks.onPrevStage);
-        this._setupButton(this.elements.nextStage, callbacks.onNextStage);
+        this._setupButton(this.elements.nextStage, callbacks.onNextStage); // Fixed duplicate prevStage binding
+
+        // Menu buttons
+        // Use cached elements from constructor
+        this._setupButton(this.elements.restartBtn, () => {
+            this.hideMenu();
+            if (callbacks.onRestart) callbacks.onRestart();
+        });
+        this._setupButton(this.elements.mainMenuBtn, () => {
+            this.hideMenu();
+            if (callbacks.onMainMenu) callbacks.onMainMenu();
+        });
+
+        // Re-bind internal menu events (since unbindButtons clears everything)
+        this._setupButton(this.elements.menuBtn, () => this.toggleMenu());
+        this._setupButton(this.elements.resumeBtn, () => this.hideMenu());
+        this._setupButton(this.elements.fullscreen, () => this.toggleFullscreen());
+    }
+
+    unbindButtons() {
+        if (this._cleanupFns && this._cleanupFns.length > 0) {
+            console.log(`UIManager: Unbinding ${this._cleanupFns.length} listeners...`);
+            this._cleanupFns.forEach(fn => fn());
+            this._cleanupFns = [];
+        }
     }
 
     /**
      * 마우스와 터치를 모두 지원하는 버튼 바인딩 헬퍼
      */
+    /**
+     * 마우스와 터치를 모두 지원하는 버튼 바인딩 헬퍼
+     */
     _setupButton(element, callback) {
         if (!element) return;
+        if (!this._cleanupFns) this._cleanupFns = [];
 
         const handleAction = (e) => {
             if (callback) callback();
         };
 
-        // 1. 마우스 클릭 (데스크탑)
-        element.addEventListener('click', (e) => {
-            // 터치 이벤트가 이미 처리된 경우(일부 모바일 브라우저 중복 발생) 방지
+        const onClick = (e) => {
             if (e.pointerType === 'touch') return;
             handleAction(e);
-        });
+        };
 
-        // 2. 터치 시작 (피드백용)
-        element.addEventListener('touchstart', (e) => {
+        const onTouchStart = (e) => {
             if (element.classList.contains('locked')) return;
             element.classList.add('pressed');
-        }, { passive: true });
+        };
 
-        // 3. 터치 종료 (실제 실행)
-        element.addEventListener('touchend', (e) => {
+        const onTouchEnd = (e) => {
             if (element.classList.contains('locked')) return;
             element.classList.remove('pressed');
-            e.preventDefault(); // 클릭 이벤트 중복 방지
+            e.preventDefault();
             handleAction(e);
-        }, { passive: false });
+        };
 
-        // 4. 터치 취소 (버튼 밖으로 나갔을 때 등)
-        element.addEventListener('touchcancel', () => {
+        const onTouchCancel = () => {
             element.classList.remove('pressed');
+        };
+
+        // Add listeners
+        element.addEventListener('click', onClick);
+        element.addEventListener('touchstart', onTouchStart, { passive: true });
+        element.addEventListener('touchend', onTouchEnd, { passive: false });
+        element.addEventListener('touchcancel', onTouchCancel);
+
+        // Store cleanup
+        this._cleanupFns.push(() => {
+            element.removeEventListener('click', onClick);
+            element.removeEventListener('touchstart', onTouchStart);
+            element.removeEventListener('touchend', onTouchEnd);
+            element.removeEventListener('touchcancel', onTouchCancel);
         });
     }
 

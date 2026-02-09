@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { STATES } from '../GameState.js';
 import { BaseScene } from './BaseScene.js';
 import { CONFIG } from '../Config.js';
 import { MazeGenerator } from '../MazeGenerator.js';
@@ -82,6 +83,9 @@ export class PlayScene extends BaseScene {
         const zombieCount = Math.min(10, Math.max(0, Math.floor((this.stageManager.level - 1) / 5)));
         this.monsterManager.spawnZombies(zombieCount, this.stageManager.level);
 
+        // Save initial checkpoint
+        if (this.player) this.player.saveCheckpoint();
+
         // 6. UI 매니저 초기화 및 바인딩
         this.ui = new UIManager(this.player, this.mazeGen, this.stageManager);
         this.ui.bindButtons({
@@ -126,6 +130,39 @@ export class PlayScene extends BaseScene {
                 this.stageManager.nextStage();
                 this.resetMaze();
                 if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+            },
+            onRestart: () => {
+                console.log("Restarting current stage...");
+                // Restore player state to start of stage
+                if (this.player) this.player.restoreCheckpoint();
+                // Reset stage stats (time, moves) - managed by StageManager or here?
+                // StageManager.resetStats() clears everything, but we might want to keep total game time?
+                // For now, let's reset stage specific stats in StageManager
+                this.stageManager.resetStats();
+
+                this.resetMaze();
+                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+            },
+            onMainMenu: () => {
+                console.log("Going to Main Menu...");
+                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+
+                // Switch scene and state
+                this.game.sceneManager.setScene(STATES.MAIN_MENU);
+                this.game.state.set(STATES.MAIN_MENU);
+
+                // Hide Game UI
+                document.getElementById('ui-overlay').style.display = 'none';
+                document.getElementById('item-actions').style.display = 'none';
+                document.getElementById('cheat-hud').style.display = 'none';
+
+                // Show Main Menu
+                const mainMenu = document.getElementById('main-menu-screen');
+                if (mainMenu) {
+                    mainMenu.classList.remove('hidden');
+                    // Ensure it's visible if hidden via CSS directly
+                    mainMenu.style.display = 'flex';
+                }
             }
         });
 
@@ -185,6 +222,12 @@ export class PlayScene extends BaseScene {
         const initialAngle = this._calculateInitialAngle();
         this.player.mazeGen = this.mazeGen;
         this.player.reset(startPos, initialAngle);
+
+        // Checkpoint logic:
+        // We need to save checkpoint ONLY if we are setting up a fresh stage (New Game or Next Stage),
+        // NOT when restarting (which uses existing checkpoint).
+        // Since _rebuildMaze is used for both, we need to handle saving externally or pass a flag.
+        // EASIER: Save checkpoint in _initScene and _gotoNextStage.
 
         // 매니저 동기화
         this.ui.mazeGen = this.mazeGen;
@@ -406,11 +449,38 @@ export class PlayScene extends BaseScene {
             }
         }
 
-        // 3. 점프 (Space 삭제 - 이제 아이템 버튼으로만 가능)
+        // 3. 점프 (Space)
+        if (input.wasJustPressed('Space')) {
+            // 버튼 클릭 효과와 동일하게 동작
+            if (this.player.inventory.jumpCount > 0) {
+                this.player.startJump(true);
+                this.ui.updateAll();
+            } else {
+                // 아이템 없으면 일반 점프라도? (현재 게임 디자인상 아이템 점프만 있는 듯)
+                // this.player.startJump(false); 
+                console.log("No jump items left");
+            }
+        }
 
-        // 4. 망치 사용 (E 키 또는 HUD 버튼)
+        // 4. 망치 사용 (E 키)
         if (input.wasJustPressed('KeyE')) {
             this._useHammer();
+        }
+
+        // 5. 텔레포트 (Q 키)
+        if (input.wasJustPressed('KeyQ')) {
+            if (this.player.inventory.teleportCount > 0) {
+                this._useTeleport();
+                this.ui.updateAll();
+            }
+        }
+
+        // 6. 함정 설치 (R 키)
+        if (input.wasJustPressed('KeyR')) {
+            if (this.player.inventory.trapCount > 0) {
+                this._useTrap();
+                this.ui.updateAll();
+            }
         }
 
         // F키: 손전등 토글
@@ -528,6 +598,23 @@ export class PlayScene extends BaseScene {
         });
     }
 
+    _useTeleport() {
+        const success = this.player.useTeleport();
+        if (success) {
+            this.ui.updateAll();
+            if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
+        }
+    }
+
+    _useTrap() {
+        const pos = this.player.placeTrap();
+        if (pos) {
+            this.trapManager.placeTrap(pos);
+            this.ui.updateAll();
+            if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+        }
+    }
+
     /**
      * 스테이지 완료 및 다음 스테이지 준비
      */
@@ -563,6 +650,9 @@ export class PlayScene extends BaseScene {
         // 미로 재생성 (공통 로직 사용)
         this._rebuildMaze();
 
+        // Save checkpoint for this new stage
+        if (this.player) this.player.saveCheckpoint();
+
         setTimeout(() => {
             this._isTransitioning = false;
         }, 1000);
@@ -583,8 +673,17 @@ export class PlayScene extends BaseScene {
     /**
      * 장면 해제 및 리소스 정리
      */
+    /**
+     * 장면 해제 및 리소스 정리
+     */
     dispose() {
+        if (this.ui) {
+            console.log("PlayScene: Disposing UI and unbinding buttons...");
+            this.ui.unbindButtons();
+        }
+
         if (this.monsterManager) {
+            this.monsterManager.clear();
             this.monsterManager.clear();
         }
         if (this.itemManager) {

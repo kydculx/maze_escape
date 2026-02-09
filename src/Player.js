@@ -39,11 +39,15 @@ export class Player {
         this.inventory = {
             hasMap: false,
             hasFlashlight: false,
+            hasSensor: false,
             hammerCount: 0,
             jumpCount: 0,
             trapCount: 0,
             teleportCount: 0
         };
+
+        // Snapshot for retry
+        this.checkpointState = null;
 
         // 손전등 및 충전 관련 상태
         this.flashlightTimer = 0;
@@ -55,6 +59,36 @@ export class Player {
 
         this.idleTimer = 0; // 대기 시간 측정용 타이머
         this.flashlight = this._initFlashlight();
+    }
+
+    /**
+     * Create a checkpoint of current inventory and stats (start of stage)
+     */
+    saveCheckpoint() {
+        this.checkpointState = {
+            inventory: { ...this.inventory },
+            flashlightTimer: this.flashlightTimer,
+            sensorTimer: this.sensorTimer
+        };
+        console.log("Player checkpoint saved:", this.checkpointState);
+    }
+
+    /**
+     * Restore player state to checkpoint
+     */
+    restoreCheckpoint() {
+        if (!this.checkpointState) return;
+
+        this.inventory = { ...this.checkpointState.inventory };
+        this.flashlightTimer = this.checkpointState.flashlightTimer;
+        this.sensorTimer = this.checkpointState.sensorTimer;
+
+        // Reset active states
+        this.isFlashlightOn = false;
+        this.isSensorOn = false;
+        if (this.flashlight) this.flashlight.intensity = 0;
+
+        console.log("Player state restored from checkpoint");
     }
 
     _initFlashlight() {

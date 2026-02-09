@@ -104,9 +104,25 @@ class Game {
         });
 
         // 도움말 (Help)
+        const helpPopup = document.getElementById('help-popup');
+        const closeHelpBtn = document.getElementById('close-help-btn');
+
         document.getElementById('help-button').addEventListener('click', () => {
             this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
-            alert('도움말: 방향키(Arrow Keys)로 이동하세요!');
+            helpPopup.classList.remove('hidden');
+        });
+
+        closeHelpBtn.addEventListener('click', () => {
+            this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            helpPopup.classList.add('hidden');
+        });
+
+        // ESC 키로 팝업 닫기
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !helpPopup.classList.contains('hidden')) {
+                helpPopup.classList.add('hidden');
+                this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            }
         });
     }
 
