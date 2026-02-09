@@ -245,6 +245,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
     color: #666;
 }
 
+/* 설정 확인 버튼 - 아래로 더 내림 */
+#settings-ok-btn {
+    margin-top: 30px;
+}
+
 
 /* 메인 메뉴 화면 스타일 (Refactored to use shared classes) */
 #main-menu-screen {
