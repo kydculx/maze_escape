@@ -18,6 +18,7 @@ import { TrapManager } from '../TrapManager.js';
 export class PlayScene extends BaseScene {
     constructor(game) {
         super(game);
+        console.log('[PlayScene] Constructor called');
         this.init();
     }
 

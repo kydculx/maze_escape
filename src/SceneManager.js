@@ -23,13 +23,19 @@ export class SceneManager {
      * @param {string} state - 갱신할 상태
      */
     setScene(state) {
+        console.log(`[SceneManager] Setting scene to: ${state}`);
+
         if (this.currentScene) {
+            console.log(`[SceneManager] Disposing previous scene`);
             this.currentScene.dispose();
         }
 
         const SceneClass = this.scenes[state];
         if (SceneClass) {
+            console.log(`[SceneManager] Creating new scene: ${SceneClass.name}`);
             this.currentScene = new SceneClass(this.game);
+        } else {
+            console.error(`[SceneManager] No scene found for state: ${state}`);
         }
     }
 

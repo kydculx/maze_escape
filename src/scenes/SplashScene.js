@@ -8,6 +8,7 @@ import { CONFIG } from '../Config.js';
 export class SplashScene extends BaseScene {
     constructor(game) {
         super(game);
+        console.log('[SplashScene] Constructor called');
         this.init();
     }
 
