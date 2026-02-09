@@ -194,7 +194,7 @@ export class PlayScene extends BaseScene {
             // 레벨에 따른 아이템 개수
             const baseItems = 3;
             const itemCount = Math.min(20, baseItems + Math.floor(this.stageManager.level / 2));
-            this.itemManager.spawnItems(itemCount);
+            this.itemManager.spawnItems(itemCount, this.stageManager.level);
         }
         if (this.monsterManager) {
             this.monsterManager.mazeGen = this.mazeGen;
