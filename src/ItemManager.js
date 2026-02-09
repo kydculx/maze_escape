@@ -30,7 +30,12 @@ export class ItemManager {
             for (let x = 1; x < this.mazeGen.width - 1; x++) {
                 // 길이면서 입구/출구가 아닌 곳만 후보로 선택
                 if (this.mazeGen.grid[y][x] === 0) {
-                    emptyCells.push({ x, y });
+                    const isEntrance = (x === this.mazeGen.entrance.x && y === this.mazeGen.entrance.y);
+                    const isExit = (x === this.mazeGen.exit.x && y === this.mazeGen.exit.y);
+
+                    if (!isEntrance && !isExit) {
+                        emptyCells.push({ x, y });
+                    }
                 }
             }
         }
