@@ -20,8 +20,9 @@ export class ItemManager {
     /**
      * 미로 내 빈 공간에 아이템을 배치
      * @param {number} count - 생성할 아이템 개수 (선택적, 기본값은 config.SPAWN_COUNT)
+     * @param {number} level - 현재 레벨 (아이템 잠금 해제 판정용)
      */
-    spawnItems(count = null) {
+    spawnItems(count = null, level = 1) {
         this.clearItems();
 
         const emptyCells = [];
@@ -34,10 +35,22 @@ export class ItemManager {
             }
         }
 
+        // 현재 레벨에서 사용 가능한 아이템만 필터링
+        const allItemTypes = Object.keys(this.config.TYPES);
+        const unlockedItemTypes = allItemTypes.filter(typeKey => {
+            const unlockLevel = this.config.UNLOCK_LEVELS?.[typeKey] ?? 1;
+            return level >= unlockLevel;
+        });
+
+        // 사용 가능한 아이템이 없으면 경고 후 종료
+        if (unlockedItemTypes.length === 0) {
+            console.warn(`[ItemManager] No items unlocked at level ${level}`);
+            return;
+        }
+
         // 섞어서 N개 선택
         this._shuffle(emptyCells);
         const spawnCount = Math.min(count ?? this.config.SPAWN_COUNT, emptyCells.length);
-        const itemTypes = Object.keys(this.config.TYPES);
 
         const thickness = CONFIG.MAZE.WALL_THICKNESS;
         const offsetX = -(this.mazeGen.width * thickness) / 2;
@@ -45,7 +58,7 @@ export class ItemManager {
 
         for (let i = 0; i < spawnCount; i++) {
             const cell = emptyCells[i];
-            const typeKey = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+            const typeKey = unlockedItemTypes[Math.floor(Math.random() * unlockedItemTypes.length)];
             const visualConfig = this.config.TYPES[typeKey];
 
             const item = new Item(typeKey, this.config, visualConfig);

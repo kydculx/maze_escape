@@ -48,6 +48,18 @@ export const GAME_CONFIG = {
     // [3] 아이템 설정 (Item Settings)
     ITEMS: {
         SPAWN_COUNT: 20, // 스테이지 시작 시 생성될 아이템 총 개수
+
+        // 레벨별 아이템 등장 시점 (외부 조절 가능)
+        UNLOCK_LEVELS: {
+            FLASHLIGHT: 1,   // 레벨 1부터 (손전등만)
+            SENSOR: 6,       // 레벨 6부터 센서 등장
+            JUMP: 11,        // 레벨 11부터 점프 등장
+            HAMMER: 16,      // 레벨 16부터 망치 등장
+            TRAP: 21,        // 레벨 21부터 함정 등장
+            TELEPORT: 26,    // 레벨 26부터 텔레포트 등장
+            MAP: 1           // 레벨 1부터 (지도는 항상 가능)
+        },
+
         TYPES: {
             JUMP: { TYPE: 'JUMP', COLOR: 0xFFFF00, SCALE: 0.12 },
             FLASHLIGHT: { TYPE: 'FLASHLIGHT', COLOR: 0xffffff, SCALE: 0.1 },
