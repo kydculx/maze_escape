@@ -13,7 +13,7 @@ export class ItemManager {
 
         this.items = [];
         this.itemGroup = new THREE.Group();
-        this.itemGroup.name = 'maze-items';
+        this.itemGroup.name = 'game-items'; // maze- 로 시작하면 MazeView.clear()에서 삭제됨
         this.scene.add(this.itemGroup);
     }
 
