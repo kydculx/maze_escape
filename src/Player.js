@@ -317,6 +317,10 @@ export class Player {
 
         this.inventory.trapCount--;
         console.log("Placing trap...");
+
+        // 함정 설치 사운드 재생
+        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.TRAP_SFX_URL);
+
         return this.group.position.clone();
     }
 
