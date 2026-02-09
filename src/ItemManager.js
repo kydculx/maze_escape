@@ -19,8 +19,9 @@ export class ItemManager {
 
     /**
      * 미로 내 빈 공간에 아이템을 배치
+     * @param {number} count - 생성할 아이템 개수 (선택적, 기본값은 config.SPAWN_COUNT)
      */
-    spawnItems() {
+    spawnItems(count = null) {
         this.clearItems();
 
         const emptyCells = [];
@@ -35,7 +36,7 @@ export class ItemManager {
 
         // 섞어서 N개 선택
         this._shuffle(emptyCells);
-        const spawnCount = Math.min(this.config.SPAWN_COUNT, emptyCells.length);
+        const spawnCount = Math.min(count ?? this.config.SPAWN_COUNT, emptyCells.length);
         const itemTypes = Object.keys(this.config.TYPES);
 
         const thickness = CONFIG.MAZE.WALL_THICKNESS;

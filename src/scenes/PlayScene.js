@@ -68,7 +68,11 @@ export class PlayScene extends BaseScene {
         this._refreshFloorMesh();
 
         this.itemManager = new ItemManager(this.scene, this.mazeGen, CONFIG.ITEMS);
-        this.itemManager.spawnItems();
+
+        // 레벨에 따른 아이템 개수 (레벨 1: 3-5개, 이후 레벨당 +1, 최대 20개)
+        const baseItems = 3;
+        const itemCount = Math.min(20, baseItems + Math.floor(this.stageManager.level / 2));
+        this.itemManager.spawnItems(itemCount);
 
         this.trapManager = new TrapManager(this.scene);
 
@@ -186,7 +190,11 @@ export class PlayScene extends BaseScene {
         this.ui.mazeGen = this.mazeGen;
         if (this.itemManager) {
             this.itemManager.mazeGen = this.mazeGen;
-            this.itemManager.spawnItems();
+
+            // 레벨에 따른 아이템 개수
+            const baseItems = 3;
+            const itemCount = Math.min(20, baseItems + Math.floor(this.stageManager.level / 2));
+            this.itemManager.spawnItems(itemCount);
         }
         if (this.monsterManager) {
             this.monsterManager.mazeGen = this.mazeGen;
