@@ -16,6 +16,18 @@ export class Zombie extends Monster {
             ...options
         });
 
+        // 레벨 기반 속도 계산
+        const level = options.level || 1;
+        const baseSpeed = zombieCfg.SPEED;
+        const speedIncrease = zombieCfg.SPEED_INCREASE_PER_LEVEL;
+        const maxMultiplier = zombieCfg.MAX_SPEED_MULTIPLIER;
+
+        // 속도 배율 계산: 1 + (레벨 * 증가율), 최대 배율로 제한
+        const speedMultiplier = Math.min(maxMultiplier, 1 + (level * speedIncrease));
+        this.speed = baseSpeed * speedMultiplier;
+
+        console.log(`Zombie spawned at level ${level}: speed ${this.speed.toFixed(2)}x (base: ${baseSpeed}, multiplier: ${speedMultiplier.toFixed(2)})`);
+
         // 배회(Patrol) 관련 상태
         this.isPatrolling = false;
         this.patrolWaitTimer = 0;

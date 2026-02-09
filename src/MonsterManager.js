@@ -16,8 +16,9 @@ export class MonsterManager {
     /**
      * 지정된 개수만큼 좀비 스폰
      * @param {number} count 
+     * @param {number} level - 현재 스테이지 레벨 (속도 계산용)
      */
-    spawnZombies(count = 5) {
+    spawnZombies(count = 5, level = 1) {
         // 빈 칸 가져오기 (입구/출구 제외된 상태)
         let emptyCells = this._getEmptyCells();
 
@@ -46,7 +47,7 @@ export class MonsterManager {
             const randomIndex = Math.floor(Math.random() * emptyCells.length);
             const cell = emptyCells.splice(randomIndex, 1)[0];
 
-            const zombie = new Zombie(this.scene, this.mazeGen, { sound: this.sound });
+            const zombie = new Zombie(this.scene, this.mazeGen, { sound: this.sound, level });
 
             // 월드 좌표 계산 (MazeGenerator의 좌표계 사용)
             const thickness = CONFIG.MAZE.WALL_THICKNESS;

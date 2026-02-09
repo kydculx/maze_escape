@@ -152,7 +152,10 @@ export const GAME_CONFIG = {
             PATROL_WAIT_MIN: 0.5,
             PATROL_WAIT_MAX: 2.0,
             SAFE_SPAWN_DISTANCE: 10,
-            PATROL_AUDIO_MAX_DIST: 10
+            PATROL_AUDIO_MAX_DIST: 10,
+            // 레벨별 속도 증가 설정
+            SPEED_INCREASE_PER_LEVEL: 0.05,  // 레벨당 5% 속도 증가
+            MAX_SPEED_MULTIPLIER: 2.0         // 최대 2배속까지
         }
     }
 };
