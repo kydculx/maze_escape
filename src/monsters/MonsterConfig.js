@@ -18,8 +18,8 @@ export const MONSTER_CONFIG = {
         SPEED: 1.5,                       // 기본 이동 속도
         MOVE_DURATION: 2,                 // 이동 주기
         DETECTION_RANGE: 2,              // 플레이어 감지 범위 (타일 거리 아님, 월드 유닛)
-        IDLE_SWAY_SPEED: 1,               // 대기 중 좌우 흔들림 속도
-        IDLE_SWAY_AMPLITUDE: 0.1,         // 대기 중 좌우 흔들림 크기
+        IDLE_SWAY_SPEED: 2,               // 대기 중 좌우 흔들림 속도
+        IDLE_SWAY_AMPLITUDE: 5,         // 대기 중 좌우 흔들림 크기
         WALK_BOB_SPEED: 2,                // 걷는 애니메이션 바운스 속도
         WALK_BOB_AMPLITUDE: 0.2,          // 걷는 애니메이션 바운스 크기
         MODEL_SCALE: 0.3,                 // 모델 크기 배율
@@ -36,22 +36,22 @@ export const MONSTER_CONFIG = {
     },
     // 울프 좀비 (강화형) 설정
     WOLF_ZOMBIE: {
-        SPEED: 2.5,                       // 좀비보다 빠름 (1.5 vs 2.5)
+        SPEED: 2.0,                       // 좀비보다 빠름 (1.5 vs 2.5)
         MOVE_DURATION: 1.2,               // 이동 반응 속도가 더 빠름
         DETECTION_RANGE: 2,              // 플레이어 감지 범위
-        IDLE_SWAY_SPEED: 11,             // 대기 동작도 더 빠름
-        IDLE_SWAY_AMPLITUDE: 0.1,
+        IDLE_SWAY_SPEED: 2,             // 대기 동작도 더 빠름
+        IDLE_SWAY_AMPLITUDE: 5,
         WALK_BOB_SPEED: 2,                // 걷는 동작이 더 역동적
         WALK_BOB_AMPLITUDE: 0.2,
         MODEL_SCALE: 0.35,                // 덩치가 약간 더 큼
         COLOR: 0xaa4444,                  // 붉은색 계열 (위협적)
         PATH_RECALC_INTERVAL: 1,        // 더 자주 경로를 탐색하여 끈질기게 추격
-        PATROL_RADIUS: 3,                 // 더 넓은 구역을 배회
+        PATROL_RADIUS: 4,                 // 더 넓은 구역을 배회
         PATROL_WAIT_MIN: 0.5,             // 대기 시간이 짧음 (공격적)
         PATROL_WAIT_MAX: 2.0,
         SAFE_SPAWN_DISTANCE: 10,
         PATROL_AUDIO_MAX_DIST: 10,        // 소리가 더 멀리까지 들림
-        SPAWN_MIN_STAGE: 3,               // 스테이지 3 이상에서만 등장
+        SPAWN_MIN_STAGE: 11,               // 스테이지 11 이상에서만 등장
         // 레벨별 난이도 조정
         SPEED_INCREASE_PER_LEVEL: 0.05,   // 레벨당 속도 증가율 (6% - 더 가파르게 증가)
         MAX_SPEED_MULTIPLIER: 1.5         // 최대 2.5배속까지 빨라짐
