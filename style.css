@@ -645,8 +645,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     /* 기본적으로 숨김 (게임 시작 시에만 표시) */
 }
 
-#cheat-btn,
-#fullscreen-btn {
+#cheat-btn {
     width: 45px;
     height: 45px;
     background: rgba(255, 0, 0, 0.1);
@@ -662,14 +661,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     justify-content: center;
 }
 
-#fullscreen-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-    margin-right: 10px;
-}
-
-#cheat-btn:active,
-#fullscreen-btn:active {
+#cheat-btn:active {
     transform: scale(0.95);
 }
 

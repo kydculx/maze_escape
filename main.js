@@ -97,9 +97,16 @@ class Game {
         const splashScreen = document.getElementById('splash-screen');
         const mainMenuScreen = document.getElementById('main-menu-screen');
 
-        // 1. 스플래시 화면 클릭 시 메인 메뉴로 전환
+        // 1. 스플래시 화면 클릭 시 메인 메뉴로 전환 + 전체화면 요청
         splashScreen.addEventListener('click', () => {
             if (this.state.is(STATES.SPLASH)) {
+                // 모바일 전체화면 요청 (사용자 상호작용 내에서 실행되어야 함)
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch((err) => {
+                        console.log('Fullscreen request failed:', err);
+                    });
+                }
+
                 this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
                 this.state.set(STATES.MAIN_MENU);
                 this.sceneManager.setScene(STATES.MAIN_MENU);
@@ -133,6 +140,8 @@ class Game {
             this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
             alert('랭킹 시스템을 불러오고 있습니다...');
         });
+
+
 
         // 설정 (Settings)
         const settingsPopup = document.getElementById('settings-popup');
