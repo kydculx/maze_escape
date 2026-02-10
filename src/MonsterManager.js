@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { CONFIG } from '../Config.js';
-import { Zombie } from './Zombie.js';
-import { WolfZombie } from './WolfZombie.js';
+import { CONFIG } from './Config.js';
+import { Zombie } from './monsters/Zombie.js';
+import { WolfZombie } from './monsters/WolfZombie.js';
 
 /**
  * 미로 내의 모든 몬스터를 관리하는 클래스
@@ -29,12 +29,10 @@ export class MonsterManager {
         let zombieCount = count;
 
         if (canSpawnWolves) {
-            // 전체의 25%를 늑대 좀비로, 최소 1마리 보장
-            wolfCount = Math.max(1, Math.round(count * 0.25));
+            // 늑대 좀비 비율: 1:1 (50%)
+            wolfCount = Math.floor(count * 0.5);
             zombieCount = count - wolfCount;
         }
-
-        console.log(`Spawning ${zombieCount} zombies and ${wolfCount} wolf zombies (level ${level})`);
 
         // 좀비 스폰
         this._spawnMonsterType(CONFIG.MONSTERS.TYPES.ZOMBIE, zombieCount, level);

@@ -10,7 +10,7 @@ import { Player } from '../player/Player.js';
 import { CameraController } from '../player/CameraController.js';
 import { ItemManager } from '../items/ItemManager.js';
 import { StageManager } from '../StageManager.js';
-import { MonsterManager } from '../monsters/MonsterManager.js';
+import { MonsterManager } from '../MonsterManager.js';
 import { TrapManager } from '../maps/TrapManager.js';
 import { SaveManager } from '../SaveManager.js';
 

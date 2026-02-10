@@ -59,6 +59,7 @@ export class SoundManager {
      */
     async loadSound(url) {
         if (this.buffers.has(url)) return this.buffers.get(url);
+        console.log(`[SoundManager] Loading sound: ${url}`);
 
         try {
             const response = await fetch(url);

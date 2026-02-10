@@ -97,7 +97,6 @@ export class Minimap {
 
         // 3.8 몬스터 표시 (치트 활성화 시)
         if (this.showMonsters && monsters && monsters.length > 0) {
-            ctx.fillStyle = this.colors.monster;
             const monsterSize = cellW * 0.8;
 
             monsters.forEach(monster => {
@@ -110,6 +109,12 @@ export class Minimap {
                 // 픽셀 좌표
                 const mPx = mx * cellW;
                 const mPy = my * cellH;
+
+                if (monster.originalColor && monster.originalColor.getStyle) {
+                    ctx.fillStyle = monster.originalColor.getStyle();
+                } else {
+                    ctx.fillStyle = this.colors.monster;
+                }
 
                 ctx.beginPath();
                 ctx.arc(mPx + cellW / 2, mPy + cellH / 2, monsterSize / 2, 0, Math.PI * 2);

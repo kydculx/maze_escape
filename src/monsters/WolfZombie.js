@@ -15,93 +15,37 @@ export class WolfZombie extends Monster {
             ...options
         });
 
-        // 레벨 기반 속도 계산
-        const level = options.level || 1;
-        const baseSpeed = wolfCfg.SPEED;
-        const speedIncrease = wolfCfg.SPEED_INCREASE_PER_LEVEL;
-        const maxMultiplier = wolfCfg.MAX_SPEED_MULTIPLIER;
-
-        const speedMultiplier = Math.min(maxMultiplier, 1 + (level * speedIncrease));
-        this.speed = baseSpeed * speedMultiplier;
-
-        console.log(`Wolf Zombie spawned at level ${level}: speed ${this.speed.toFixed(2)}x`);
-
-        this.sound = options.sound;
         this._initAudio();
-
-        // Freeze 효과
-        this.isFrozen = false;
-        this.freezeTimer = 0;
-        this.originalColor = new THREE.Color(wolfCfg.COLOR);
-        this.frozenColor = new THREE.Color(0x00ffff);
     }
 
+    /**
+     * 늑대 좀비 설정 반환
+     */
     _getConfig() {
         return CONFIG.MONSTERS.WOLF_ZOMBIE;
     }
 
-    freeze(duration) {
-        this.isFrozen = true;
-        this.freezeTimer = duration;
-        this._setBodyColor(this.frozenColor);
-        this.isMovingTile = false;
-        this.path = [];
-    }
 
-    _setBodyColor(color) {
-        if (!this.model) return;
-        this.model.traverse((child) => {
-            if (child.isMesh && child.material) {
-                child.material.color.copy(color);
-            }
-        });
-    }
-
+    /**
+     * 오디오 설정 초기화
+     */
     _initAudio() {
         const audioCfg = CONFIG.AUDIO;
         this.patrolSFXUrl = audioCfg.WOLF_PATROL_SFX;
-        this.trackSFXUrl = audioCfg.WOLF_TRACK_SFX; // 늑대 추격음이 좀비 추격음과 같게 설정되어 있던 부분 (Config 확인 필요)
-        // WolfZombie는 WOLF_TRACK_SFX를 써야 함. EngineConfig.js 확인 결과 WOLF_TRACK_SFX 있음.
-        // 기존 코드: this.trackSFXUrl = audioCfg.ZOMBIE_TRACK_SFX;  <-- 버그였음! 수정.
+        this.trackSFXUrl = audioCfg.WOLF_TRACK_SFX;
         this.attackSFXUrl = audioCfg.WOLF_ATTACK_SFX;
         this.soundCooldown = 0;
 
-        if (this.sound) {
-            this.trackSoundController = this.sound.playLoop(this.trackSFXUrl, 0);
-        }
+        // 부모 클래스의 오디오 시스템 초기화 호출
+        this._initAudioSystem();
     }
 
-    update(deltaTime, player) {
-        super.update(deltaTime, player);
-        this._updateAudioVolumes(deltaTime, player);
-    }
 
-    _updateAudioVolumes(deltaTime, player) {
-        if (!this.trackSoundController) return;
 
-        if (!player) return;
 
-        const distInTiles = this.position.distanceTo(player.position) / CONFIG.MAZE.WALL_THICKNESS;
-        const maxDist = this._getConfig().DETECTION_RANGE;
-        const isTracking = !this.isPatrolling && this.state === CONFIG.MONSTERS.STATES.MOVE;
-
-        let targetVolume = this._calculateVolume(distInTiles, maxDist);
-
-        if (isTracking && targetVolume > 0) {
-            if (!this.trackSoundController.isPlaying) {
-                console.log(`[WolfZombie] Starting track audio. Dist: ${distInTiles.toFixed(2)}, Vol: ${targetVolume.toFixed(2)}`);
-                this.trackSoundController.play();
-            }
-            const sfxVolume = this.sound.sfxVolume || 1.0;
-            this.trackSoundController.setVolume(targetVolume * sfxVolume);
-        } else {
-            if (this.trackSoundController.isPlaying) {
-                console.log('[WolfZombie] Stopping track audio');
-                this.trackSoundController.stop();
-            }
-        }
-    }
-
+    /**
+     * 늑대 모델 생성 (CharacterBuilder 사용)
+     */
     _initModel(options) {
         this.model = CharacterBuilder.createWolf(options);
         this.group.add(this.model);
@@ -113,6 +57,9 @@ export class WolfZombie extends Monster {
         this.head = this.model.getObjectByName('headGroup');
     }
 
+    /**
+     * 늑대 애니메이션 업데이트 (사족보행/대기)
+     */
     _updateAnimation(deltaTime) {
         if (!this.model || this.isFrozen) return;
 
@@ -139,44 +86,6 @@ export class WolfZombie extends Monster {
         }
     }
 
-    update(deltaTime, player) {
-        if (!this.group) return;
 
-        if (this.isFrozen) {
-            this.freezeTimer -= deltaTime;
-            if (this.freezeTimer <= 0) {
-                this.isFrozen = false;
-                this._setBodyColor(this.originalColor);
-            }
-            return;
-        }
 
-        super.update(deltaTime, player);
-        this._updateAudioVolumes(deltaTime);
-
-        if (this.minimapMarker) {
-            this.minimapMarker.position.copy(this.position);
-        }
-    }
-
-    destroy() {
-        if (this.trackAudio) {
-            this.trackAudio.pause();
-            this.trackAudio.currentTime = 0;
-        }
-        super.destroy();
-    }
-
-    _calculateVolume(distInTiles, maxDist) {
-        if (distInTiles >= maxDist) return 0;
-        const steps = Math.floor(maxDist);
-        const stepSize = 1.0 / steps;
-        const currentStep = Math.floor(distInTiles);
-        return Math.max(0, 1.0 - (currentStep * stepSize));
-    }
-
-    isMakingSound() {
-        if (!this.trackAudio) return false;
-        return !this.trackAudio.paused && this.trackAudio.volume > 0.01;
-    }
 }
