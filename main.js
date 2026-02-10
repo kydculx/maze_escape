@@ -58,9 +58,36 @@ class Game {
 
         window.addEventListener('resize', () => this.onResize());
 
+        // 핀치 줌 및 브라우저 확대/축소 방지
+        this.preventZoom();
+
         // 5. 게임 루프 시작
         this.clock = new THREE.Clock();
         this.animate();
+    }
+
+    /**
+     * 브라우저의 기본 확대/축소 동작(핀치 줌, 휠 줌)을 차단
+     */
+    preventZoom() {
+        // 1. 제스처 이벤트 차단 (Safari 등)
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        document.addEventListener('gesturechange', (e) => e.preventDefault());
+        document.addEventListener('gestureend', (e) => e.preventDefault());
+
+        // 2. 컨트롤/커맨드 + 휠(확대/축소) 차단
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // 3. 터치 시작 시 두 손가락 이상이면 기본 동작 차단 (보조)
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     }
 
     /**
