@@ -102,7 +102,14 @@ class Game {
             if (this.state.is(STATES.SPLASH)) {
                 // 모바일 전체화면 요청 (사용자 상호작용 내에서 실행되어야 함)
                 if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen().catch((err) => {
+                    document.documentElement.requestFullscreen().then(() => {
+                        // 전체화면 성공 시 화면 방향 잠금 시도 (모바일)
+                        if (screen.orientation && screen.orientation.lock) {
+                            screen.orientation.lock('portrait').catch(err => {
+                                console.log('Screen orientation lock failed:', err);
+                            });
+                        }
+                    }).catch((err) => {
                         console.log('Fullscreen request failed:', err);
                     });
                 }
