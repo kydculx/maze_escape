@@ -9,7 +9,7 @@ export const ITEM_CONFIG = {
         FLASHLIGHT: 1,   // 시작부터 등장
         MAP: 1,          // 시작부터 등장
         SENSOR: 6,       // 레벨 6부터 등장
-        ZOMBIE_DISGUISE: 6, // 레벨 6부터 등장
+        ZOMBIE_DISGUISE: 6, // 레벨 6부터 등장 (가면)
         JUMP: 11,        // 레벨 11부터 등장
         HAMMER: 16,      // 레벨 16부터 등장
         TRAP: 21,        // 레벨 21부터 등장
@@ -64,7 +64,7 @@ export const ITEM_CONFIG = {
             TYPE: 'ZOMBIE_DISGUISE',
             COLOR: 0x44aa44,  // 짙은 녹색
             SCALE: 0.2,
-            CONSUMABLE: true  // 사용 시 일정 시간 변신
+            CONSUMABLE: true  // 사용 시 일정 시간 변신 (가면 착용)
         }
     },
     // 지도(Map) 관련 세부 설정
@@ -105,10 +105,10 @@ export const ITEM_CONFIG = {
         FLICKER_THRESHOLD: 3.0,   // 배터리 부족 경고 시점 (초)
         COLOR: 0x00ffff           // 센서 UI 색상
     },
-    // 좀비 위장(Zombie Disguise) 관련 설정
+    // 가면(Mask) 관련 설정 (기존 좀비 위장)
     ZOMBIE_DISGUISE: {
         DURATION: 10.0,           // 위장 지속 시간 (초)
-        SPEED_FACTOR: 0.5,        // 위장 중 이동 속도 패널티 (50% 속도로 느려짐 - 좀비 흉내)
+        SPEED_FACTOR: 0.5,        // 가면 착용 중 이동 속도 패널티 (50% 속도로 느려짐 - 좀비 흉내)
         COLOR: 0x44aa44           // 위장 효과 오버레이 색상
     },
     // 손전등(Flashlight) 관련 세부 설정

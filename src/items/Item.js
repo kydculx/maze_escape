@@ -346,7 +346,7 @@ export class Item {
                 return sensorGroup;
             }
             case 'ZOMBIE_DISGUISE': {
-                // 좀비 위장 (좀비 머리 같은 초록색 가면/박스) 🧟
+                // 가면 (좀비 머리 모양의 초록색 가면) 🎭
                 const disguiseGroup = new THREE.Group();
 
                 // 1. 머리 (좀비랑 비슷한 초록색 박스)
