@@ -24,6 +24,21 @@ body {
     /* 표준 텍스트 선택 방지 */
 }
 
+/* Global Horror Vignette & Noise */
+body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.8) 100%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    z-index: 9999;
+    mix-blend-mode: multiply;
+}
+
 /* 캔버스가 화면 전체를 차지하도록 설정 */
 #game-canvas {
     display: block;
@@ -39,7 +54,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: #000000;
+    background: radial-gradient(circle, #2a0000 0%, #000000 100%);
     /* 완전 불투명 검은 배경 (3D 씬 가림) */
     display: flex;
     justify-content: center;
@@ -59,20 +74,44 @@ body {
 }
 
 #splash-screen .content h1 {
-    font-size: 4rem;
+    font-family: 'Creepster', cursive;
+    font-size: 5rem;
     margin-bottom: 1rem;
     letter-spacing: 5px;
-    background: linear-gradient(45deg, #00ff00, #008800);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    color: #ff0000;
+    text-shadow: 0 0 10px #8b0000, 0 0 20px #500000, 2px 2px 0px #000;
+    animation: horror-flicker 3s infinite;
 }
 
 #splash-screen .content p {
-    font-size: 1.2rem;
+    font-family: 'Roboto Slab', serif;
+    font-size: 1.5rem;
     margin-bottom: 2rem;
+    color: #cc0000;
     opacity: 0.8;
+    text-shadow: 0 0 5px #000;
+}
+
+@keyframes horror-flicker {
+
+    0%,
+    19%,
+    21%,
+    23%,
+    25%,
+    54%,
+    56%,
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 10px #8b0000, 0 0 20px #500000, 2px 2px 0px #000;
+    }
+
+    20%,
+    24%,
+    55% {
+        opacity: 0.5;
+        text-shadow: none;
+    }
 }
 
 @keyframes blink {
@@ -95,9 +134,11 @@ body {
    Shared UI Styles (Consistency Standardization)
    ========================================================================== */
 :root {
-    --ui-theme-color: #00ff00;
-    --ui-bg-color: rgba(20, 20, 20, 0.95);
-    --ui-overlay-color: rgba(0, 0, 0, 0.8);
+    --ui-theme-color: #d00000;
+    /* Blood Red */
+    --ui-bg-color: rgba(10, 0, 0, 0.95);
+    /* Deep Dark Red/Black */
+    --ui-overlay-color: rgba(0, 0, 0, 0.9);
 }
 
 /* Common Popup Overlay */
@@ -128,24 +169,27 @@ body {
 .ui-popup-content {
     background: var(--ui-bg-color);
     padding: 40px;
-    border-radius: 15px;
-    border: 1px solid var(--ui-theme-color);
+    border-radius: 5px;
+    /* Sharper corners */
+    border: 2px solid var(--ui-theme-color);
     text-align: center;
-    box-shadow: 0 0 30px rgba(0, 255, 0, 0.1);
+    box-shadow: 0 0 30px rgba(139, 0, 0, 0.3), inset 0 0 50px rgba(0, 0, 0, 0.8);
     min-width: 300px;
     max-width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: white;
+    font-family: 'Roboto Slab', serif;
+    color: #e0e0e0;
 }
 
 .ui-popup-content h2 {
     color: var(--ui-theme-color);
-    font-size: 2.5rem;
+    font-family: 'Creepster', cursive;
+    font-size: 3.5rem;
     margin-bottom: 2rem;
     letter-spacing: 3px;
     text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
 }
 
 /* Settings Specific Styles */
@@ -214,7 +258,7 @@ input[type="range"]::-webkit-slider-thumb {
     height: 20px;
     background: var(--ui-theme-color);
     border-radius: 50%;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
     transition: transform 0.2s;
 }
 
@@ -227,16 +271,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Common Button Style */
 .ui-btn {
     padding: 12px 30px;
-    font-size: 1.1rem;
-    background: transparent;
+    font-size: 1.3rem;
+    font-family: 'Creepster', cursive;
+    background: linear-gradient(180deg, rgba(50, 0, 0, 0.8), rgba(20, 0, 0, 0.9));
     border: 1px solid var(--ui-theme-color);
-    color: #fff;
+    color: #ffcccc;
     cursor: pointer;
     transition: all 0.2s ease;
-    border-radius: 5px;
+    border-radius: 3px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     min-width: 200px;
+    text-shadow: 2px 2px 0 #000;
 }
 
 /* 호버 효과 제거 (모바일 최적화)
@@ -250,8 +296,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
 */
 /* Force disable scaling */
 
+/* Hover effect removed
+.ui-btn:hover:not(:disabled) {
+    background: rgba(200, 0, 0, 0.3);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+    transform: scale(1.05);
+    color: #fff;
+}
+*/
+
 .ui-btn:active:not(:disabled) {
-    background: rgba(0, 255, 0, 0.3);
+    background: rgba(150, 0, 0, 0.5);
+    transform: scale(0.98);
 }
 
 .ui-btn.disabled,
@@ -300,6 +356,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
     justify-content: center;
     align-items: center;
     perspective: 400px;
+    border: 2px solid rgba(139, 0, 0, 0.5);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
     /* 크기에 맞춰 조정 */
 }
 
@@ -325,12 +385,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
     position: relative;
     width: 140px;
     height: 45px;
-    background: rgba(20, 20, 20, 0.8);
-    color: #00ff00;
+    background: rgba(40, 0, 0, 0.8);
+    color: #ff3333;
     font-family: 'Inter', sans-serif;
     font-weight: bold;
     font-size: 13px;
-    border: 1px solid #00ff00;
+    border: 1px solid #ff3333;
     border-radius: 4px;
     /* 사각형 형태 */
     cursor: pointer;
@@ -339,7 +399,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     justify-content: center;
     align-items: center;
     padding: 0;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
     letter-spacing: 1px;
 }
 
@@ -356,7 +416,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .btn-text {
     z-index: 1;
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
 }
 
 /* UI Overlay Container */
@@ -387,7 +447,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     backdrop-filter: blur(10px);
     padding: 15px;
     border-radius: 12px;
-    border: 1px solid rgba(0, 255, 255, 0.4);
+    border: 1px solid rgba(255, 0, 0, 0.4);
     color: white;
     font-family: 'Inter', sans-serif;
     min-width: 260px;
@@ -403,7 +463,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .camera-panel::-webkit-scrollbar-thumb {
-    background: rgba(0, 255, 255, 0.3);
+    background: rgba(255, 0, 0, 0.3);
     border-radius: 2px;
 }
 
@@ -414,7 +474,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     color: #00ffff;
     text-align: center;
     text-transform: uppercase;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 0, 0, 0.2);
     padding-bottom: 8px;
 }
 
@@ -448,8 +508,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .hud-item .count.highlight {
-    color: #ffaa00;
-    text-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+    color: #ff0000;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
     font-size: 1.4em;
 }
 
@@ -480,8 +540,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
     /* 캔버스 위, HUD 아래 */
     opacity: 0;
     transition: opacity 0.5s ease;
-    background: radial-gradient(circle, transparent 40%, rgba(0, 150, 0, 0.2) 70%, rgba(0, 50, 0, 0.4) 100%);
-    box-shadow: inset 0 0 100px rgba(0, 255, 0, 0.1);
+    background: radial-gradient(circle, transparent 40%, rgba(150, 0, 0, 0.2) 70%, rgba(50, 0, 0, 0.4) 100%);
+    box-shadow: inset 0 0 100px rgba(255, 0, 0, 0.1);
 }
 
 #disguise-overlay.active {
@@ -491,11 +551,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 @keyframes disguise-pulse {
     0% {
-        box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.1);
+        box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.1);
     }
 
     100% {
-        box-shadow: inset 0 0 150px rgba(0, 255, 0, 0.2);
+        box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.2);
     }
 }
 
@@ -522,8 +582,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 100%;
     border: 2px solid rgba(0, 255, 255, 0.3);
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(0, 255, 255, 0.05) 0%, rgba(0, 255, 255, 0.0) 70%);
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+    background: radial-gradient(circle, rgba(255, 0, 0, 0.05) 0%, rgba(255, 0, 0, 0.0) 70%);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.1);
 }
 
 /* 레이더 중심 플레이어 표시 제거됨 */
@@ -685,7 +745,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
 }
 
 #top-hud .label {
@@ -714,10 +774,10 @@ input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 16px;
     height: 16px;
-    background: #00ffff;
+    background: #ff0000;
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -856,7 +916,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 #hud-gem {
-    border-bottom: 3px solid #00ffff;
+    border-bottom: 3px solid #ff0000;
 }
 
 #hud-key {
@@ -1073,7 +1133,8 @@ input[type="range"]::-webkit-slider-thumb {
     left: 0;
     width: 100%;
     height: 100%;
-    background: #00ff00;
+    background: #ff0000;
+    box-shadow: 0 0 5px #ff0000;
     /* 초록색으로 변경 */
     transition: height 0.3s, background-color 0.3s;
     border-radius: 0 0 3px 3px;
@@ -1105,7 +1166,7 @@ input[type="range"]::-webkit-slider-thumb {
     padding: 10px 20px;
     background: rgba(20, 20, 20, 0.8);
     color: #00ffff;
-    border: 1px solid #00ffff;
+    border: 1px solid #ff3333;
     border-radius: 6px;
     font-family: 'Inter', sans-serif;
     font-weight: bold;
@@ -1120,7 +1181,7 @@ input[type="range"]::-webkit-slider-thumb {
 .maze-btn:active,
 .maze-btn.pressed {
     transform: scale(0.95) translateY(2px);
-    background: #00cccc;
+    background: #aa0000;
     color: #000;
 }
 
@@ -1150,8 +1211,8 @@ input[type="range"]::-webkit-slider-thumb {
     justify-content: space-between;
     align-items: center;
     padding: 20px 30px;
-    background: rgba(0, 255, 0, 0.05);
-    border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+    background: rgba(255, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(255, 0, 0, 0.2);
 }
 
 .popup-header h2 {
@@ -1202,7 +1263,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .control-column h4 {
-    color: rgba(0, 255, 255, 0.8);
+    color: rgba(255, 50, 50, 0.8);
     margin-bottom: 15px;
     text-transform: uppercase;
     font-size: 0.9rem;
@@ -1244,10 +1305,10 @@ input[type="range"]::-webkit-slider-thumb {
 .gesture {
     display: inline-block;
     padding: 4px 10px;
-    background: rgba(0, 255, 255, 0.1);
+    background: rgba(255, 0, 0, 0.1);
     border-radius: 12px;
     font-size: 0.85rem;
-    color: #00ffff;
+    color: #ff0000;
 }
 
 .divider {

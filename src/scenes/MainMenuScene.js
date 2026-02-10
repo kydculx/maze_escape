@@ -30,11 +30,13 @@ export class MainMenuScene extends BaseScene {
         spotLight.position.set(5, 5, 5);
         this.scene.add(spotLight);
 
-        // 3. 중앙 객체 (멋진 연출용)
+        // 3. 중앙 객체 (멋진 연출용) - 제거됨 (사용자 요청)
+        /*
         const geometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
         const material = new THREE.MeshStandardMaterial({ color: 0x00ff00, metalness: 0.7, roughness: 0.2 });
         this.object = new THREE.Mesh(geometry, material);
         this.scene.add(this.object);
+        */
 
         // 바닥 추가
         const floorGeometry = new THREE.PlaneGeometry(20, 20);
@@ -48,16 +50,20 @@ export class MainMenuScene extends BaseScene {
 
 
     update() {
-        // 객체 자동 회전 및 카메라 부드러운 이동
+        // 객체 자동 회전 및 카메라 부드러운 이동 (제거됨 - 사용자 요청)
+        /*
         if (this.object) {
             this.object.rotation.y += 0.005;
             this.object.rotation.z += 0.005;
         }
 
-        // 카메라가 원을 그리며 천천히 회전하는 연출
         const time = Date.now() * 0.0005;
         this.camera.position.x = Math.sin(time) * 6;
         this.camera.position.z = Math.cos(time) * 6;
+        this.camera.lookAt(0, 0, 0);
+        */
+
+        // 고정된 시점 유지
         this.camera.lookAt(0, 0, 0);
     }
 }
