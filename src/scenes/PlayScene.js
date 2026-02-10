@@ -147,8 +147,10 @@ export class PlayScene extends BaseScene {
             () => { // onResume (메뉴 닫힘)
                 console.log('[PlayScene] Game Resumed via Menu');
                 this.game.state.resumeGame();
-                if (this.weatherSystem) this.weatherSystem.resume();
+                // Context Resume First!
                 if (this.game.sound) this.game.sound.resumeAll();
+                // Then resume weather audio
+                if (this.weatherSystem) this.weatherSystem.resume();
             }
         );
 

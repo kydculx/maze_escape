@@ -245,14 +245,21 @@ export class WeatherSystem {
         }
         if (this.thunderSound && this.thunderSound.isPlaying) {
             this.thunderSound.pause();
+            this.wasThunderPlaying = true;
+        } else {
+            this.wasThunderPlaying = false;
         }
     }
 
     resume() {
+        console.log('[WeatherSystem] Resuming... RainEnabled:', this.weatherConfig.RAIN.ENABLED);
         if (this.rainSound && !this.rainSound.isPlaying && this.weatherConfig.RAIN.ENABLED) {
             this.rainSound.play();
         }
-        // Thunder doesn't resume automatically as it's an event, unless it was mid-play
-        // But for simplicity, we just resume rain loop.
+
+        if (this.wasThunderPlaying && this.thunderSound) {
+            this.thunderSound.play();
+            this.wasThunderPlaying = false;
+        }
     }
 }
