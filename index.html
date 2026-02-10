@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Web Game</title>
     <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
     <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -19,13 +26,7 @@
         <canvas id="minimap-canvas"></canvas>
     </div>
 
-    <!-- 모바일 가로 모드 경고 오버레이 -->
-    <div id="rotate-device-overlay">
-        <div class="rotate-content">
-            <div class="rotate-icon">📱</div>
-            <p>최적의 경험을 위해<br>세로 모드로 회전해주세요.</p>
-        </div>
-    </div>
+
 
     <!-- UI Overlay Container -->
     <div id="ui-overlay">

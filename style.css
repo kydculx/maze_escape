@@ -12,6 +12,16 @@ body {
     /* 배경색 설정 */
     touch-action: none;
     /* 핀치 줌 및 기본 터치 동작 방지 */
+    -webkit-touch-callout: none;
+    /* iOS 길게 누르기 메뉴 방지 */
+    -webkit-user-select: none;
+    /* Safari/Chrome 텍스트 선택 방지 */
+    -moz-user-select: none;
+    /* Firefox 텍스트 선택 방지 */
+    -ms-user-select: none;
+    /* IE/Edge 텍스트 선택 방지 */
+    user-select: none;
+    /* 표준 텍스트 선택 방지 */
 }
 
 /* 캔버스가 화면 전체를 차지하도록 설정 */
@@ -795,53 +805,7 @@ input[type="range"]::-webkit-slider-thumb {
     /* 클릭 가능하도록 설정 */
 }
 
-/* --- Rotate Device Overlay (Mobile Portrait Enforcement) --- */
-#rotate-device-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    z-index: 9999;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    text-align: center;
-}
 
-.rotate-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-}
-
-.rotate-icon {
-    font-size: 80px;
-    animation: rotate-animation 2s infinite ease-in-out;
-}
-
-@keyframes rotate-animation {
-
-    0%,
-    100% {
-        transform: rotate(-90deg);
-    }
-
-    50% {
-        transform: rotate(0deg);
-    }
-}
-
-/* Landscape Mode Check for Mobile */
-@media screen and (orientation: landscape) and (max-height: 500px) {
-    #rotate-device-overlay {
-        display: flex;
-    }
-}
 
 /* 호버 효과 제거 (모바일 최적화)
 .nav-btn:hover:not(:disabled) {

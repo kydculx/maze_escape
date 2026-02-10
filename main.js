@@ -88,6 +88,12 @@ class Game {
                 e.preventDefault();
             }
         }, { passive: false });
+
+        // 4. 우클릭/길게 누르기 메뉴 차단 (모바일 앱 느낌)
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            return false;
+        }, { passive: false });
     }
 
     /**
