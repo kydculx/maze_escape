@@ -135,6 +135,23 @@ export class PlayScene extends BaseScene {
 
         // 6. UI 매니저 초기화 및 바인딩
         this.ui = new UIManager(this.player, this.mazeGen, this.stageManager);
+
+        // 메뉴 열림/닫힘 시 일시정지 처리 콜백 등록
+        this.ui.registerPauseCallbacks(
+            () => { // onPause (메뉴 열림)
+                console.log('[PlayScene] Game Paused via Menu');
+                this.game.state.pauseGame();
+                if (this.weatherSystem) this.weatherSystem.pause();
+                if (this.game.sound) this.game.sound.pauseAll();
+            },
+            () => { // onResume (메뉴 닫힘)
+                console.log('[PlayScene] Game Resumed via Menu');
+                this.game.state.resumeGame();
+                if (this.weatherSystem) this.weatherSystem.resume();
+                if (this.game.sound) this.game.sound.resumeAll();
+            }
+        );
+
         this.ui.bindButtons({
             onHammer: () => this._useHammer(),
             onJump: () => {

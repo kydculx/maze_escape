@@ -148,15 +148,25 @@ export class UIManager {
         }
     }
 
+    /**
+     * 일시정지/재개 콜백 등록
+     */
+    registerPauseCallbacks(onPause, onResume) {
+        this.onPause = onPause;
+        this.onResume = onResume;
+    }
+
     showMenu() {
         if (this.elements.menuPopup) {
             this.elements.menuPopup.classList.remove('hidden');
+            if (this.onPause) this.onPause();
         }
     }
 
     hideMenu() {
         if (this.elements.menuPopup) {
             this.elements.menuPopup.classList.add('hidden');
+            if (this.onResume) this.onResume();
         }
     }
 

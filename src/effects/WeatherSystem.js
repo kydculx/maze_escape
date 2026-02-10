@@ -228,8 +228,6 @@ export class WeatherSystem {
         if (this.rainSystem) {
             this.scene.remove(this.rainSystem);
             this.rainSystem.dispose();
-            // Geometry and Material disposed by traverse/dispose logic in parent scene usually, 
-            // but for safety:
             if (this.rainSystem.geometry) this.rainSystem.geometry.dispose();
             if (this.rainSystem.material) this.rainSystem.material.dispose();
         }
@@ -239,5 +237,22 @@ export class WeatherSystem {
         if (this.lightningAmbient) {
             this.scene.remove(this.lightningAmbient);
         }
+    }
+
+    pause() {
+        if (this.rainSound && this.rainSound.isPlaying) {
+            this.rainSound.pause();
+        }
+        if (this.thunderSound && this.thunderSound.isPlaying) {
+            this.thunderSound.pause();
+        }
+    }
+
+    resume() {
+        if (this.rainSound && !this.rainSound.isPlaying && this.weatherConfig.RAIN.ENABLED) {
+            this.rainSound.play();
+        }
+        // Thunder doesn't resume automatically as it's an event, unless it was mid-play
+        // But for simplicity, we just resume rain loop.
     }
 }
