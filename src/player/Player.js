@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG, PLAYER_ACTION_STATES } from './Config.js';
+import { CONFIG, PLAYER_ACTION_STATES } from '../Config.js';
 
 /**
  * 플레이어 캐릭터의 위치, 이동, 상태를 관리하는 클래스 (1인칭 전용)

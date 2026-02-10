@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { CONFIG } from './Config.js';
+import { CONFIG } from '../Config.js';
 import { Zombie } from './Zombie.js';
+import { WolfZombie } from './WolfZombie.js';
 
 /**
  * 미로 내의 모든 몬스터를 관리하는 클래스
@@ -14,11 +15,44 @@ export class MonsterManager {
     }
 
     /**
-     * 지정된 개수만큼 좀비 스폰
+     * 지정된 개수만큼 몬스터 스폰 (좀비 + 늑대 좀비)
      * @param {number} count 
      * @param {number} level - 현재 스테이지 레벨 (속도 계산용)
      */
     spawnZombies(count = 5, level = 1) {
+        // 스테이지 3부터 늑대 좀비 등장
+        const wolfMinStage = CONFIG.MONSTERS.WOLF_ZOMBIE.SPAWN_MIN_STAGE;
+        const canSpawnWolves = level >= wolfMinStage;
+
+        // 늑대 좀비 비율: 일반 좀비 3마리당 1마리 (25%)
+        let wolfCount = 0;
+        let zombieCount = count;
+
+        if (canSpawnWolves) {
+            // 전체의 25%를 늑대 좀비로, 최소 1마리 보장
+            wolfCount = Math.max(1, Math.round(count * 0.25));
+            zombieCount = count - wolfCount;
+        }
+
+        console.log(`Spawning ${zombieCount} zombies and ${wolfCount} wolf zombies (level ${level})`);
+
+        // 좀비 스폰
+        this._spawnMonsterType(CONFIG.MONSTERS.TYPES.ZOMBIE, zombieCount, level);
+
+        // 늑대 좀비 스폰
+        if (wolfCount > 0) {
+            this._spawnMonsterType(CONFIG.MONSTERS.TYPES.WOLF_ZOMBIE, wolfCount, level);
+        }
+    }
+
+    /**
+     * 특정 타입의 몬스터를 스폰하는 헬퍼 메서드
+     * @param {string} monsterType - 몬스터 타입 (ZOMBIE 또는 WOLF_ZOMBIE)
+     * @param {number} count - 스폰할 개수
+     * @param {number} level - 현재 스테이지 레벨
+     */
+    _spawnMonsterType(monsterType, count, level) {
+        if (count <= 0) return;
         // 빈 칸 가져오기 (입구/출구 제외된 상태)
         let emptyCells = this._getEmptyCells();
 
@@ -53,14 +87,20 @@ export class MonsterManager {
             const randomIndex = Math.floor(Math.random() * emptyCells.length);
             const cell = emptyCells.splice(randomIndex, 1)[0];
 
-            const zombie = new Zombie(this.scene, this.mazeGen, { sound: this.sound, level });
+            // 몬스터 타입에 따라 인스턴스 생성
+            let monster;
+            if (monsterType === CONFIG.MONSTERS.TYPES.WOLF_ZOMBIE) {
+                monster = new WolfZombie(this.scene, this.mazeGen, { sound: this.sound, level });
+            } else {
+                monster = new Zombie(this.scene, this.mazeGen, { sound: this.sound, level });
+            }
 
             // 월드 좌표 계산 (MazeGenerator의 좌표계 사용)
             const thickness = CONFIG.MAZE.WALL_THICKNESS;
             const offsetX = -(this.mazeGen.width * thickness) / 2;
             const offsetZ = -(this.mazeGen.height * thickness) / 2;
 
-            zombie.position.set(
+            monster.position.set(
                 offsetX + cell.x * thickness + thickness / 2,
                 0,
                 offsetZ + cell.y * thickness + thickness / 2
@@ -84,15 +124,13 @@ export class MonsterManager {
 
             if (roadDirs.length > 0) {
                 // 길 중 하나를 무작위로 골라 바라봄
-                zombie.rotation.y = roadDirs[Math.floor(Math.random() * roadDirs.length)].angle;
+                monster.rotation.y = roadDirs[Math.floor(Math.random() * roadDirs.length)].angle;
             } else {
-                zombie.rotation.y = Math.random() * Math.PI * 2;
+                monster.rotation.y = Math.random() * Math.PI * 2;
             }
 
-            this.monsters.push(zombie);
+            this.monsters.push(monster);
         }
-
-        console.log(`${spawnCount} zombies spawned.`);
     }
 
     /**

@@ -148,6 +148,134 @@ export class CharacterBuilder {
     }
 
     /**
+     * 늑대 좀비 전용 사족보행 모델 생성
+     * @param {Object} options { color, scale }
+     */
+    static createWolf(options = {}) {
+        const {
+            color = 0xaa4444, // 붉은 늑대 색상
+            scale = 0.35
+        } = options;
+
+        const group = new THREE.Group();
+        group.scale.set(scale, scale, scale);
+
+        // 모델을 90도 회전시켜 좀비와 같은 방향(-Z)을 바라보도록 설정
+        group.rotation.y = -Math.PI / 2;
+
+        // 1. 늑대 몸통 (수평으로 긴 형태)
+        const bodyGeom = new THREE.BoxGeometry(1.2, 0.6, 0.5);
+        const bodyMat = new THREE.MeshStandardMaterial({ color });
+        const body = new THREE.Mesh(bodyGeom, bodyMat);
+        body.position.set(0, 0.5, 0);
+        body.castShadow = true;
+        group.add(body);
+
+        // 2. 늑대 머리 (주둥이 포함)
+        const headGroup = new THREE.Group();
+        headGroup.name = 'headGroup';
+        headGroup.position.set(0.7, 0.6, 0);
+        group.add(headGroup);
+
+        // 머리 메인 부분
+        const headGeom = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+        const head = new THREE.Mesh(headGeom, bodyMat);
+        head.castShadow = true;
+        headGroup.add(head);
+
+        // 주둥이 (Snout)
+        const snoutGeom = new THREE.BoxGeometry(0.3, 0.2, 0.2);
+        const snout = new THREE.Mesh(snoutGeom, bodyMat);
+        snout.position.set(0.3, -0.05, 0);
+        snout.castShadow = true;
+        headGroup.add(snout);
+
+        // 귀 (삼각형 모양)
+        const earGeom = new THREE.ConeGeometry(0.15, 0.3, 3);
+        const lEar = new THREE.Mesh(earGeom, bodyMat);
+        lEar.position.set(-0.1, 0.3, -0.1);
+        lEar.rotation.z = Math.PI / 6;
+        lEar.castShadow = true;
+        headGroup.add(lEar);
+
+        const rEar = new THREE.Mesh(earGeom, bodyMat);
+        rEar.position.set(-0.1, 0.3, 0.1);
+        rEar.rotation.z = Math.PI / 6;
+        rEar.castShadow = true;
+        headGroup.add(rEar);
+
+        // 눈 (빛나는 붉은 눈)
+        const eyeGeom = new THREE.SphereGeometry(0.08, 8, 8);
+        const eyeMat = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            emissive: 0xff0000,
+            emissiveIntensity: 0.5
+        });
+
+        const lEye = new THREE.Mesh(eyeGeom, eyeMat);
+        lEye.position.set(0.15, 0.1, -0.15);
+        headGroup.add(lEye);
+
+        const rEye = new THREE.Mesh(eyeGeom, eyeMat);
+        rEye.position.set(0.15, 0.1, 0.15);
+        headGroup.add(rEye);
+
+        // 3. 네 개의 다리 (사족보행)
+        const legGeom = new THREE.BoxGeometry(0.15, 0.5, 0.15);
+        const legMat = new THREE.MeshStandardMaterial({ color });
+
+        // 앞 왼쪽 다리
+        const flLegPivot = new THREE.Group();
+        flLegPivot.name = 'frontLeftLeg';
+        flLegPivot.position.set(0.4, 0.3, -0.2);
+        group.add(flLegPivot);
+        const flLeg = new THREE.Mesh(legGeom, legMat);
+        flLeg.position.y = -0.25;
+        flLeg.castShadow = true;
+        flLegPivot.add(flLeg);
+
+        // 앞 오른쪽 다리
+        const frLegPivot = new THREE.Group();
+        frLegPivot.name = 'frontRightLeg';
+        frLegPivot.position.set(0.4, 0.3, 0.2);
+        group.add(frLegPivot);
+        const frLeg = new THREE.Mesh(legGeom, legMat);
+        frLeg.position.y = -0.25;
+        frLeg.castShadow = true;
+        frLegPivot.add(frLeg);
+
+        // 뒤 왼쪽 다리
+        const blLegPivot = new THREE.Group();
+        blLegPivot.name = 'backLeftLeg';
+        blLegPivot.position.set(-0.4, 0.3, -0.2);
+        group.add(blLegPivot);
+        const blLeg = new THREE.Mesh(legGeom, legMat);
+        blLeg.position.y = -0.25;
+        blLeg.castShadow = true;
+        blLegPivot.add(blLeg);
+
+        // 뒤 오른쪽 다리
+        const brLegPivot = new THREE.Group();
+        brLegPivot.name = 'backRightLeg';
+        brLegPivot.position.set(-0.4, 0.3, 0.2);
+        group.add(brLegPivot);
+        const brLeg = new THREE.Mesh(legGeom, legMat);
+        brLeg.position.y = -0.25;
+        brLeg.castShadow = true;
+        brLegPivot.add(brLeg);
+
+        // 4. 꼬리
+        const tailGeom = new THREE.BoxGeometry(0.1, 0.1, 0.4);
+        const tail = new THREE.Mesh(tailGeom, legMat);
+        tail.position.set(-0.7, 0.6, 0);
+        tail.rotation.x = -Math.PI / 4;
+        tail.castShadow = true;
+        group.add(tail);
+
+        return group;
+    }
+
+    /**
      * 기본 이족보행 캐릭터 모델 생성
      * @param {Object} options { color, scale }
      */

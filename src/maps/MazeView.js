@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG } from './Config.js';
+import { CONFIG } from '../Config.js';
 
 /**
  * 미로의 시각적 표현(3D 메쉬)을 관리하는 클래스

@@ -15,10 +15,10 @@ export class SplashScene extends BaseScene {
     init() {
         // 1. 카메라 설정
         this.camera = new THREE.PerspectiveCamera(
-            CONFIG.CAMERA.FOV,
+            CONFIG.PLAYER.CAMERA.FOV,
             window.innerWidth / window.innerHeight,
-            CONFIG.CAMERA.NEAR,
-            CONFIG.CAMERA.FAR
+            CONFIG.PLAYER.CAMERA.NEAR,
+            CONFIG.PLAYER.CAMERA.FAR
         );
         this.camera.position.set(0, 5, 10);
         this.camera.lookAt(0, 0, 0);

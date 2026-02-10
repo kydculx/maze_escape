@@ -14,10 +14,10 @@ export class MainMenuScene extends BaseScene {
     init() {
         // 1. 카메라 설정 (메인 메뉴용 시점)
         this.camera = new THREE.PerspectiveCamera(
-            CONFIG.CAMERA.FOV,
+            CONFIG.PLAYER.CAMERA.FOV,
             window.innerWidth / window.innerHeight,
-            CONFIG.CAMERA.NEAR,
-            CONFIG.CAMERA.FAR
+            CONFIG.PLAYER.CAMERA.NEAR,
+            CONFIG.PLAYER.CAMERA.FAR
         );
         this.camera.position.set(2, 2, 5);
         this.camera.lookAt(0, 0, 0);

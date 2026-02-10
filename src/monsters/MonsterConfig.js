@@ -1,0 +1,59 @@
+/**
+ * 몬스터 관련 설정
+ */
+export const MONSTER_CONFIG = {
+    TYPES: {
+        ZOMBIE: 'ZOMBIE',
+        WOLF_ZOMBIE: 'WOLF_ZOMBIE'
+    },
+    STATES: {
+        IDLE: 'IDLE',
+        MOVE: 'MOVE',
+        ATTACK: 'ATTACK',
+        HURT: 'HURT',
+        DIE: 'DIE'
+    },
+    // 일반 좀비 설정
+    ZOMBIE: {
+        SPEED: 1.5,                       // 기본 이동 속도
+        MOVE_DURATION: 2,                 // 이동 주기
+        DETECTION_RANGE: 2,              // 플레이어 감지 범위 (타일 거리 아님, 월드 유닛)
+        IDLE_SWAY_SPEED: 1,               // 대기 중 좌우 흔들림 속도
+        IDLE_SWAY_AMPLITUDE: 0.1,         // 대기 중 좌우 흔들림 크기
+        WALK_BOB_SPEED: 2,                // 걷는 애니메이션 바운스 속도
+        WALK_BOB_AMPLITUDE: 0.2,          // 걷는 애니메이션 바운스 크기
+        MODEL_SCALE: 0.3,                 // 모델 크기 배율
+        COLOR: 0x77aa77,                  // 모델 기본 색상 (녹색 계열)
+        PATH_RECALC_INTERVAL: 1,          // 경로 재계산 간격 (초 단위, 낮을수록 똑똑하지만 성능 부하)
+        PATROL_RADIUS: 3,                 // 배회 모드 시 이동 반경
+        PATROL_WAIT_MIN: 0.5,             // 배회 지점 도착 후 최소 대기 시간 (초)
+        PATROL_WAIT_MAX: 2.0,             // 배회 지점 도착 후 최대 대기 시간 (초)
+        SAFE_SPAWN_DISTANCE: 10,          // 플레이어로부터의 안전 생성 거리 (이 거리 밖에서만 생성)
+        PATROL_AUDIO_MAX_DIST: 10,        // 배회 사운드가 들리는 최대 거리
+        // 레벨별 난이도 조정
+        SPEED_INCREASE_PER_LEVEL: 0.05,   // 레벨당 속도 증가율 (5%)
+        MAX_SPEED_MULTIPLIER: 1.5         // 속도 증가 최대 한계 (기본 속도의 2배)
+    },
+    // 울프 좀비 (강화형) 설정
+    WOLF_ZOMBIE: {
+        SPEED: 2.5,                       // 좀비보다 빠름 (1.5 vs 2.5)
+        MOVE_DURATION: 1.2,               // 이동 반응 속도가 더 빠름
+        DETECTION_RANGE: 3,              // 플레이어 감지 범위
+        IDLE_SWAY_SPEED: 1.5,             // 대기 동작도 더 빠름
+        IDLE_SWAY_AMPLITUDE: 0.15,
+        WALK_BOB_SPEED: 3,                // 걷는 동작이 더 역동적
+        WALK_BOB_AMPLITUDE: 0.25,
+        MODEL_SCALE: 0.35,                // 덩치가 약간 더 큼
+        COLOR: 0xaa4444,                  // 붉은색 계열 (위협적)
+        PATH_RECALC_INTERVAL: 0.8,        // 더 자주 경로를 탐색하여 끈질기게 추격
+        PATROL_RADIUS: 4,                 // 더 넓은 구역을 배회
+        PATROL_WAIT_MIN: 0.3,             // 대기 시간이 짧음 (공격적)
+        PATROL_WAIT_MAX: 1.5,
+        SAFE_SPAWN_DISTANCE: 10,
+        PATROL_AUDIO_MAX_DIST: 12,        // 소리가 더 멀리까지 들림
+        SPAWN_MIN_STAGE: 3,               // 스테이지 3 이상에서만 등장
+        // 레벨별 난이도 조정
+        SPEED_INCREASE_PER_LEVEL: 0.06,   // 레벨당 속도 증가율 (6% - 더 가파르게 증가)
+        MAX_SPEED_MULTIPLIER: 2.0         // 최대 2.5배속까지 빨라짐
+    }
+};

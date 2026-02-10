@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG } from './Config.js';
+import { CONFIG } from '../Config.js';
 
 /**
  * 카메라 시점 및 동적 연출(점프 시 틸트, 안개 조절 등)을 관리하는 클래스
@@ -11,10 +11,10 @@ export class CameraController {
 
         // 카메라 생성
         this.camera = new THREE.PerspectiveCamera(
-            CONFIG.CAMERA.FOV,
+            CONFIG.PLAYER.CAMERA.FOV,
             window.innerWidth / window.innerHeight,
-            CONFIG.CAMERA.NEAR,
-            CONFIG.CAMERA.FAR
+            CONFIG.PLAYER.CAMERA.NEAR,
+            CONFIG.PLAYER.CAMERA.FAR
         );
 
         // 플레이어 그룹에 카메라 추가 (부모-자식 관계 설정으로 자동 추적)
@@ -31,7 +31,7 @@ export class CameraController {
         // 1. 대기 중 도리도리(Sway) 연출
         const isIdle = !this.player.isMoving && !this.player.isRotating && !this.player.isJumping;
         const jumpCfg = CONFIG.PLAYER.JUMP_EFFECT;
-        const camCfg = CONFIG.CAMERA;
+        const camCfg = CONFIG.PLAYER.CAMERA;
 
         let swayOffset = 0;
         if (isIdle && this.player.idleTimer >= jumpCfg.IDLE_SWAY_DELAY) {
@@ -51,7 +51,7 @@ export class CameraController {
             const rawFactor = Math.sin(jumpProgress * Math.PI);
 
             // 안개 가시거리 확장
-            const fogCfg = CONFIG.ENVIRONMENT.FOG;
+            const fogCfg = CONFIG.MAZE.FOG;
             let visibilityFactor = 0;
             if (rawFactor > jumpCfg.VISIBILITY_THRESHOLD) {
                 visibilityFactor = (rawFactor - jumpCfg.VISIBILITY_THRESHOLD) / (1.0 - jumpCfg.VISIBILITY_THRESHOLD);
@@ -83,7 +83,7 @@ export class CameraController {
     }
 
     setFirstPerson() {
-        const camCfg = CONFIG.CAMERA;
+        const camCfg = CONFIG.PLAYER.CAMERA;
         this.camera.position.set(0, camCfg.FIRST_PERSON_HEIGHT, 0);
 
         const forward = new THREE.Vector3(0, camCfg.FIRST_PERSON_HEIGHT, -1);
@@ -95,7 +95,7 @@ export class CameraController {
     onJumpEnd() {
         // 안개 거리 복구
         if (this.scene.fog) {
-            this.scene.fog.far = CONFIG.ENVIRONMENT.FOG.FAR;
+            this.scene.fog.far = CONFIG.MAZE.FOG.FAR;
         }
         // 카메라 각도 복구
         this.setFirstPerson();
@@ -110,7 +110,7 @@ export class CameraController {
 
         // 반응형 FOV 계산 (가로 모드에서 너무 넓게 보이는 현상 방지)
         // 기본 FOV를 기준으로, 가로가 길어지면 수직 FOV를 줄여서 체감 가시 영역을 일정하게 유지
-        const baseFov = CONFIG.CAMERA.FOV;
+        const baseFov = CONFIG.PLAYER.CAMERA.FOV;
         if (aspect > 1) {
             // Landscape: 수평 시야각을 일정하게 유지하려는 시도 (vFOV 조정)
             // fov = 2 * atan(tan(baseFov / 2) / aspect) -> 수평 고정 방식

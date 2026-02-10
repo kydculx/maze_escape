@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { InputHandler } from './src/InputHandler.js';
+import { InputHandler } from './src/player/InputHandler.js';
 import { GameState, STATES } from './src/GameState.js';
 import { SceneManager } from './src/SceneManager.js';
 import { SoundManager } from './src/SoundManager.js';

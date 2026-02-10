@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG } from './Config.js';
+import { CONFIG } from '../Config.js';
 
 /**
  * 설치된 함정(Trap)을 관리하는 클래스

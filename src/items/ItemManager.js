@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Item } from './Item.js';
-import { CONFIG } from './Config.js';
+import { CONFIG } from '../Config.js';
 
 /**
  * 미로 내 아이템의 생성, 관리, 충돌을 제어하는 클래스

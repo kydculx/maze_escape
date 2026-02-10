@@ -1,4 +1,4 @@
-import { CONFIG } from './Config.js';
+import { CONFIG } from '../Config.js';
 
 /**
  * 미로의 구조와 플레이어 위치를 보여주는 미니맵 클래스
@@ -20,11 +20,13 @@ export class Minimap {
             wall: colors.WALL,
             road: colors.ROAD,
             player: colors.PLAYER,
+            monster: '#ff0000', // 몬스터 색상 (빨강)
             border: '#555555',
             entrance: colors.ENTRANCE,
             exit: colors.EXIT
         };
         this.rotationFollow = config.ROTATION_FOLLOW;
+        this.showMonsters = false; // 치트/아이템 사용 시 true로 설정
     }
 
     /**
@@ -91,6 +93,28 @@ export class Minimap {
             ctx.fillStyle = this.colors.exit;
             ctx.fillRect(exit.x * cellW, exit.y * cellH, cellW, cellH);
             this._drawLabel(ctx, 'G', exit.x * cellW + cellW / 2, exit.y * cellH + cellH / 2, cellW);
+        }
+
+        // 3.8 몬스터 표시 (치트 활성화 시)
+        if (this.showMonsters && monsters && monsters.length > 0) {
+            ctx.fillStyle = this.colors.monster;
+            const monsterSize = cellW * 0.8;
+
+            monsters.forEach(monster => {
+                if (!monster.position) return;
+
+                // 월드 좌표 -> 그리드 좌표 -> 픽셀 좌표 변환
+                const mx = (monster.position.x - offsetX) / thickness;
+                const my = (monster.position.z - offsetZ) / thickness;
+
+                // 픽셀 좌표
+                const mPx = mx * cellW;
+                const mPy = my * cellH;
+
+                ctx.beginPath();
+                ctx.arc(mPx + cellW / 2, mPy + cellH / 2, monsterSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
 
         // 4. 플레이어 아이콘 표시

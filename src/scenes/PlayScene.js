@@ -2,16 +2,16 @@ import * as THREE from 'three';
 import { STATES } from '../GameState.js';
 import { BaseScene } from './BaseScene.js';
 import { CONFIG } from '../Config.js';
-import { MazeGenerator } from '../MazeGenerator.js';
-import { MazeView } from '../MazeView.js';
+import { MazeGenerator } from '../maps/MazeGenerator.js';
+import { MazeView } from '../maps/MazeView.js';
 import { UIManager } from '../UIManager.js';
-import { Minimap } from '../Minimap.js';
-import { Player } from '../Player.js';
-import { CameraController } from '../CameraController.js';
-import { ItemManager } from '../ItemManager.js';
+import { Minimap } from '../maps/Minimap.js';
+import { Player } from '../player/Player.js';
+import { CameraController } from '../player/CameraController.js';
+import { ItemManager } from '../items/ItemManager.js';
 import { StageManager } from '../StageManager.js';
-import { MonsterManager } from '../MonsterManager.js';
-import { TrapManager } from '../TrapManager.js';
+import { MonsterManager } from '../monsters/MonsterManager.js';
+import { TrapManager } from '../maps/TrapManager.js';
 import { SaveManager } from '../SaveManager.js';
 
 /**
@@ -49,7 +49,8 @@ export class PlayScene extends BaseScene {
 
     _initScene() {
         // 1. 환경 설정 (안개)
-        const fogCfg = CONFIG.ENVIRONMENT.FOG;
+        // 1. 환경 설정 (안개)
+        const fogCfg = CONFIG.MAZE.FOG;
         this.scene.background = new THREE.Color(fogCfg.COLOR);
         this.scene.fog = new THREE.Fog(fogCfg.COLOR, fogCfg.NEAR, fogCfg.FAR);
 
@@ -136,6 +137,9 @@ export class PlayScene extends BaseScene {
             onCheat: () => {
                 if (this.itemManager) {
                     this.itemManager.spawnNearbyItems(this.player.position, this.stageManager.level);
+                }
+                if (this.minimap) {
+                    this.minimap.showMonsters = true;
                 }
                 this.ui.updateAll();
             },
@@ -265,10 +269,10 @@ export class PlayScene extends BaseScene {
     }
 
     _initLights() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, CONFIG.ENVIRONMENT.LIGHTING.AMBIENT_INTENSITY);
+        const ambientLight = new THREE.AmbientLight(0xffffff, CONFIG.MAZE.LIGHTING.AMBIENT_INTENSITY);
         this.scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, CONFIG.ENVIRONMENT.LIGHTING.SUN_INTENSITY);
+        const sunLight = new THREE.DirectionalLight(0xffffff, CONFIG.MAZE.LIGHTING.SUN_INTENSITY);
         sunLight.position.set(-50, 50, -50);
         this.scene.add(sunLight);
     }
@@ -480,9 +484,11 @@ export class PlayScene extends BaseScene {
 
         // 1.9 안개 거리 동적 조정 (손전등 상태에 따라)
         if (this.scene.fog) {
-            const fogCfg = CONFIG.ENVIRONMENT.FOG;
+            const fogColor = CONFIG.MAZE.FOG.COLOR;
+            const fogNear = CONFIG.MAZE.FOG.NEAR;
+            const fogFar = CONFIG.MAZE.FOG.FAR;
             const flCfg = CONFIG.ITEMS.FLASHLIGHT;
-            const targetFar = this.player.isFlashlightOn ? fogCfg.FAR_FLASHLIGHT : fogCfg.FAR;
+            const targetFar = this.player.isFlashlightOn ? CONFIG.MAZE.FOG.FAR_FLASHLIGHT : CONFIG.MAZE.FOG.FAR;
             // 부드럽게 전환 (Lerp)
             this.scene.fog.far += (targetFar - this.scene.fog.far) * deltaTime * flCfg.FOG_TRANSITION_SPEED;
         }
@@ -623,7 +629,18 @@ export class PlayScene extends BaseScene {
                 case 'right':
                     this.player.startRotation(-Math.PI / 2);
                     this.stageManager.isStageActive = true;
+                    this.ui.updateAll(); // 회전 후 미니맵 업데이트
                     break;
+            }
+        }
+
+        // L키: 몬스터 위치 표시 치트
+        if (input.wasJustPressed('KeyL')) {
+            if (this.minimap) {
+                this.minimap.showMonsters = !this.minimap.showMonsters;
+                this.ui.updateAll();
+                console.log(`[Cheat] Monster Map Visibility: ${this.minimap.showMonsters}`);
+                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.SENSOR_TOGGLE_SFX_URL, 0.5);
             }
         }
     }
