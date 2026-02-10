@@ -24,6 +24,33 @@ export const ENGINE_CONFIG = {
                 INTENSITY: 1,         // 포인트 라이트 강도
                 POSITION: { x: 5, y: 5, z: 5 } // 조명 위치 (x, y, z)
             }
+        },
+        // 날씨 설정
+        WEATHER: {
+            RAIN: {
+                ENABLED: true,
+                COUNT: 3000,          // 비 입자 개수
+                COLOR: 0xaaaaaa,      // 비 색상 (약간 회색)
+                SPEED_Y: 25,          // 낙하 속도
+                RANGE_X: 40,          // 생성 범위 X (플레이어 기준)
+                RANGE_Z: 40,          // 생성 범위 Z (플레이어 기준)
+                HEIGHT: 30,           // 생성 높이
+                SIZE: 0.001,           // 빗줄기 굵기
+                LENGTH: 0.5           // 빗줄기 길이
+            },
+            LIGHTNING: {
+                ENABLED: true,
+                COLOR: 0xffffff,      // 번개 빛 색상
+                INTENSITY: 2.5,       // 번개 빛 강도 (순간적)
+                INTERVAL_MIN: 10,     // 최소 간격 (초)
+                INTERVAL_MAX: 30,     // 최대 간격 (초)
+                DURATION: 0.2         // 번개 지속 시간 (초)
+            },
+            FOG: {
+                COLOR: 0x050505,      // 어두운 안개 색상 (비오는 날)
+                NEAR: 2,
+                FAR: 10               // 시야를 좁게 하여 공포감 조성
+            }
         }
     },
 
@@ -31,6 +58,8 @@ export const ENGINE_CONFIG = {
     AUDIO: {
         // 배경음 및 효과음 파일 경로
         BGM_URL: 'audio/bgm_background.mp3',             // 배경음악
+        THUNDER_SFX_URL: 'audio/eff_thunder.mp3',        // 천둥 소리
+        RAIN_BGS_URL: 'audio/eff_rain.mp3',         // 빗소리 (배경)
         CLICK_SFX_URL: 'audio/eff_click.mp3',            // UI 클릭음
         FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3',      // 발소리
         JUMP_SFX_URL: 'audio/eff_jump.wav',              // 점프 소리

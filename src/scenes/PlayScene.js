@@ -11,6 +11,7 @@ import { CameraController } from '../player/CameraController.js';
 import { ItemManager } from '../items/ItemManager.js';
 import { StageManager } from '../StageManager.js';
 import { MonsterManager } from '../MonsterManager.js';
+import { WeatherSystem } from '../effects/WeatherSystem.js';
 import { TrapManager } from '../maps/TrapManager.js';
 import { SaveManager } from '../SaveManager.js';
 
@@ -104,6 +105,13 @@ export class PlayScene extends BaseScene {
         // 6. 카메라 및 매니저들
         this.cameraController = new CameraController(this.player, this.scene);
         this.camera = this.cameraController.camera;
+
+        // 6.1 오디오 리스너 초기화 (3D 사운드용)
+        this.audioListener = new THREE.AudioListener();
+        this.camera.add(this.audioListener);
+
+        // 6.5 날씨 시스템 초기화 (카메라 설정 후)
+        this.weatherSystem = new WeatherSystem(this.scene, this.camera, this.audioListener);
 
         this._refreshFloorMesh();
 
@@ -372,6 +380,18 @@ export class PlayScene extends BaseScene {
         this.scene.add(floor);
     }
 
+    dispose() {
+        if (this.weatherSystem) {
+            this.weatherSystem.stop();
+        }
+        // Clean up other managers if needed
+        if (this.monsterManager) {
+            // Stop any monster sounds if they are not attached to scene
+        }
+
+        super.dispose();
+    }
+
     update(dt) {
         // 일시정지 상태 체크
         if (this.game.state.isPaused) {
@@ -491,6 +511,11 @@ export class PlayScene extends BaseScene {
             const targetFar = this.player.isFlashlightOn ? CONFIG.MAZE.FOG.FAR_FLASHLIGHT : CONFIG.MAZE.FOG.FAR;
             // 부드럽게 전환 (Lerp)
             this.scene.fog.far += (targetFar - this.scene.fog.far) * deltaTime * flCfg.FOG_TRANSITION_SPEED;
+        }
+
+        // 1.95 날씨 업데이트
+        if (this.weatherSystem) {
+            this.weatherSystem.update(deltaTime, this.player.position);
         }
 
         // UI 상태 업데이트
