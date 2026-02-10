@@ -13,13 +13,13 @@ export const MAP_CONFIG = {
 
     // 조명 설정 (게임플레이)
     LIGHTING: {
-        AMBIENT_INTENSITY: 0.2,   // 주변광(Ambient Light) 강도 (전체적인 밝기)
+        AMBIENT_INTENSITY: 0.5,   // 주변광(Ambient Light) 강도 (전체적인 밝기)
         SUN_INTENSITY: 0.2        // 주광(Directional Light) 강도 (그림자 생성용)
     },
 
     // 안개 설정 (거리감 및 분위기 조성)
     FOG: {
-        COLOR: 0x000000,          // 안개 색상 (검정색은 어둠을 표현)
+        COLOR: 0x101010,          // 안개 색상 (검정색은 어둠을 표현)
         NEAR: 0,                  // 안개가 시작되는 거리 (플레이어 위치 기준)
         FAR: 3,                   // 기본 안개 끝 거리 (손전등 OFF 시 가시거리)
         FAR_FLASHLIGHT: 5         // 손전등 ON 시 안개 끝 거리 (가시거리 확장)
@@ -34,8 +34,8 @@ export const MAP_CONFIG = {
 };
 
 export const STAGE_CONFIG = {
-    INITIAL_LEVEL: 1,
-    INITIAL_SIZE: 5,
-    SIZE_INCREMENT: 1,
-    MAX_SIZE: 31
+    INITIAL_LEVEL: 1,       // 게임 시작 레벨
+    INITIAL_SIZE: 5,        // 레벨 1의 미로 크기 (5x5)
+    SIZE_INCREMENT: 1,      // 레벨 업 당 미로 크기 증가량
+    MAX_SIZE: 31            // 미로의 최대 크기 제한
 };
