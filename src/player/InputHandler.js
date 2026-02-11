@@ -20,29 +20,70 @@ export class InputHandler {
         this.touchStartPoint = { x: 0, y: 0 };
         this.swipeThreshold = 50; // 최소 스와이프 거리 (픽셀)
         this.currentSwipe = null; // 'up', 'down', 'left', 'right'
+        this.ignoreCurrentTouch = false; // UI 위에서의 터치/클릭 무시용 플래그
 
         // 터치 이벤트
         window.addEventListener('touchstart', (e) => {
+            // UI 요소 위에서의 터치는 무시
+            if (this._isUIElement(e.target)) {
+                this.ignoreCurrentTouch = true;
+                return;
+            }
+            this.ignoreCurrentTouch = false;
             this.touchStartPoint = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }, { passive: true });
 
         window.addEventListener('touchend', (e) => {
+            if (this.ignoreCurrentTouch) return;
             this._handleSwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
         }, { passive: true });
 
         // 마우스 드래그를 스와이프로 처리
         this.isMouseDown = false;
         window.addEventListener('mousedown', (e) => {
+            // UI 요소 위에서의 클릭은 무시
+            if (this._isUIElement(e.target)) {
+                this.ignoreCurrentTouch = true;
+                return;
+            }
+            this.ignoreCurrentTouch = false;
             this.isMouseDown = true;
             this.touchStartPoint = { x: e.clientX, y: e.clientY };
         });
 
         window.addEventListener('mouseup', (e) => {
+            if (this.ignoreCurrentTouch) {
+                this.ignoreCurrentTouch = false;
+                return;
+            }
             if (this.isMouseDown) {
                 this._handleSwipe(e.clientX, e.clientY);
                 this.isMouseDown = false;
             }
         });
+    }
+
+    /**
+     * 특정 요소가 UI 요소(HUD, 팝업 등)인지 확인
+     */
+    _isUIElement(target) {
+        if (!target) return false;
+
+        // UI 컨테이너 ID 목록
+        const uiContainers = [
+            'top-hud',
+            'item-actions',
+            'cheat-hud',
+            'ingame-menu-popup',
+            'settings-popup',
+            'help-popup',
+            'main-menu-screen',
+            'minimap-container',
+            'radar-container'
+        ];
+
+        // 타겟 본인이나 부모 중 하나라도 UI 컨테이너에 속하는지 확인
+        return !!target.closest(uiContainers.map(id => `#${id}`).join(', '));
     }
 
     /**

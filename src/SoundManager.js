@@ -28,6 +28,7 @@ export class SoundManager {
         this.buffers = new Map(); // URL -> AudioBuffer
         this.activeLoops = new Set(); // Track all active loop controllers
         this.allAudioElements = new Set(); // Track all HTMLAudioElement instances
+        this.isPausedForMenu = false; // 일시정지 유무 (BGM 감쇄용)
     }
 
     /**
@@ -290,9 +291,16 @@ export class SoundManager {
      * @param {number} volume - 볼륨 (0~1)
      */
     setMasterVolume(volume) {
-        if (isNaN(volume)) return;
+        if (!Number.isFinite(volume)) return;
         this.masterVolume = Math.max(0, Math.min(1, volume));
+
+        // BGM 업데이트
         this._updateBGMVolume();
+
+        // 모든 활성 루프(SFX, Weather) 업데이트
+        for (const controller of this.activeLoops) {
+            controller.setVolume(controller.volume);
+        }
     }
 
     /**
@@ -311,8 +319,16 @@ export class SoundManager {
      * SFX 볼륨 설정 (0~1)
      */
     setSFXVolume(volume) {
-        if (isNaN(volume)) return;
+        if (!Number.isFinite(volume)) return;
         this.sfxVolume = Math.max(0, Math.min(1, volume));
+
+        // 실시간으로 모든 SFX 루프(몬스터 등) 볼륨 업데이트
+        for (const controller of this.activeLoops) {
+            if (controller.category === 'sfx') {
+                controller.setVolume(controller.volume);
+            }
+        }
+
         // 볼륨 변경 시 저장
         console.log('[SoundManager] Saving SFX volume:', this.sfxVolume);
         SaveManager.saveSettings(this.bgmVolume, this.sfxVolume, this.weatherVolume);
@@ -342,8 +358,10 @@ export class SoundManager {
      */
     _updateBGMVolume() {
         if (this.bgm) {
-            // 저장된 기본 볼륨 * BGM 볼륨 설정 * 마스터 볼륨
-            this.bgm.volume = this.currentBGMBaseVolume * this.bgmVolume * this.masterVolume;
+            // 저장된 기본 볼륨 * BGM 볼륨 설정 * 마스터 볼륨 * 일시정지 감쇄(0.2)
+            const menuMultiplier = this.isPausedForMenu ? 0.2 : 1.0;
+            const targetVolume = this.currentBGMBaseVolume * this.bgmVolume * this.masterVolume * menuMultiplier;
+            this.bgm.volume = Math.max(0, Math.min(1, targetVolume));
         }
     }
 
@@ -363,12 +381,12 @@ export class SoundManager {
      * 컨텍스트를 suspend하지 않으므로 버튼음 등의 SFX는 계속 작동함
      */
     pauseAll() {
-        console.log(`[SoundManager] Pausing BGM and ${this.activeLoops.size} loops.`);
+        console.log(`[SoundManager] Pausing sounds (BGM lowered, ${this.activeLoops.size} loops stopped).`);
 
-        // 1. BGM 일시정지 (내장 HTML Audio)
+        // 1. BGM 일시정지 대신 볼륨 감쇄 (메뉴에서 볼륨 조절 확인 가능하게)
         if (this.bgm && !this.bgm.paused) {
-            this.bgm.pause();
-            this.bgm.wasPlayingBeforePause = true;
+            this.isPausedForMenu = true;
+            this._updateBGMVolume();
         }
 
         // 2. 모든 Web Audio 루프 일시정지 (상태 저장 후 소스만 중지)
@@ -406,7 +424,10 @@ export class SoundManager {
             this.context.resume();
         }
 
-        // 2. BGM 복구
+        // 2. BGM 복구 (볼륨 원복)
+        this.isPausedForMenu = false;
+        this._updateBGMVolume();
+
         if (this.bgm && this.bgm.wasPlayingBeforePause) {
             this.bgm.play().catch(() => { });
             this.bgm.wasPlayingBeforePause = false;

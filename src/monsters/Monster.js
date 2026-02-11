@@ -423,7 +423,11 @@ export class Monster {
             const sfxVolume = this.sound.sfxVolume || 1.0;
 
             if (isTracking && trackVolume > 0) {
-                // SoundManager internally handles auto-start if queued
+                // Ensure sound is playing
+                if (!this.trackSoundController.isPlaying) {
+                    this.trackSoundController.play();
+                }
+
                 this.trackSoundController.setVolume(trackVolume * sfxVolume);
 
                 // 추격 중엔 배회 사운드 끄기
