@@ -57,14 +57,14 @@ export class WeatherSystem {
             return;
         }
 
-        // Rain Background Sound - SoundManager의 루프 시스템 이용 (AutoPlay 사용)
+        // Rain Background Sound - SoundManager의 루프 시스템 이용 (AutoPlay 사용, weather 카테고리)
         if (ASSETS.AUDIO.SFX.RAIN) {
-            this.rainSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.RAIN, 0.3, true);
+            this.rainSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.RAIN, 0.3, true, 'weather');
         }
 
-        // Thunder Sound Effect - 로딩만 미리 해두기 (AutoPlay 사용하되 볼륨 0)
+        // Thunder Sound Effect - 로딩만 미리 해두기 (AutoPlay 사용하되 볼륨 0, weather 카테고리)
         if (ASSETS.AUDIO.SFX.THUNDER) {
-            this.thunderSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.THUNDER, 0, true);
+            this.thunderSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.THUNDER, 0, true, 'weather');
         }
     }
 
@@ -207,9 +207,9 @@ export class WeatherSystem {
         // Position lightning roughly near player (Directional light pos invalidates shadows if changed too much, but for flash it's ok)
         // Actually keep directional light high up fixed
 
-        // Sound
+        // Sound (weather 카테고리 지정)
         if (this.sound) {
-            this.sound.playSFX(ASSETS.AUDIO.SFX.THUNDER, 1.0);
+            this.sound.playSFX(ASSETS.AUDIO.SFX.THUNDER, 1.0, 'weather');
         }
 
         console.log('[Weather] Lightning triggered!');

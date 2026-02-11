@@ -16,7 +16,8 @@ export class SoundManager {
         console.log('[SoundManager] Loaded settings from localStorage:', savedSettings);
         this.bgmVolume = savedSettings.bgmVolume;
         this.sfxVolume = savedSettings.sfxVolume;
-        console.log('[SoundManager] BGM Volume:', this.bgmVolume, 'SFX Volume:', this.sfxVolume);
+        this.weatherVolume = savedSettings.weatherVolume !== undefined ? savedSettings.weatherVolume : 1.0;
+        console.log('[SoundManager] BGM Volume:', this.bgmVolume, 'SFX Volume:', this.sfxVolume, 'Weather Volume:', this.weatherVolume);
 
         this.enabled = true;
         this.initialized = false;
@@ -89,7 +90,7 @@ export class SoundManager {
      * @param {string} url 
      * @returns {Object} Sound Controller { setVolume(0~1), stop() }
      */
-    playLoop(url, initialVolume = 0, autoPlay = false) {
+    playLoop(url, initialVolume = 0, autoPlay = false, category = 'sfx') {
         if (!this.enabled) return null;
         if (!this.initialized) this.init(); // 상호작용 내 호출 보장
 
@@ -100,6 +101,7 @@ export class SoundManager {
             isPlaying: false,
             isLoading: false,
             volume: initialVolume,
+            category: category,
             shouldStop: false,
             wasPlayingBeforePause: false, // 재개 및 초기화용 플래그
 
@@ -108,8 +110,9 @@ export class SoundManager {
                 controller.volume = v;
                 if (controller.gainNode && controller.isPlaying) {
                     try {
+                        const categoryVolume = controller.category === 'weather' ? this.weatherVolume : this.sfxVolume;
                         // 부드러운 볼륨 전환 (Click 방지)
-                        controller.gainNode.gain.setTargetAtTime(v * this.sfxVolume * this.masterVolume, this.context.currentTime, 0.1);
+                        controller.gainNode.gain.setTargetAtTime(v * categoryVolume * this.masterVolume, this.context.currentTime, 0.1);
                     } catch (e) {
                         // Context가 닫혔거나 에러 발생 시 무시
                     }
@@ -145,8 +148,9 @@ export class SoundManager {
                 source.loop = true;
 
                 const gainNode = this.context.createGain();
-                // 초기 볼륨 설정 (SFX 볼륨 및 마스터 볼륨 적용)
-                gainNode.gain.value = controller.volume * this.sfxVolume * this.masterVolume;
+                // 초기 볼륨 설정 (SFX/Weather 볼륨 및 마스터 볼륨 적용)
+                const categoryVolume = controller.category === 'weather' ? this.weatherVolume : this.sfxVolume;
+                gainNode.gain.value = controller.volume * categoryVolume * this.masterVolume;
 
                 source.connect(gainNode);
                 gainNode.connect(this.context.destination);
@@ -233,9 +237,12 @@ export class SoundManager {
      * 효과음(SFX) 즉시 재생
      * @param {string} url - 오디오 파일 경로
      * @param {number} volume - 볼륨 (0~1)
+     * @param {string} category - 볼륨 카테고리 ('sfx' 또는 'weather')
      */
-    async playSFX(url, volume = 0.8) {
+    async playSFX(url, volume = 0.8, category = 'sfx') {
         if (!this.enabled) return;
+
+        const categoryVolume = category === 'weather' ? this.weatherVolume : this.sfxVolume;
 
         // Web Audio API가 준비되었다면 우선 사용
         if (this.context && this.initialized) {
@@ -243,7 +250,7 @@ export class SoundManager {
             if (!buffer) {
                 // 캐시 없으면 로드 시도 (비동기라 즉시 재생은 안 될 수 있음 - 최초 1회 딜레이 감수)
                 // 또는 그냥 기존 Audio 방식 폴백
-                this._playSFXFallback(url, volume);
+                this._playSFXFallback(url, volume, category);
                 // 백그라운드에서 로드해둠
                 this.loadSound(url);
                 return;
@@ -252,7 +259,7 @@ export class SoundManager {
             const source = this.context.createBufferSource();
             source.buffer = buffer;
             const gainNode = this.context.createGain();
-            gainNode.gain.value = volume * this.sfxVolume * this.masterVolume;
+            gainNode.gain.value = volume * categoryVolume * this.masterVolume;
 
             source.connect(gainNode);
             gainNode.connect(this.context.destination);
@@ -260,14 +267,15 @@ export class SoundManager {
         } else {
             // 사용자 인터랙션이 없어 초기화되지 않았다면 오디오 자동 재생 정책으로 차단됨
             if (!this.initialized) return;
-            this._playSFXFallback(url, volume);
+            this._playSFXFallback(url, volume, category);
         }
     }
 
-    _playSFXFallback(url, volume) {
+    _playSFXFallback(url, volume, category = 'sfx') {
         const sfx = new Audio(url);
         this.allAudioElements.add(sfx);
-        sfx.volume = volume * this.sfxVolume * this.masterVolume;
+        const categoryVolume = category === 'weather' ? this.weatherVolume : this.sfxVolume;
+        sfx.volume = volume * categoryVolume * this.masterVolume;
         sfx.play().catch(error => {
             console.warn('SFX play failed:', error);
         }).finally(() => {
@@ -294,7 +302,7 @@ export class SoundManager {
         this._updateBGMVolume();
         // 볼륨 변경 시 저장
         console.log('[SoundManager] Saving BGM volume:', this.bgmVolume);
-        SaveManager.saveSettings(this.bgmVolume, this.sfxVolume);
+        SaveManager.saveSettings(this.bgmVolume, this.sfxVolume, this.weatherVolume);
     }
 
     /**
@@ -304,7 +312,25 @@ export class SoundManager {
         this.sfxVolume = Math.max(0, Math.min(1, volume));
         // 볼륨 변경 시 저장
         console.log('[SoundManager] Saving SFX volume:', this.sfxVolume);
-        SaveManager.saveSettings(this.bgmVolume, this.sfxVolume);
+        SaveManager.saveSettings(this.bgmVolume, this.sfxVolume, this.weatherVolume);
+    }
+
+    /**
+     * 날씨 효과음 볼륨 설정 (0~1)
+     */
+    setWeatherVolume(volume) {
+        this.weatherVolume = Math.max(0, Math.min(1, volume));
+
+        // 실시간으로 모든 날씨 루프 볼륨 업데이트
+        for (const controller of this.activeLoops) {
+            if (controller.category === 'weather') {
+                controller.setVolume(controller.volume); // 재적용 유도
+            }
+        }
+
+        // 볼륨 변경 시 저장
+        console.log('[SoundManager] Saving Weather volume:', this.weatherVolume);
+        SaveManager.saveSettings(this.bgmVolume, this.sfxVolume, this.weatherVolume);
     }
 
     /**

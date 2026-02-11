@@ -13,11 +13,12 @@ export class SaveManager {
      * @param {number} bgmVolume - BGM 볼륨 (0~1)
      * @param {number} sfxVolume - SFX 볼륨 (0~1)
      */
-    static saveSettings(bgmVolume, sfxVolume) {
+    static saveSettings(bgmVolume, sfxVolume, weatherVolume) {
         try {
             const settings = {
                 bgmVolume: bgmVolume,
-                sfxVolume: sfxVolume
+                sfxVolume: sfxVolume,
+                weatherVolume: weatherVolume
             };
             localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
             console.log('[SaveManager] Settings saved to localStorage:', settings);
@@ -47,7 +48,8 @@ export class SaveManager {
         console.log('[SaveManager] No saved settings found, using defaults');
         return {
             bgmVolume: 1.0,
-            sfxVolume: 1.0
+            sfxVolume: 1.0,
+            weatherVolume: 1.0
         };
     }
 

@@ -38,8 +38,10 @@ export class UIManager {
             settingsOkBtn: document.getElementById('settings-ok-btn'),
             bgmSlider: document.getElementById('bgm-volume-slider'),
             sfxSlider: document.getElementById('sfx-volume-slider'),
+            weatherSlider: document.getElementById('weather-volume-slider'),
             bgmVal: document.getElementById('bgm-volume-val'),
-            sfxVal: document.getElementById('sfx-volume-val')
+            sfxVal: document.getElementById('sfx-volume-val'),
+            weatherVal: document.getElementById('weather-volume-val')
         };
 
 
@@ -180,13 +182,16 @@ export class UIManager {
         // 현재 볼륨 값으로 슬라이더 초기화
         const currentBGM = Math.round(soundManager.bgmVolume * 100);
         const currentSFX = Math.round(soundManager.sfxVolume * 100);
+        const currentWeather = Math.round(soundManager.weatherVolume * 100);
 
         this.elements.bgmSlider.value = currentBGM;
         this.elements.bgmVal.textContent = `${currentBGM}%`;
         this.elements.sfxSlider.value = currentSFX;
         this.elements.sfxVal.textContent = `${currentSFX}%`;
+        this.elements.weatherSlider.value = currentWeather;
+        this.elements.weatherVal.textContent = `${currentWeather}%`;
 
-        console.log('[UIManager] Initialized settings UI - BGM:', currentBGM, '% SFX:', currentSFX, '%');
+        console.log('[UIManager] Initialized settings UI - BGM:', currentBGM, '% SFX:', currentSFX, '% Weather:', currentWeather, '%');
 
         const updateBGM = () => {
             const val = this.elements.bgmSlider.value;
@@ -200,8 +205,15 @@ export class UIManager {
             soundManager.setSFXVolume(val / 100);
         };
 
+        const updateWeather = () => {
+            const val = this.elements.weatherSlider.value;
+            this.elements.weatherVal.textContent = `${val}%`;
+            soundManager.setWeatherVolume(val / 100);
+        };
+
         this.elements.bgmSlider.addEventListener('input', updateBGM);
         this.elements.sfxSlider.addEventListener('input', updateSFX);
+        this.elements.weatherSlider.addEventListener('input', updateWeather);
 
         this._setupButton(this.elements.closeSettingsBtn, () => this.hideSettings());
         this._setupButton(this.elements.settingsOkBtn, () => {
