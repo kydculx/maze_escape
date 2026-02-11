@@ -29,6 +29,18 @@ const trapSfxUrl = new URL('./assets/audio/eff_trap.mp3', import.meta.url).href;
 const wallBrickUrl = new URL('./assets/textures/wall_brick.png', import.meta.url).href;
 const floorStoneUrl = new URL('./assets/textures/floor_stone.png', import.meta.url).href;
 
+const wallGothicUrl = new URL('./assets/textures/wall_gothic.png', import.meta.url).href;
+const floorGothicUrl = new URL('./assets/textures/floor_gothic.png', import.meta.url).href;
+
+// [Dungeon Themes]
+const wallDungeonAUrl = new URL('./assets/textures/dungeon_A_wall.png', import.meta.url).href;
+const floorDungeonAUrl = new URL('./assets/textures/dungeon_A_floor.png', import.meta.url).href;
+const wallDungeonBUrl = new URL('./assets/textures/dungeon_B_wall.png', import.meta.url).href;
+const floorDungeonBUrl = new URL('./assets/textures/dungeon_B_floor.png', import.meta.url).href;
+const wallDungeonCUrl = new URL('./assets/textures/dungeon_C_wall.png', import.meta.url).href;
+const floorDungeonCUrl = new URL('./assets/textures/dungeon_C_floor.png', import.meta.url).href;
+
+
 export const ASSETS = {
     AUDIO: {
         BGM: bgmUrl,
@@ -60,6 +72,15 @@ export const ASSETS = {
     },
     TEXTURES: {
         WALL_BRICK: wallBrickUrl,
-        FLOOR_STONE: floorStoneUrl
+        FLOOR_STONE: floorStoneUrl,
+        WALL_GOTHIC: wallGothicUrl,
+        FLOOR_GOTHIC: floorGothicUrl,
+
+        // Dungeon Themes
+        DUNGEON: {
+            TYPE_A: { WALL: wallDungeonAUrl, FLOOR: floorDungeonAUrl },
+            TYPE_B: { WALL: wallDungeonBUrl, FLOOR: floorDungeonBUrl },
+            TYPE_C: { WALL: wallDungeonCUrl, FLOOR: floorDungeonCUrl }
+        }
     }
 };

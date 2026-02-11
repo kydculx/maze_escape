@@ -46,7 +46,8 @@ export const ENGINE_CONFIG = {
                 INTENSITY: 2.5,       // 번개 빛 강도 (순간적)
                 INTERVAL_MIN: 15,     // 최소 간격 (초)
                 INTERVAL_MAX: 30,     // 최대 간격 (초)
-                DURATION: 0.2         // 번개 지속 시간 (초)
+                DURATION: 0.2,        // 번개 지속 시간 (초)
+                HEIGHT: 12            // 번개 생성 높이 (벽 높이 위)
             },
             FOG: {
                 COLOR: 0x050505,      // 어두운 안개 색상 (비오는 날)

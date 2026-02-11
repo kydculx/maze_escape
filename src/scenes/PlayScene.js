@@ -51,6 +51,8 @@ export class PlayScene extends BaseScene {
 
     _initScene() {
         // 1. 환경 설정 (안개)
+        this._randomizeTheme(); // 초기 테마 랜덤 설정
+
         // 1. 환경 설정 (안개)
         const fogCfg = CONFIG.MAZE.FOG;
         this.scene.background = new THREE.Color(fogCfg.COLOR);
@@ -78,11 +80,12 @@ export class PlayScene extends BaseScene {
         // 4. 미로 로직 및 뷰 초기화 (StageManager의 mazeSize 사용)
         this.mazeGen = new MazeGenerator(this.stageManager.mazeSize, this.stageManager.mazeSize);
 
-        // 모양 결정 (레벨 기반 가용 모양 중 선택)
-        const availableShapes = this._getAvailableShapes(this.stageManager.level);
-        const shape = CONFIG.MAZE.SHAPE && availableShapes.includes(CONFIG.MAZE.SHAPE)
-            ? CONFIG.MAZE.SHAPE
-            : availableShapes[Math.floor(Math.random() * availableShapes.length)];
+        // 모양 결정 (설정값이 있으면 강제 적용, 없으면 레벨 기반 랜덤)
+        let shape = CONFIG.MAZE.SHAPE;
+        if (!shape) {
+            const availableShapes = this._getAvailableShapes(this.stageManager.level);
+            shape = availableShapes[Math.floor(Math.random() * availableShapes.length)];
+        }
 
         this.mazeGen.applyShapeMask(shape);
         this.mazeGen.generateData();
@@ -331,12 +334,18 @@ export class PlayScene extends BaseScene {
      * 미로 재생성 공통 로직 (resetMaze, _gotoNextStage에서 사용)
      */
     _rebuildMaze() {
+        // 스테이지 변경 시 테마 랜덤 변경
+        this._randomizeTheme(); // 테마 변경
+
         const size = this.stageManager.mazeSize;
         this.mazeGen = new MazeGenerator(size, size);
 
-        // 레벨에 따라 모양 결정
-        const availableShapes = this._getAvailableShapes(this.stageManager.level);
-        const shape = availableShapes[Math.floor(Math.random() * availableShapes.length)];
+        // 레벨에 따라 모양 결정 (설정값이 있으면 강제 적용)
+        let shape = CONFIG.MAZE.SHAPE;
+        if (!shape) {
+            const availableShapes = this._getAvailableShapes(this.stageManager.level);
+            shape = availableShapes[Math.floor(Math.random() * availableShapes.length)];
+        }
         this.mazeGen.applyShapeMask(shape);
         this.mazeGen.generateData();
 
@@ -397,7 +406,46 @@ export class PlayScene extends BaseScene {
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = 0; // 타일들이 0.01에 있으므로 0에 배치
         floor.receiveShadow = true;
+        floor.receiveShadow = true;
         this.scene.add(floor);
+    }
+
+    _randomizeTheme() {
+        const themes = Object.keys(CONFIG.MAZE.THEMES);
+        const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+        CONFIG.MAZE.CURRENT_THEME = randomTheme;
+        console.log(`[PlayScene] Theme selected for this stage: ${randomTheme}`);
+
+        // 안개 설정 갱신 (테마 변경 후 즉시 적용)
+        if (this.scene.fog) {
+            const fogCfg = CONFIG.MAZE.FOG;
+            this.scene.fog.color.setHex(fogCfg.COLOR);
+            this.scene.fog.near = fogCfg.NEAR;
+            this.scene.fog.far = fogCfg.FAR;
+            this.scene.background = new THREE.Color(fogCfg.COLOR);
+        }
+
+        // 조명 갱신 (테마 변경 후 즉시 적용)
+        // 기존 조명 제거 후 재생성 방식보다는 속성 업데이트가 좋으나, 
+        // _initLights에서 생성된 조명 참조를 저장하지 않았으므로, 
+        // 간단히 씬 배경/안개만 여기서 하고 조명은 _initLights나 MazeView 호출 시 반영되길 기대...
+        // 하지만 _initLights는 init()에서 한 번만 호출됨.
+        // 따라서 조명 강도 업데이트 로직이 필요함.
+
+        this._updateLightsForTheme();
+    }
+
+    _updateLightsForTheme() {
+        // 씬에서 조명 찾기
+        const ambientLight = this.scene.children.find(c => c.type === 'AmbientLight');
+        const sunLight = this.scene.children.find(c => c.type === 'DirectionalLight');
+
+        if (ambientLight) {
+            ambientLight.intensity = CONFIG.MAZE.LIGHTING.AMBIENT_INTENSITY;
+        }
+        if (sunLight) {
+            sunLight.intensity = CONFIG.MAZE.LIGHTING.SUN_INTENSITY;
+        }
     }
 
     dispose() {

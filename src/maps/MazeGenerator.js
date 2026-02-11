@@ -87,65 +87,92 @@ export class MazeGenerator {
     }
 
     /**
-     * 미로 데이터 생성 (Recursive Backtracking)
+     * 미로 데이터 생성 (Iterative Randomized DFS)
+     * - 고전적인 미로 알고리즘.
+     * - 방향을 무작위로 섞어서 진행하므로 긴 직선보다는 구불구불한 경로가 생성됨.
+     * - 스택을 사용하여 재귀 호출 없이 구현 (안전성 확보).
      */
     generateData() {
-        // 모양 마스크가 적용된 곳은 미리 벽(1)으로 채워둠 (이미 fill(1) 이지만 명시적 확인용으로 놔둠)
+        // 1. 초기화: 모든 셀은 벽(1) (생성자에서 이미 완료)
 
         const stack = [];
 
-        // 마스크 내의 유효한 시작점 찾기 (보통 중심 근처)
-        let startX = Math.floor(this.width / 2);
-        let startY = Math.floor(this.height / 2);
-        // 만약 중심이 마스크 밖이라면 (그럴 일은 거의 없지만) 첫 번째 유효한 점 찾기
-        if (!this.mask[startY][startX]) {
-            outer: for (let y = 1; y < this.height - 1; y++) {
-                for (let x = 1; x < this.width - 1; x++) {
-                    if (this.mask[y][x]) {
-                        startX = x; startY = y; break outer;
-                    }
-                }
+        // 2. 시작점 선택 (홀수 좌표)
+        let startX = 1;
+        let startY = 1;
+
+        // 마스크 내의 유효한 시작점 찾기
+        while (!this.mask[startY][startX]) {
+            startX += 2; // 홀수 칸 이동
+            if (startX >= this.width - 1) {
+                startX = 1;
+                startY += 2;
             }
+            if (startY >= this.height - 1) break;
         }
 
+        // 시작점 뚫기 및 스택 푸시
         this.grid[startY][startX] = 0;
         stack.push([startX, startY]);
 
+        // 방향 정의 (상, 하, 좌, 우 - 2칸씩)
         const directions = [
-            [0, -2], // 상
-            [0, 2],  // 하
-            [-2, 0], // 좌
-            [2, 0]   // 우
+            [0, -2], [0, 2], [-2, 0], [2, 0]
         ];
 
+        // Fisher-Yates Shuffle for directions
+        const shuffle = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
+
+        // 3. 반복 (스택이 빌 때까지)
         while (stack.length > 0) {
-            const [cx, cy] = stack[stack.length - 1];
+            const [cx, cy] = stack[stack.length - 1]; // 현재 위치 (Peek)
+
+            // 연결 가능한 이웃 찾기
             const neighbors = [];
 
             for (const [dx, dy] of directions) {
                 const nx = cx + dx;
                 const ny = cy + dy;
 
-                // 마스크 범위 내에 있고 아직 벽인 곳만
-                if (nx > 0 && nx < this.width - 1 && ny > 0 && ny < this.height - 1 &&
-                    this.mask[ny][nx] && this.grid[ny][nx] === 1) {
-                    neighbors.push([nx, ny, dx, dy]);
+                // 유효 범위 체크
+                if (nx > 0 && nx < this.width - 1 && ny > 0 && ny < this.height - 1) {
+                    // 마스크 내부이고 && 아직 방문하지 않은 벽(1)이라면
+                    if (this.mask[ny][nx] && this.grid[ny][nx] === 1) {
+                        neighbors.push([nx, ny, dx, dy]);
+                    }
                 }
             }
 
             if (neighbors.length > 0) {
-                const [nx, ny, dx, dy] = neighbors[Math.floor(Math.random() * neighbors.length)];
+                // 이웃 중 하나를 랜덤 선택 (섞기)
+                shuffle(neighbors);
+                const [nx, ny, dx, dy] = neighbors[0];
 
-                // 현재 칸과 다음 칸 사이의 벽을 허묾
-                this.grid[cy + dy / 2][cx + dx / 2] = 0;
-                this.grid[ny][nx] = 0;
+                // 벽 뚫기 (중간 벽 + 다음 칸)
+                this.grid[cy + dy / 2][cx + dx / 2] = 0; // 중간 벽
+                this.grid[ny][nx] = 0;                   // 다음 칸
 
+                // 다음 칸을 스택에 추가
                 stack.push([nx, ny]);
             } else {
+                // 갈 곳이 없으면 스택에서 제거 (Backtracking)
                 stack.pop();
             }
         }
 
+        // 입구/출구 생성
+        this._createEntranceAndExit();
+
+        return this.grid;
+    }
+
+    _createEntranceAndExit() {
         // 입구 생성: 마스크 내 왼쪽 가장자리에서 가장 처음 만나는 길 찾기
         outerIn: for (let x = 0; x < this.width; x++) {
             for (let y = 1; y < this.height - 1; y++) {
@@ -155,6 +182,14 @@ export class MazeGenerator {
                     break outerIn;
                 }
             }
+        }
+
+        // Fallback: 입구를 찾지 못했으면 강제로 (0, 1)에 생성 (항상 (1,1)은 열려있으므로)
+        if (!this.entrance) {
+            console.warn("MazeGenerator: Failed to find natural entrance, forcing fallback at (0, 1).");
+            this.grid[1][1] = 0; // Ensure neighbor is open
+            this.grid[1][0] = 0; // Open entrance
+            this.entrance = { x: 0, y: 1 };
         }
 
         // 출구 생성: 마스크 내 오른쪽 가장자리에서 가장 마지막에 만나는 길 찾기
@@ -168,7 +203,15 @@ export class MazeGenerator {
             }
         }
 
-        return this.grid;
+        // Fallback: 출구를 찾지 못했으면 강제로 반대편 끝에 생성
+        if (!this.exit) {
+            console.warn("MazeGenerator: Failed to find natural exit, forcing fallback.");
+            const exitX = this.width - 1;
+            const exitY = this.height - 2;
+            this.grid[exitY][exitX - 1] = 0; // Ensure neighbor is open
+            this.grid[exitY][exitX] = 0;     // Open exit
+            this.exit = { x: exitX, y: exitY };
+        }
     }
 
     /**

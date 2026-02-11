@@ -103,12 +103,17 @@ export class WeatherSystem {
 
     createLightningEffect() {
         const lightConfig = this.weatherConfig.LIGHTNING;
-        // Directional Light for global flash effect (PointLight was too local/weak)
-        this.lightningLight = new THREE.DirectionalLight(lightConfig.COLOR, 0);
-        this.lightningLight.position.set(0, 100, 0);
+
+        // Use PointLight for local "overhead" effect
+        // Distance 50 정도면 충분히 주변 밝힘. Decay 2는 물리적으로 정확.
+        this.lightningLight = new THREE.PointLight(lightConfig.COLOR, 0, 100, 2);
+        this.lightningLight.position.set(0, lightConfig.HEIGHT || 15, 0);
+        // 그림자? 성능 문제로 일단 끔. PointLight 그림자는 무거움.
+        // 하지만 "벽 위쪽 느낌"을 내려면 그림자가 있으면 좋음.
+        // 일단 빛의 위치 변화만으로도 그림자 방향이 바뀌는 느낌(MeshStandardMaterial의 normal map 반응)은 남.
         this.scene.add(this.lightningLight);
 
-        // Also add an ambient light flash for shadow lifting
+        // Also add an ambient light flash for shadow lifting (overall brightness)
         this.lightningAmbient = new THREE.AmbientLight(lightConfig.COLOR, 0);
         this.scene.add(this.lightningAmbient);
     }
@@ -202,17 +207,26 @@ export class WeatherSystem {
 
         // Initial Flash
         this.lightningLight.intensity = this.weatherConfig.LIGHTNING.INTENSITY;
-        this.lightningAmbient.intensity = this.weatherConfig.LIGHTNING.INTENSITY * 0.5;
+        this.lightningAmbient.intensity = this.weatherConfig.LIGHTNING.INTENSITY * 0.3;
 
-        // Position lightning roughly near player (Directional light pos invalidates shadows if changed too much, but for flash it's ok)
-        // Actually keep directional light high up fixed
+        // Position lightning roughly near player to simulate "overhead" strike
+        // 벽 높이가 2이므로, HEIGHT(12) 정도면 적당히 높음.
+        // 플레이어 기준 반경 10 정도 내에서 랜덤
+        const offsetX = (Math.random() - 0.5) * 20;
+        const offsetZ = (Math.random() - 0.5) * 20;
+        const lx = playerPosition ? playerPosition.x + offsetX : 0;
+        const lz = playerPosition ? playerPosition.z + offsetZ : 0;
+        const ly = this.weatherConfig.LIGHTNING.HEIGHT || 12;
+
+        this.lightningLight.position.set(lx, ly, lz);
 
         // Sound (weather 카테고리 지정)
         if (this.sound) {
+            // 천둥 소리도 랜덤 피치/볼륨? 일단 기본
             this.sound.playSFX(ASSETS.AUDIO.SFX.THUNDER, 1.0, 'weather');
         }
 
-        console.log('[Weather] Lightning triggered!');
+        console.log(`[Weather] Lightning triggered at (${lx.toFixed(1)}, ${ly}, ${lz.toFixed(1)})`);
     }
 
     stop() {

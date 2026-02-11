@@ -65,8 +65,10 @@ export class MazeView {
         const wallMaterial = new THREE.MeshStandardMaterial({
             map: wallTexture,
             color: config.WALL_COLOR,
-            roughness: 0.9,
-            metalness: 0.05
+            roughness: config.MATERIAL.ROUGHNESS,
+            metalness: config.MATERIAL.METALNESS,
+            emissive: config.MATERIAL.EMISSIVE,
+            emissiveIntensity: config.MATERIAL.EMISSIVE_INTENSITY
         });
 
         // 바닥 타일 설정
@@ -77,9 +79,9 @@ export class MazeView {
         const floorGeometry = new THREE.PlaneGeometry(config.WALL_THICKNESS, config.WALL_THICKNESS);
         const floorMaterial = new THREE.MeshStandardMaterial({
             map: floorTexture,
-            color: 0x888888,
-            roughness: 0.8,
-            metalness: 0.1
+            color: 0x777777,
+            roughness: 0.35,         // 물웅덩이 효과를 위한 매끄러운 바닥
+            metalness: 0.2
         });
 
         const offsetX = -(mazeGen.width * config.WALL_THICKNESS) / 2;
