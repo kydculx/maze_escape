@@ -45,7 +45,8 @@ export class Player {
             jumpCount: 0,
             trapCount: 0,
             teleportCount: 0,
-            disguiseCount: 0
+            disguiseCount: 0,
+            itemOrder: [] // 아이템 획득 순서 추적
         };
 
         // Snapshot for retry
@@ -73,7 +74,8 @@ export class Player {
             inventory: { ...this.inventory },
             flashlightTimer: this.flashlightTimer,
             sensorTimer: this.sensorTimer,
-            disguiseTimer: this.disguiseTimer
+            disguiseTimer: this.disguiseTimer,
+            itemOrder: [...this.inventory.itemOrder]
         };
         console.log("Player checkpoint saved:", this.checkpointState);
     }
@@ -88,6 +90,7 @@ export class Player {
         this.flashlightTimer = this.checkpointState.flashlightTimer;
         this.sensorTimer = this.checkpointState.sensorTimer;
         this.disguiseTimer = this.checkpointState.disguiseTimer;
+        this.inventory.itemOrder = [...this.checkpointState.itemOrder];
 
         // Reset active states
         this.isFlashlightOn = false;
@@ -331,7 +334,8 @@ export class Player {
         if (isSpecial) {
             if (this.inventory.jumpCount <= 0) return;
             this.inventory.jumpCount--;
-            this.jumpHeight = CONFIG.PLAYER.JUMP_HEIGHT * CONFIG.ITEMS.JUMP_BOOST.MULTIPLIER;
+            if (this.inventory.jumpCount <= 0) this._updateItemOrder('JUMP', false);
+            this.jumpHeight = CONFIG.PLAYER.JUMP_HEIGHT * CONFIG.PLAYER.JUMP_EFFECT.SPECIAL_MULTIPLIER;
         } else {
             // 일반 점프 (스페이스바 등)
             this.jumpHeight = CONFIG.PLAYER.JUMP_HEIGHT;
@@ -355,7 +359,10 @@ export class Player {
         const dx = Math.round(-Math.sin(this.group.rotation.y));
         const dy = Math.round(-Math.cos(this.group.rotation.y));
 
-        if (callback) callback(dx, dy);
+        if (callback) {
+            callback(dx, dy);
+            if (this.inventory.hammerCount <= 0) this._updateItemOrder('HAMMER', false);
+        }
     }
 
     /**
@@ -366,6 +373,7 @@ export class Player {
         if (this.inventory.trapCount <= 0 || this.isMoving || this.isJumping) return null;
 
         this.inventory.trapCount--;
+        if (this.inventory.trapCount <= 0) this._updateItemOrder('TRAP', false);
         console.log("Placing trap...");
 
         // 함정 설치 사운드 재생
@@ -428,6 +436,7 @@ export class Player {
 
         // 아이템 소모
         this.inventory.teleportCount--;
+        if (this.inventory.teleportCount <= 0) this._updateItemOrder('TELEPORT', false);
         console.log(`Teleported to [${target.x}, ${target.y}]`);
 
         // 텔레포트 사운드 재생
@@ -486,6 +495,28 @@ export class Player {
                 console.log("Zombie disguise acquired!");
                 break;
         }
+
+        // 아이템 순서 업데이트
+        this._updateItemOrder(item.type, true);
+    }
+
+    /**
+     * 아이템 순서 리스트 업데이트
+     */
+    _updateItemOrder(type, isAcquired) {
+        if (isAcquired) {
+            // 이미 있으면 순서를 맨 뒤로(가장 최근) 보내지 않고 유지할지, 아니면 갱신할지?
+            // "획득한 순서대로"이므로 처음 얻었을 때 위치 유지하는 것이 일반적이나,
+            // 완전히 소모했다가 다시 얻는 경우를 위해 소모 시 제거 로직과 병행.
+            if (!this.inventory.itemOrder.includes(type)) {
+                this.inventory.itemOrder.push(type);
+            }
+        } else {
+            const index = this.inventory.itemOrder.indexOf(type);
+            if (index > -1) {
+                this.inventory.itemOrder.splice(index, 1);
+            }
+        }
     }
 
     /**
@@ -522,6 +553,7 @@ export class Player {
         if (this.inventory.disguiseCount <= 0 || this.disguiseTimer > 0) return false;
 
         this.inventory.disguiseCount--;
+        if (this.inventory.disguiseCount <= 0) this._updateItemOrder('ZOMBIE_DISGUISE', false);
         this.disguiseTimer = CONFIG.ITEMS.ZOMBIE_DISGUISE.DURATION;
         console.log("Zombie disguise activated! Speed halved.");
 

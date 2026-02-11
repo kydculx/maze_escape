@@ -244,6 +244,42 @@ export class UIManager {
     updateItemButtons() {
         if (!this.player) return;
 
+        const container = document.getElementById('item-actions');
+        if (!container) return;
+
+        // 아이템 타입과 엘리먼트 매핑
+        const typeToElement = {
+            'HAMMER': this.elements.hammer,
+            'JUMP': this.elements.jump,
+            'FLASHLIGHT': this.elements.flashlight,
+            'TRAP': this.elements.trap,
+            'TELEPORT': this.elements.teleport,
+            'ZOMBIE_DISGUISE': this.elements.disguise,
+            'SENSOR': this.elements.sensor
+        };
+
+        const itemOrder = this.player.inventory.itemOrder || [];
+
+        // 1. 현재 획득한 순서대로 DOM 재배치 및 가시성 설정
+        itemOrder.forEach(type => {
+            const el = typeToElement[type];
+            if (el) {
+                // 부모 컨테이너가 flex-direction: column-reverse이므로 
+                // 순서대로 appendChild를 하면 아래서 위로 쌓입니다.
+                container.appendChild(el);
+                el.classList.remove('hidden');
+            }
+        });
+
+        // 2. 획득하지 않은 아이템은 숨김
+        Object.keys(typeToElement).forEach(type => {
+            if (!itemOrder.includes(type)) {
+                const el = typeToElement[type];
+                if (el) el.classList.add('hidden');
+            }
+        });
+
+        // 3. 각 아이템 세부 상태 업데이트 (기존 로직)
         // 망치
         if (this.elements.hammer) {
             const count = this.player.inventory.hammerCount;
@@ -291,6 +327,22 @@ export class UIManager {
             const isUsing = this.player.isDisguised;
             this.elements.disguise.classList.toggle('active', isUsing);
             this.elements.disguise.classList.toggle('locked', count <= 0 && !isUsing);
+        }
+
+        // 사운드 센서 배터리 업데이트
+        if (this.elements.sensor) {
+            const sensorCfg = CONFIG.ITEMS.SENSOR;
+            const progress = (this.player.sensorTimer / sensorCfg.DURATION) * 100;
+            const fill = this.elements.sensor.querySelector('.battery-bar-fill');
+            if (fill) fill.style.height = `${progress}%`;
+            this.elements.sensor.classList.toggle('active', this.player.isSensorOn);
+            this.elements.sensor.classList.toggle('locked', this.player.sensorTimer <= 0);
+        }
+
+        // 미니맵 표시 여부 (지도 아이템 획득 시)
+        if (this.elements.minimap) {
+            const hasMap = this.player.inventory.hasMap;
+            this.elements.minimap.style.display = hasMap ? 'flex' : 'none';
         }
     }
 

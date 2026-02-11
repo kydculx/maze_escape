@@ -166,6 +166,10 @@ body::after {
     /* Ensure it's hidden */
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* Common Popup Content Box */
 .ui-popup-content {
     background: rgba(20, 0, 0, 0.85);
@@ -957,7 +961,7 @@ input[type="range"]::-webkit-slider-thumb {
     left: 20px;
     display: none;
     /* 기본적으로 숨김 (게임 시작 시에만 표시) */
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: 15px;
     pointer-events: auto;
     z-index: 100;
