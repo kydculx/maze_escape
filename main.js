@@ -166,8 +166,10 @@ class Game {
         const settingsOkBtn = document.getElementById('settings-ok-btn');
         const bgmSlider = document.getElementById('bgm-volume-slider');
         const sfxSlider = document.getElementById('sfx-volume-slider');
+        const weatherSlider = document.getElementById('weather-volume-slider');
         const bgmVal = document.getElementById('bgm-volume-val');
         const sfxVal = document.getElementById('sfx-volume-val');
+        const weatherVal = document.getElementById('weather-volume-val');
 
         // 설정 버튼 클릭 시 팝업 열기
         document.getElementById('settings-button').addEventListener('click', () => {
@@ -176,13 +178,16 @@ class Game {
                 // 현재 볼륨 값으로 슬라이더 초기화
                 const currentBGM = Math.round(this.sound.bgmVolume * 100);
                 const currentSFX = Math.round(this.sound.sfxVolume * 100);
+                const currentWeather = Math.round(this.sound.weatherVolume * 100);
 
                 bgmSlider.value = currentBGM;
                 bgmVal.textContent = `${currentBGM}%`;
                 sfxSlider.value = currentSFX;
                 sfxVal.textContent = `${currentSFX}%`;
+                weatherSlider.value = currentWeather;
+                weatherVal.textContent = `${currentWeather}%`;
 
-                console.log('[Main] Opening settings - BGM:', currentBGM, '% SFX:', currentSFX, '%');
+                console.log('[Main] Opening settings - BGM:', currentBGM, '% SFX:', currentSFX, '% Weather:', currentWeather, '%');
 
                 settingsPopup.classList.remove('hidden');
                 settingsPopup.style.display = 'flex';
@@ -203,6 +208,14 @@ class Game {
                 const val = sfxSlider.value;
                 sfxVal.textContent = `${val}%`;
                 this.sound.setSFXVolume(val / 100);
+            });
+        }
+
+        if (weatherSlider) {
+            weatherSlider.addEventListener('input', () => {
+                const val = weatherSlider.value;
+                weatherVal.textContent = `${val}%`;
+                this.sound.setWeatherVolume(val / 100);
             });
         }
 

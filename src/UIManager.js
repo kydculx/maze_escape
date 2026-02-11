@@ -31,6 +31,7 @@ export class UIManager {
             resumeBtn: document.getElementById('close-menu-btn'),
             restartBtn: document.getElementById('restart-btn'),
             mainMenuBtn: document.getElementById('main-menu-btn'),
+            ingameSettingsBtn: document.getElementById('ingame-settings-btn'),
             disguiseOverlay: document.getElementById('disguise-overlay'),
             // Settings elements
             settingsPopup: document.getElementById('settings-popup'),
@@ -208,6 +209,7 @@ export class UIManager {
         const updateWeather = () => {
             const val = this.elements.weatherSlider.value;
             this.elements.weatherVal.textContent = `${val}%`;
+            console.log(`[UIManager] Weather volume changed to: ${val}%`); // Debug log
             soundManager.setWeatherVolume(val / 100);
         };
 
@@ -331,6 +333,10 @@ export class UIManager {
                 this.elements.menuPopup.classList.add('hidden');
             }
             if (callbacks.onMainMenu) callbacks.onMainMenu();
+        });
+
+        this._setupButton(this.elements.ingameSettingsBtn, () => {
+            this.showSettings();
         });
 
         // Re-bind internal menu events (since unbindButtons clears everything)
