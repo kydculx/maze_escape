@@ -43,7 +43,7 @@ export class GameState {
      * 게임 일시 정지
      */
     pauseGame() {
-        if (!this.isPaused && this.current === STATES.PLAYING) {
+        if (!this.isPaused && (this.current === STATES.PLAYING || this.current === STATES.GAME_OVER)) {
             this.isPaused = true;
             console.log("Game Paused");
         }

@@ -39,6 +39,10 @@ const wallDungeonBUrl = new URL('./assets/textures/dungeon_B_wall.png', import.m
 const floorDungeonBUrl = new URL('./assets/textures/dungeon_B_floor.png', import.meta.url).href;
 const wallDungeonCUrl = new URL('./assets/textures/dungeon_C_wall.png', import.meta.url).href;
 const floorDungeonCUrl = new URL('./assets/textures/dungeon_C_floor.png', import.meta.url).href;
+const zombieSkinUrl = new URL('./assets/textures/zombie_skin_v3.png', import.meta.url).href;
+const zombieClothesUrl = new URL('./assets/textures/zombie_clothes_v2.png', import.meta.url).href;
+const zombieHeadOverhaulUrl = new URL('./assets/textures/zombie_head_v3.png', import.meta.url).href;
+const zombieBodyOverhaulUrl = new URL('./assets/textures/zombie_body_v3.png', import.meta.url).href;
 
 
 export const ASSETS = {
@@ -81,6 +85,12 @@ export const ASSETS = {
             TYPE_A: { WALL: wallDungeonAUrl, FLOOR: floorDungeonAUrl },
             TYPE_B: { WALL: wallDungeonBUrl, FLOOR: floorDungeonBUrl },
             TYPE_C: { WALL: wallDungeonCUrl, FLOOR: floorDungeonCUrl }
+        },
+        ZOMBIE: {
+            SKIN: zombieSkinUrl,
+            CLOTHES: zombieClothesUrl,
+            HEAD_OVERHAUL: zombieHeadOverhaulUrl,
+            BODY_OVERHAUL: zombieBodyOverhaulUrl
         }
     }
 };

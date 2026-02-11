@@ -7,10 +7,11 @@ import { WolfZombie } from './monsters/WolfZombie.js';
  * 미로 내의 모든 몬스터를 관리하는 클래스
  */
 export class MonsterManager {
-    constructor(scene, mazeGen, soundManager) {
+    constructor(scene, mazeGen, soundManager, onMonsterAttack) {
         this.scene = scene;
         this.mazeGen = mazeGen;
         this.sound = soundManager;
+        this.onMonsterAttack = onMonsterAttack;
         this.monsters = [];
     }
 
@@ -20,16 +21,27 @@ export class MonsterManager {
      * @param {number} level - 현재 스테이지 레벨 (속도 계산용)
      */
     spawnZombies(count = 5, level = 1) {
-        // 스테이지 3부터 늑대 좀비 등장
+        // MonsterConfig.js의 설정을 따름
+        const zombieMinStage = CONFIG.MONSTERS.ZOMBIE.SPAWN_MIN_STAGE;
+
+        if (level < zombieMinStage) {
+            console.log(`[MonsterManager] Skipping zombie spawn: level ${level} < minStage ${zombieMinStage}`);
+            return;
+        }
+
         const wolfMinStage = CONFIG.MONSTERS.WOLF_ZOMBIE.SPAWN_MIN_STAGE;
+
         const canSpawnWolves = level >= wolfMinStage;
 
-        // 늑대 좀비 비율: 일반 좀비 3마리당 1마리 (25%)
+        if (!canSpawnWolves && wolfMinStage !== CONFIG.MONSTERS.WOLF_ZOMBIE.SPAWN_MIN_STAGE) {
+            console.log(`[MonsterManager] Skipping wolf spawn: level ${level} < minStage ${wolfMinStage}`);
+        }
+
+        // 늑대 좀비 비율: 1:1 (50%)
         let wolfCount = 0;
         let zombieCount = count;
 
         if (canSpawnWolves) {
-            // 늑대 좀비 비율: 1:1 (50%)
             wolfCount = Math.floor(count * 0.5);
             zombieCount = count - wolfCount;
         }
@@ -54,7 +66,6 @@ export class MonsterManager {
         // 빈 칸 가져오기 (입구/출구 제외된 상태)
         let emptyCells = this._getEmptyCells();
 
-        // [안전 거리 확보] 입구로부터 5타일 이상 떨어진 곳만 필터링
         // [안전 거리 확보] 입구로부터 5타일 이상 떨어진 곳만 필터링
         if (this.mazeGen.entrance) {
             // 맵 크기에 따라 안전 거리 유동적 조정 (기본값 vs 맵 크기의 절반)
@@ -87,10 +98,18 @@ export class MonsterManager {
 
             // 몬스터 타입에 따라 인스턴스 생성
             let monster;
+            const monsterOptions = {
+                sound: this.sound,
+                level,
+                onAttack: (m) => {
+                    if (this.onMonsterAttack) this.onMonsterAttack(m);
+                }
+            };
+
             if (monsterType === CONFIG.MONSTERS.TYPES.WOLF_ZOMBIE) {
-                monster = new WolfZombie(this.scene, this.mazeGen, { sound: this.sound, level });
+                monster = new WolfZombie(this.scene, this.mazeGen, monsterOptions);
             } else {
-                monster = new Zombie(this.scene, this.mazeGen, { sound: this.sound, level });
+                monster = new Zombie(this.scene, this.mazeGen, monsterOptions);
             }
 
             // 월드 좌표 계산 (MazeGenerator의 좌표계 사용)

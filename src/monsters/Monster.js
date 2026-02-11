@@ -41,6 +41,10 @@ export class Monster {
         // Common Monster Properties (Speed, Freeze, etc.)
         this._initCommonProperties(options);
 
+        // Attack logic
+        this.onAttack = options.onAttack;
+        this.attackTimer = 0;
+
         this._initModel(options);
     }
 
@@ -193,6 +197,11 @@ export class Monster {
         const distToPlayer = this.position.distanceTo(player.position);
         const detectionRange = config.DETECTION_RANGE * CONFIG.MAZE.WALL_THICKNESS;
 
+        // 공격 쿨다운 업데이트
+        if (this.attackTimer > 0) {
+            this.attackTimer -= deltaTime;
+        }
+
         // 플레이어 감지 (추적 모드)
         // 위장 상태일 때는 감지하지 않음
         const canDetect = !player.isDisguised && distToPlayer < detectionRange;
@@ -200,6 +209,13 @@ export class Monster {
         if (canDetect) {
             this.state = CONFIG.MONSTERS.STATES.MOVE;
             this.isPatrolling = false;
+
+            // --- 공격 로직 추가 ---
+            if (this.attackTimer <= 0 && distToPlayer < (config.ATTACK_RANGE || 0.8)) {
+                this.attack();
+                this.attackTimer = config.ATTACK_COOLDOWN || 2;
+            }
+            // ------------------
 
             // 경로 재계산 (일정 간격으로)
             this.lastPathCalcTime += deltaTime;
@@ -274,6 +290,24 @@ export class Monster {
     }
 
     /**
+     * 플레이어 공격
+     */
+    attack() {
+        console.log(`[Monster] ${this.type} attacks player!`);
+        this.setState(CONFIG.MONSTERS.STATES.ATTACK);
+
+        // 공격 사운드 재생
+        if (this.sound && this.attackSFXUrl) {
+            this.sound.playSFX(this.attackSFXUrl);
+        }
+
+        // 공격 콜백 호출 (PlayScene에서 화면 효과 처리)
+        if (this.onAttack) {
+            this.onAttack(this);
+        }
+    }
+
+    /**
      * 지정된 월드 위치까지의 경로 계산
      */
     _calculatePath(targetWorldPos, isChase = true) {
@@ -306,6 +340,9 @@ export class Monster {
      */
     _moveAlongPath(deltaTime) {
         const config = this._getConfig();
+        // Calculate duration based on tiles per second (this.speed)
+        // Ensure this.speed is at least 0.01 to avoid division by zero
+        const moveDuration = 1.0 / Math.max(0.01, this.speed);
 
         if (!this.isMovingTile) {
             // 다음 타일로 이동 시작
@@ -331,7 +368,7 @@ export class Monster {
 
         // 타일 이동 진행
         this.moveTimer += deltaTime;
-        const progress = Math.min(this.moveTimer / config.MOVE_DURATION, 1.0);
+        const progress = Math.min(this.moveTimer / moveDuration, 1.0);
 
         // 위치 Lerp
         this.position.lerpVectors(this.startTilePos, this.targetTilePos, progress);

@@ -117,7 +117,7 @@ export class Minimap {
                 }
 
                 ctx.beginPath();
-                ctx.arc(mPx + cellW / 2, mPy + cellH / 2, monsterSize / 2, 0, Math.PI * 2);
+                ctx.arc(mPx, mPy, monsterSize / 2, 0, Math.PI * 2);
                 ctx.fill();
             });
         }

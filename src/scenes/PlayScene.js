@@ -128,10 +128,30 @@ export class PlayScene extends BaseScene {
 
         this.trapManager = new TrapManager(this.scene);
 
-        this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound);
+        this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound, (monster) => {
+            if (this.ui) {
+                this.ui.showBittenEffect();
+                this.ui.triggerDamageEffect();
+            }
+            if (this.player) {
+                const isDead = this.player.takeDamage(10); // 한 번 공격당할 때 10 대미지
+                if (this.ui) this.ui.updateHealthBar();
 
-        // 레벨에 따른 좀비 생성 (레벨 1-5: 0마리, 이후 5레벨마다 +1, 최대 10마리)
-        const zombieCount = Math.min(10, Math.max(0, Math.floor((this.stageManager.level - 1) / 5)));
+                if (isDead) {
+                    console.log("Player is dead! Game Over.");
+                    this.game.state.set(STATES.GAME_OVER);
+                    if (this.ui) this.ui.showDeathScreen(); // 전용 사망 화면 표시
+                }
+            }
+        });
+
+        // 레벨에 따른 좀비 생성 (Config의 SPAWN_RULES 기준)
+        const spawnRules = CONFIG.MONSTERS.SPAWN_RULES;
+        const zombieCount = Math.min(
+            spawnRules.MAX_MONSTER_COUNT,
+            Math.max(0, spawnRules.BASE_COUNT + Math.floor((this.stageManager.level - 1) / spawnRules.COUNT_CALC_DIVISOR))
+        );
+
         this.monsterManager.spawnZombies(zombieCount, this.stageManager.level);
 
         // Save initial checkpoint
@@ -269,8 +289,12 @@ export class PlayScene extends BaseScene {
                     // Ensure it's visible if hidden via CSS directly
                     mainMenu.style.display = 'flex';
                 }
+                if (this.ui) this.ui.showInGameHUD(false);
             }
         });
+
+        // 인게임 화면 진입 시 HUD 표시
+        if (this.ui) this.ui.showInGameHUD(true);
 
         // 설정 창 초기화
         this.ui.initSettings(this.game.sound);
@@ -378,7 +402,14 @@ export class PlayScene extends BaseScene {
         if (this.monsterManager) {
             this.monsterManager.mazeGen = this.mazeGen;
             this.monsterManager.clear();
-            const zombieCount = Math.min(10, Math.max(0, Math.floor((this.stageManager.level - 1) / 5)));
+
+            // 레벨에 따른 좀비 생성 (Config의 SPAWN_RULES 기준)
+            const spawnRules = CONFIG.MONSTERS.SPAWN_RULES;
+            const zombieCount = Math.min(
+                spawnRules.MAX_MONSTER_COUNT,
+                Math.max(0, spawnRules.BASE_COUNT + Math.floor((this.stageManager.level - 1) / spawnRules.COUNT_CALC_DIVISOR))
+            );
+
             this.monsterManager.spawnZombies(zombieCount, this.stageManager.level);
         }
         if (this.trapManager) {
@@ -499,6 +530,11 @@ export class PlayScene extends BaseScene {
 
         // 1. 플레이어 업데이트
         this.player.update(deltaTime);
+
+        // 1.0 체력 회복 중일 때 UI 업데이트
+        if (this.ui && this.player.idleTimer >= CONFIG.PLAYER.REGEN_DELAY && this.player.health < this.player.maxHealth) {
+            this.ui.updateHealthBar();
+        }
 
         // 1.1 스테이지 통계 업데이트 (시간)
         if (this.stageManager && this.stageManager.isStageActive) {
@@ -653,6 +689,7 @@ export class PlayScene extends BaseScene {
     }
 
     _handleInput(input) {
+        if (!this.game.state.is(STATES.PLAYING)) return;
         if (this.player.isJumping) return;
 
         if (input.wasJustPressed('ArrowLeft')) {

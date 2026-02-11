@@ -50,13 +50,19 @@ export class Zombie extends Monster {
         const cfg = this._getConfig();
 
         if (this.isMovingTile) {
-            const bobSpeed = cfg.WALK_BOB_SPEED;
+            // Scale animation speed by the monster's speed
+            const bobSpeed = cfg.WALK_BOB_SPEED * this.speed;
             const bobAmp = cfg.WALK_BOB_AMPLITUDE;
 
             if (this.leftLeg) this.leftLeg.rotation.x = Math.sin(this.animTime * bobSpeed) * bobAmp;
             if (this.rightLeg) this.rightLeg.rotation.x = -Math.sin(this.animTime * bobSpeed) * bobAmp;
-            if (this.leftArm) this.leftArm.rotation.x = -Math.sin(this.animTime * bobSpeed) * bobAmp * 0.5;
-            if (this.rightArm) this.rightArm.rotation.x = Math.sin(this.animTime * bobSpeed) * bobAmp * 0.5;
+
+            // 팔이 앞으로 뻗은 상태(-PI/2)에서 위아래로 약간 흔들림
+            const armForwardBase = -Math.PI / 2;
+            const armSwing = Math.sin(this.animTime * bobSpeed) * bobAmp * 0.3;
+            if (this.leftArm) this.leftArm.rotation.x = armForwardBase + armSwing;
+            if (this.rightArm) this.rightArm.rotation.x = armForwardBase - armSwing;
+
             if (this.head) this.head.rotation.y = Math.sin(this.animTime * bobSpeed * 0.5) * 0.1;
         } else {
             const swaySpeed = cfg.IDLE_SWAY_SPEED;
@@ -65,8 +71,11 @@ export class Zombie extends Monster {
             if (this.head) this.head.rotation.y = Math.sin(this.animTime * swaySpeed) * swayAmp;
             if (this.leftLeg) this.leftLeg.rotation.x = 0;
             if (this.rightLeg) this.rightLeg.rotation.x = 0;
-            if (this.leftArm) this.leftArm.rotation.x = 0;
-            if (this.rightArm) this.rightArm.rotation.x = 0;
+
+            // 대기 시에도 팔을 앞으로 뻗고 있음
+            const armForwardBase = -Math.PI / 2;
+            if (this.leftArm) this.leftArm.rotation.x = armForwardBase;
+            if (this.rightArm) this.rightArm.rotation.x = armForwardBase;
         }
     }
 

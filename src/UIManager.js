@@ -43,7 +43,14 @@ export class UIManager {
             bgmVal: document.getElementById('bgm-volume-val'),
             sfxVal: document.getElementById('sfx-volume-val'),
             weatherVal: document.getElementById('weather-volume-val'),
-            itemActions: document.getElementById('item-actions')
+            itemActions: document.getElementById('item-actions'),
+            bittenOverlay: document.getElementById('bitten-overlay'),
+            healthContainer: document.getElementById('health-bar-container'),
+            healthFill: document.getElementById('health-fill'),
+            // Death screen elements
+            deathScreen: document.getElementById('death-screen'),
+            deathRestartBtn: document.getElementById('death-restart-btn'),
+            deathMainMenuBtn: document.getElementById('death-main-menu-btn')
         };
 
         this._cleanupFns = [];
@@ -56,6 +63,7 @@ export class UIManager {
     updateAll() {
         this.updateHUD();
         this.updateItemButtons();
+        this.updateHealthBar();
     }
 
     /**
@@ -173,6 +181,26 @@ export class UIManager {
         if (this.elements.menuPopup) {
             this.elements.menuPopup.classList.add('hidden');
             if (this.onResume) this.onResume();
+        }
+    }
+
+    /**
+     * 사망 화면 표시
+     */
+    showDeathScreen() {
+        if (this.elements.deathScreen) {
+            this.elements.deathScreen.classList.remove('hidden');
+            if (this.onPause) this.onPause(); // 게임 일시정지 트리거
+        }
+    }
+
+    /**
+     * 사망 화면 숨김
+     */
+    hideDeathScreen() {
+        if (this.elements.deathScreen) {
+            this.elements.deathScreen.classList.add('hidden');
+            // Resume은 수동으로 제어 (다시하기 등에서)
         }
     }
 
@@ -400,6 +428,18 @@ export class UIManager {
         this._setupButton(this.elements.menuBtn, () => this.toggleMenu());
         this._setupButton(this.elements.resumeBtn, () => this.hideMenu());
         this._setupButton(this.elements.fullscreen, () => this.toggleFullscreen());
+
+        // Death screen buttons
+        this._setupButton(this.elements.deathRestartBtn, () => {
+            this.hideDeathScreen();
+            if (callbacks.onRestart) callbacks.onRestart();
+        });
+        this._setupButton(this.elements.deathMainMenuBtn, () => {
+            if (this.elements.deathScreen) {
+                this.elements.deathScreen.classList.add('hidden');
+            }
+            if (callbacks.onMainMenu) callbacks.onMainMenu();
+        });
     }
 
     unbindButtons() {
@@ -549,5 +589,66 @@ export class UIManager {
 
             container.appendChild(el);
         });
+    }
+
+    /**
+     * 좀비에게 물렸을 때 화면 효과 실행
+     */
+    showBittenEffect() {
+        if (!this.elements.bittenOverlay) return;
+
+        // 기존 애니메이션 클래스 제거 후 다시 추가하여 트리거
+        this.elements.bittenOverlay.classList.remove('active');
+        void this.elements.bittenOverlay.offsetWidth; // Reflow 트리거
+        this.elements.bittenOverlay.classList.add('active');
+
+        // 0.5초 후 제거 (애니메이션 시간과 일치)
+        setTimeout(() => {
+            if (this.elements.bittenOverlay) {
+                this.elements.bittenOverlay.classList.remove('active');
+            }
+        }, 500);
+    }
+
+    /**
+     * 플레이어 체력 바 업데이트
+     */
+    updateHealthBar() {
+        if (!this.player || !this.elements.healthFill) return;
+
+        const healthRatio = this.player.health / this.player.maxHealth;
+        const fillWidth = Math.max(0, Math.min(100, healthRatio * 100));
+
+        this.elements.healthFill.style.width = `${fillWidth}%`;
+
+        // 저체력 경고 (25% 이하)
+        if (this.elements.healthContainer) {
+            this.elements.healthContainer.classList.toggle('low-health', healthRatio <= 0.25);
+        }
+    }
+
+    /**
+     * 대미지 입었을 때 글리치 효과 트리거
+     */
+    triggerDamageEffect() {
+        if (!this.elements.healthContainer) return;
+
+        this.elements.healthContainer.classList.add('damaged');
+
+        setTimeout(() => {
+            if (this.elements.healthContainer) {
+                this.elements.healthContainer.classList.remove('damaged');
+            }
+        }, 300);
+    }
+
+    /**
+     * 인게임 HUD(체력바 등) 표시 설정
+     * @param {boolean} visible 
+     */
+    showInGameHUD(visible) {
+        if (this.elements.healthContainer) {
+            this.elements.healthContainer.classList.toggle('hidden', !visible);
+        }
     }
 }

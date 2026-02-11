@@ -66,7 +66,8 @@ export class WolfZombie extends Monster {
         const cfg = this._getConfig();
 
         if (this.isMovingTile) {
-            const bobSpeed = cfg.WALK_BOB_SPEED;
+            // Scale animation speed by the monster's speed
+            const bobSpeed = cfg.WALK_BOB_SPEED * this.speed;
             const bobAmp = cfg.WALK_BOB_AMPLITUDE;
 
             if (this.frontLeftLeg) this.frontLeftLeg.rotation.x = Math.sin(this.animTime * bobSpeed) * bobAmp;

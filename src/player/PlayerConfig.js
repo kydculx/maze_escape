@@ -14,6 +14,10 @@ export const PLAYER_CONFIG = {
     MOVE_DURATION: 0.7,       // 한 칸 이동 시 소요되는 시간 (초)
     ROTATION_DURATION: 0.3,   // 90도 회전 시 소요되는 시간 (초)
     PLAYER_RADIUS: 0.15,      // 플레이어 충돌 판정 반지름
+    MAX_HEALTH: 100,          // 최대 체력
+    DAMAGE_COOLDOWN: 1.0,     // 무적 시간 (대미지 입은 후 다시 입을 때까지의 시간)
+    REGEN_DELAY: 3.0,         // 체력 회복 시작 대기 시간 (초)
+    REGEN_RATE: 5.0,          // 초당 체력 회복량
     JUMP_HEIGHT: 5.0,         // 기본 점프 높이
     JUMP_DURATION: 1.5,       // 점프 전체 사이클 시간 (초)
     // 점프 시 시각 효과 설정

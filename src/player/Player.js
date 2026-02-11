@@ -63,6 +63,11 @@ export class Player {
         this.idleTimer = 0; // 대기 시간 측정용 타이머
         this.disguiseTimer = 0; // 좀비 위장 지속시간 타이머
 
+        // 체격 상태
+        this.health = CONFIG.PLAYER.MAX_HEALTH;
+        this.maxHealth = CONFIG.PLAYER.MAX_HEALTH;
+        this.damageCooldown = 0; // 대미지 무적 시간 타이머
+
         this.flashlight = this._initFlashlight();
     }
 
@@ -75,6 +80,7 @@ export class Player {
             flashlightTimer: this.flashlightTimer,
             sensorTimer: this.sensorTimer,
             disguiseTimer: this.disguiseTimer,
+            health: this.health,
             itemOrder: [...this.inventory.itemOrder]
         };
         console.log("Player checkpoint saved:", this.checkpointState);
@@ -90,6 +96,7 @@ export class Player {
         this.flashlightTimer = this.checkpointState.flashlightTimer;
         this.sensorTimer = this.checkpointState.sensorTimer;
         this.disguiseTimer = this.checkpointState.disguiseTimer;
+        this.health = this.checkpointState.health;
         this.inventory.itemOrder = [...this.checkpointState.itemOrder];
 
         // Reset active states
@@ -177,7 +184,7 @@ export class Player {
             if (!this.isJumping) {
                 const walkSpeed = 12;
                 if (this.animationTime - this.lastFootstepTime >= Math.PI / walkSpeed) {
-                    if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.FOOTSTEP, 0.3);
+                    if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.FOOTSTEP, 0.1);
                     this.lastFootstepTime = this.animationTime;
                 }
             }
@@ -300,6 +307,33 @@ export class Player {
                 console.log("Zombie disguise expired");
             }
         }
+
+        // 5.6 대미지 쿨다운 관리
+        if (this.damageCooldown > 0) {
+            this.damageCooldown -= deltaTime;
+        }
+
+        // 5.7 체력 회복 (Regeneration)
+        const regenCfg = CONFIG.PLAYER;
+        if (isIdle && this.idleTimer >= regenCfg.REGEN_DELAY && this.health < this.maxHealth) {
+            this.health = Math.min(this.health + regenCfg.REGEN_RATE * deltaTime, this.maxHealth);
+        }
+    }
+
+    /**
+     * 대미지 입기
+     * @param {number} amount 
+     * @returns {boolean} 사망 여부
+     */
+    takeDamage(amount) {
+        if (this.damageCooldown > 0 || this.health <= 0) return false;
+
+        this.health = Math.max(0, this.health - amount);
+        this.damageCooldown = CONFIG.PLAYER.DAMAGE_COOLDOWN;
+        this.idleTimer = 0; // 공격 당하면 대기 타이머 초기화 (체력 회복 지연)
+
+        console.log(`Player took ${amount} damage. Health: ${this.health}`);
+        return this.health <= 0;
     }
 
     startMove(stepDir) {
