@@ -3,6 +3,8 @@
  * (카메라, 환경, 조명, 오디오, 메뉴 오브젝트)
  */
 
+import { ASSETS } from './Assets.js';
+
 export const ENGINE_CONFIG = {
     // [1] 화면 및 렌더링 (Display & Rendering)
     RENDERER: {
@@ -42,7 +44,7 @@ export const ENGINE_CONFIG = {
                 ENABLED: true,
                 COLOR: 0xffffff,      // 번개 빛 색상
                 INTENSITY: 2.5,       // 번개 빛 강도 (순간적)
-                INTERVAL_MIN: 10,     // 최소 간격 (초)
+                INTERVAL_MIN: 15,     // 최소 간격 (초)
                 INTERVAL_MAX: 30,     // 최대 간격 (초)
                 DURATION: 0.2         // 번개 지속 시간 (초)
             },
@@ -56,27 +58,6 @@ export const ENGINE_CONFIG = {
 
     // [4] 사운드 리소스 및 설정 (Audio Assets)
     AUDIO: {
-        // 배경음 및 효과음 파일 경로
-        BGM_URL: 'audio/bgm_background.mp3',             // 배경음악
-        THUNDER_SFX_URL: 'audio/eff_thunder.mp3',        // 천둥 소리
-        RAIN_BGS_URL: 'audio/eff_rain.mp3',         // 빗소리 (배경)
-        CLICK_SFX_URL: 'audio/eff_click.mp3',            // UI 클릭음
-        FOOTSTEP_SFX_URL: 'audio/eff_footstep.mp3',      // 발소리
-        JUMP_SFX_URL: 'audio/eff_jump.wav',              // 점프 소리
-        ITEM_PICKUP_SFX_URL: 'audio/eff_itemget.mp3',    // 아이템 획득 소리
-        ZOMBIE_PATROL_SFX: 'audio/eff_zombie_patrol.mp3',     // 좀비 배회 소리 (그르렁)
-        ZOMBIE_TRACK_SFX: 'audio/eff_zombie_track.mp3',      // 좀비 추격 소리 (크아앙)
-        ZOMBIE_ATTACK_SFX: 'audio/eff_zombie_attack.mp3', // 좀비 공격 소리 (추격음과 동일하게 설정)
-        WOLF_PATROL_SFX: 'audio/eff_wolf_patrol.mp3',     // 늑대 배회 소리 (그르렁)
-        WOLF_TRACK_SFX: 'audio/eff_wolf_track.mp3',      // 늑대 추격 소리 (크아앙)
-        WOLF_ATTACK_SFX: 'audio/eff_wolf_attack.mp3',     // 늑대 공격 소리 (추격음과 동일하게 설정)
-
-        FLASHLIGHT_SWITCH_SFX_URL: 'audio/eff_flashlight_switch.mp3', // 손전등 스위치 소리
-        SENSOR_TOGGLE_SFX_URL: 'audio/eff_sensor_switch.mp3', // 센서 스위치 소리
-        TELEPORT_SFX_URL: 'audio/eff_teleport.mp3',      // 텔레포트 효과음
-        HAMMER_SFX_URL: 'audio/eff_hammer_smash.mp3',    // 망치 사용 소리
-        TRAP_SFX_URL: 'audio/eff_trap.mp3',              // 함정 설치 소리
-
-        DEFAULT_BGM_VOLUME: 0.4                          // 기본 배경음악 볼륨 (0.0 ~ 1.0)
+        DEFAULT_BGM_VOLUME: 0.4
     }
 };

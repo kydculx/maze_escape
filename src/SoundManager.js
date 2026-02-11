@@ -2,6 +2,7 @@
  * 게임 사운드를 총괄 관리하는 클래스
  */
 import { CONFIG } from './Config.js';
+import { ASSETS } from './Assets.js';
 import { SaveManager } from './SaveManager.js';
 
 export class SoundManager {
@@ -24,6 +25,8 @@ export class SoundManager {
         // Web Audio API Context
         this.context = null;
         this.buffers = new Map(); // URL -> AudioBuffer
+        this.activeLoops = new Set(); // Track all active loop controllers
+        this.allAudioElements = new Set(); // Track all HTMLAudioElement instances
     }
 
     /**
@@ -49,6 +52,14 @@ export class SoundManager {
         // 대기 중이던 BGM이 있다면 재생 시도
         if (this.bgm && this.bgm.paused) {
             this.bgm.play().catch(() => { });
+        }
+
+        // 대기 중이던 루프(빗소리 등)가 있다면 재생 시도
+        for (const controller of this.activeLoops) {
+            if (controller.wasPlayingBeforePause && !controller.isPlaying) {
+                controller.play();
+                controller.wasPlayingBeforePause = false;
+            }
         }
     }
 
@@ -78,17 +89,19 @@ export class SoundManager {
      * @param {string} url 
      * @returns {Object} Sound Controller { setVolume(0~1), stop() }
      */
-    playLoop(url, initialVolume = 0) {
-        if (!this.enabled || !this.context) return null;
+    playLoop(url, initialVolume = 0, autoPlay = false) {
+        if (!this.enabled) return null;
+        if (!this.initialized) this.init(); // 상호작용 내 호출 보장
 
         const controller = {
             source: null,
             gainNode: null,
             url: url,
             isPlaying: false,
-            isLoading: false, // 로딩 중 플래그 추가
+            isLoading: false,
             volume: initialVolume,
-            shouldStop: false, // 로딩 중 정지 요청 플래그
+            shouldStop: false,
+            wasPlayingBeforePause: false, // 재개 및 초기화용 플래그
 
             // 볼륨 설정 메서드
             setVolume: (v) => {
@@ -96,16 +109,24 @@ export class SoundManager {
                 if (controller.gainNode && controller.isPlaying) {
                     try {
                         // 부드러운 볼륨 전환 (Click 방지)
-                        controller.gainNode.gain.setTargetAtTime(v * this.masterVolume, this.context.currentTime, 0.1);
+                        controller.gainNode.gain.setTargetAtTime(v * this.sfxVolume * this.masterVolume, this.context.currentTime, 0.1);
                     } catch (e) {
                         // Context가 닫혔거나 에러 발생 시 무시
                     }
                 }
             },
 
-            // 재생 시작
+            // 재생 시작 (비동기)
             play: async () => {
                 if (controller.isPlaying || controller.isLoading) return;
+
+                // Context가 아직 없다면 재생 의사만 밝히고 트래킹에 추가 (init/resume에서 처리)
+                if (!this.context) {
+                    console.log(`[SoundManager] Context not ready. Queuing loop: ${url}`);
+                    controller.wasPlayingBeforePause = true;
+                    this.activeLoops.add(controller);
+                    return;
+                }
 
                 controller.isLoading = true;
                 controller.shouldStop = false;
@@ -124,8 +145,8 @@ export class SoundManager {
                 source.loop = true;
 
                 const gainNode = this.context.createGain();
-                // 초기 볼륨 설정 (마스터 볼륨 적용)
-                gainNode.gain.value = controller.volume * this.masterVolume;
+                // 초기 볼륨 설정 (SFX 볼륨 및 마스터 볼륨 적용)
+                gainNode.gain.value = controller.volume * this.sfxVolume * this.masterVolume;
 
                 source.connect(gainNode);
                 gainNode.connect(this.context.destination);
@@ -135,6 +156,7 @@ export class SoundManager {
                 controller.source = source;
                 controller.gainNode = gainNode;
                 controller.isPlaying = true;
+                this.activeLoops.add(controller);
             },
 
             // 재생 중지
@@ -156,8 +178,13 @@ export class SoundManager {
                     controller.gainNode = null;
                 }
                 controller.isPlaying = false;
+                this.activeLoops.delete(controller);
             }
         };
+
+        if (autoPlay) {
+            controller.play();
+        }
 
         return controller;
     }
@@ -169,6 +196,7 @@ export class SoundManager {
      */
     playBGM(url, volume = 0.5) {
         if (!this.enabled) return;
+        if (!this.initialized) this.init(); // 상호작용 내 호출 보장
 
         // 기존 BGM 중단
         if (this.bgm) {
@@ -177,6 +205,7 @@ export class SoundManager {
         }
 
         this.bgm = new Audio(url);
+        this.allAudioElements.add(this.bgm);
         this.bgm.loop = true;
         this.currentBGMBaseVolume = volume; // 기본 볼륨 저장
         this.bgm.volume = volume * this.bgmVolume * this.masterVolume;
@@ -196,6 +225,7 @@ export class SoundManager {
         if (this.bgm) {
             this.bgm.pause();
             this.bgm.currentTime = 0;
+            this.bgm = null; // Clear object to prevent re-triggers
         }
     }
 
@@ -236,9 +266,14 @@ export class SoundManager {
 
     _playSFXFallback(url, volume) {
         const sfx = new Audio(url);
+        this.allAudioElements.add(sfx);
         sfx.volume = volume * this.sfxVolume * this.masterVolume;
         sfx.play().catch(error => {
             console.warn('SFX play failed:', error);
+        }).finally(() => {
+            sfx.addEventListener('ended', () => {
+                this.allAudioElements.delete(sfx);
+            }, { once: true });
         });
     }
 
@@ -294,28 +329,88 @@ export class SoundManager {
     }
 
     /**
-     * 일시정지: 모든 사운드 중단 (Context Suspend & Element Pause)
+     * 일시정지: BGM과 모든 '루프 가동 중인 소리'를 일시정지
+     * 컨텍스트를 suspend하지 않으므로 버튼음 등의 SFX는 계속 작동함
      */
     pauseAll() {
-        if (this.context && this.context.state === 'running') {
-            this.context.suspend();
-        }
+        console.log(`[SoundManager] Pausing BGM and ${this.activeLoops.size} loops.`);
+
+        // 1. BGM 일시정지 (내장 HTML Audio)
         if (this.bgm && !this.bgm.paused) {
             this.bgm.pause();
-            this.bgm.wasPlayingBeforePause = true; // 플래그 저장
+            this.bgm.wasPlayingBeforePause = true;
+        }
+
+        // 2. 모든 Web Audio 루프 일시정지 (상태 저장 후 소스만 중지)
+        // controller.stop()을 직접 부르면 activeLoops에서 삭제되므로 여기서 수동 중지
+        for (const controller of this.activeLoops) {
+            if (controller.isPlaying) {
+                controller.wasPlayingBeforePause = true;
+
+                // 소스 중단 로직 (isPlaying=false는 유지하되 세트에서는 지우지 않음)
+                if (controller.source) {
+                    try { controller.source.stop(); } catch (e) { }
+                    controller.source.disconnect();
+                    controller.source = null;
+                }
+                if (controller.gainNode) {
+                    controller.gainNode.disconnect();
+                    controller.gainNode = null;
+                }
+                controller.isPlaying = false;
+            }
         }
     }
 
     /**
      * 재개: 사운드 다시 재생
      */
+    /**
+     * 재개: BGM과 이전에 재생 중이던 루프 사운드 복구
+     */
     resumeAll() {
+        console.log('[SoundManager] Resuming sounds...');
+
+        // 1. 컨텍스트 확인 (상호작용 유도용)
         if (this.context && this.context.state === 'suspended') {
             this.context.resume();
         }
+
+        // 2. BGM 복구
         if (this.bgm && this.bgm.wasPlayingBeforePause) {
             this.bgm.play().catch(() => { });
             this.bgm.wasPlayingBeforePause = false;
         }
+
+        // 3. 루프 사운드 복구
+        for (const controller of this.activeLoops) {
+            if (controller.wasPlayingBeforePause) {
+                controller.play();
+                controller.wasPlayingBeforePause = false;
+            }
+        }
+    }
+
+    /**
+     * 모든 루프 사운드(비, 몬스터 등)만 정지
+     */
+    stopAllLoops() {
+        console.log(`[SoundManager] Stopping all loop sounds. Count: ${this.activeLoops.size}`);
+        for (const controller of this.activeLoops) {
+            try {
+                controller.stop();
+            } catch (e) { }
+        }
+        this.activeLoops.clear();
+    }
+
+    /**
+     * 모든 사운드 강제 중지 (장면 전환 시 안전장치)
+     * 컨텍스트를 서스펜드하지 않아 버튼음 등은 계속 작동 가능하게 함
+     */
+    stopAll() {
+        console.log(`[SoundManager] Stopping all sounds (BGM + Loops).`);
+        this.stopBGM();
+        this.stopAllLoops();
     }
 }

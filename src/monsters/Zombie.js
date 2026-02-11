@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Monster } from './Monster.js';
 import { CharacterBuilder } from '../CharacterBuilder.js';
 import { CONFIG } from '../Config.js';
+import { ASSETS } from '../Assets.js';
 
 /**
  * 기본 좀비 클래스
@@ -73,10 +74,9 @@ export class Zombie extends Monster {
      * 오디오 설정 초기화
      */
     _initAudio() {
-        const audioCfg = CONFIG.AUDIO;
-        this.patrolSFXUrl = audioCfg.ZOMBIE_PATROL_SFX;
-        this.trackSFXUrl = audioCfg.ZOMBIE_TRACK_SFX;
-        this.attackSFXUrl = audioCfg.ZOMBIE_ATTACK_SFX;
+        this.patrolSFXUrl = ASSETS.AUDIO.SFX.ZOMBIE.PATROL;
+        this.trackSFXUrl = ASSETS.AUDIO.SFX.ZOMBIE.TRACK;
+        this.attackSFXUrl = ASSETS.AUDIO.SFX.ZOMBIE.ATTACK;
         this.soundCooldown = 0;
 
         // 부모 클래스의 오디오 시스템 초기화 호출

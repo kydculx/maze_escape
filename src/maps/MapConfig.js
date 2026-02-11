@@ -1,14 +1,16 @@
 /**
  * 맵(미로) 관련 설정
  */
+import { ASSETS } from '../Assets.js';
+
 export const MAP_CONFIG = {
     DEFAULT_WIDTH: 15,            // 초기 미로 가로 칸 수
     DEFAULT_HEIGHT: 15,           // 초기 미로 세로 칸 수
     WALL_HEIGHT: 2,               // 벽의 높이
     WALL_THICKNESS: 1.5,          // 벽의 두께 (이동 거리 단위)
     WALL_COLOR: 0xffffff,         // 벽의 기본 색상 (텍스처와 곱해짐)
-    TEXTURE_URL: 'textures/wall_brick.png',   // 벽 텍스처 경로
-    FLOOR_TEXTURE_URL: 'textures/floor_stone.png', // 바닥 텍스처 경로
+    TEXTURE_URL: ASSETS.TEXTURES.WALL_BRICK,     // 벽 텍스처
+    FLOOR_TEXTURE_URL: ASSETS.TEXTURES.FLOOR_STONE, // 바닥 텍스처
     SHAPE: 'RECTANGLE',           // 미로 모양 (RECTANGLE, DIAMOND, CIRCLE, TRIANGLE)
 
     // 조명 설정 (게임플레이)

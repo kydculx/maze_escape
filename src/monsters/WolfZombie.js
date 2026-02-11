@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Monster } from './Monster.js';
 import { CharacterBuilder } from '../CharacterBuilder.js';
 import { CONFIG } from '../Config.js';
+import { ASSETS } from '../Assets.js';
 
 /**
  * 늑대 좀비 클래스 - 빠르고 공격적인 사족보행 몬스터
@@ -30,10 +31,9 @@ export class WolfZombie extends Monster {
      * 오디오 설정 초기화
      */
     _initAudio() {
-        const audioCfg = CONFIG.AUDIO;
-        this.patrolSFXUrl = audioCfg.WOLF_PATROL_SFX;
-        this.trackSFXUrl = audioCfg.WOLF_TRACK_SFX;
-        this.attackSFXUrl = audioCfg.WOLF_ATTACK_SFX;
+        this.patrolSFXUrl = ASSETS.AUDIO.SFX.WOLF.PATROL;
+        this.trackSFXUrl = ASSETS.AUDIO.SFX.WOLF.TRACK;
+        this.attackSFXUrl = ASSETS.AUDIO.SFX.WOLF.ATTACK;
         this.soundCooldown = 0;
 
         // 부모 클래스의 오디오 시스템 초기화 호출

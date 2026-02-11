@@ -170,4 +170,11 @@ export class MonsterManager {
         }
         this.monsters = [];
     }
+
+    /**
+     * 리소스 정리
+     */
+    dispose() {
+        this.clear();
+    }
 }

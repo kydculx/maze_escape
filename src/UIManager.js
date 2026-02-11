@@ -1,4 +1,5 @@
 import { CONFIG } from './Config.js';
+import { ASSETS } from './Assets.js';
 
 /**
  * 게임 내 UI(HUD, 버튼 등)를 관리하는 클래스
@@ -204,7 +205,7 @@ export class UIManager {
 
         this._setupButton(this.elements.closeSettingsBtn, () => this.hideSettings());
         this._setupButton(this.elements.settingsOkBtn, () => {
-            soundManager.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            soundManager.playSFX(ASSETS.AUDIO.SFX.CLICK);
             this.hideSettings();
         });
     }
@@ -312,7 +313,11 @@ export class UIManager {
             if (callbacks.onRestart) callbacks.onRestart();
         });
         this._setupButton(this.elements.mainMenuBtn, () => {
-            this.hideMenu();
+            // hideMenu()를 직접 호출하면 onResume()이 트리거되어 소리가 다시 켜짐
+            // 대신 팝업만 직접 숨기고 콜백 실행
+            if (this.elements.menuPopup) {
+                this.elements.menuPopup.classList.add('hidden');
+            }
             if (callbacks.onMainMenu) callbacks.onMainMenu();
         });
 

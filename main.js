@@ -6,6 +6,7 @@ import { SoundManager } from './src/SoundManager.js';
 import { SaveManager } from './src/SaveManager.js';
 import { CONFIG } from './src/Config.js';
 import { PlayScene } from './src/scenes/PlayScene.js';
+import { ASSETS } from './src/Assets.js';
 
 /**
  * 3D 게임 엔진 메인 클래스 - 엔트리 포인트
@@ -37,8 +38,9 @@ class Game {
         const initAudio = () => {
             if (this.sound) {
                 this.sound.init(); // 오디오 잠금 해제 알림
-                if (!this.sound.bgm) {
-                    this.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+                // Only play BGM if it's not already set/playing
+                if (!this.sound.bgm && this.state.is(STATES.MAIN_MENU)) {
+                    this.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
                 }
             }
             window.removeEventListener('click', initAudio);
@@ -122,7 +124,7 @@ class Game {
                     });
                 }
 
-                this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+                this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
                 this.state.set(STATES.MAIN_MENU);
                 this.sceneManager.setScene(STATES.MAIN_MENU);
                 splashScreen.classList.add('hidden');
@@ -152,7 +154,7 @@ class Game {
 
         // 랭킹 (Rankings)
         document.getElementById('rankings-button').addEventListener('click', () => {
-            this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
             alert('랭킹 시스템을 불러오고 있습니다...');
         });
 
@@ -169,7 +171,7 @@ class Game {
 
         // 설정 버튼 클릭 시 팝업 열기
         document.getElementById('settings-button').addEventListener('click', () => {
-            this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
             if (settingsPopup) {
                 // 현재 볼륨 값으로 슬라이더 초기화
                 const currentBGM = Math.round(this.sound.bgmVolume * 100);
@@ -207,7 +209,7 @@ class Game {
         // 설정 팝업 닫기 버튼들
         if (closeSettingsBtn) {
             closeSettingsBtn.addEventListener('click', () => {
-                this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+                this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
                 if (settingsPopup) {
                     settingsPopup.classList.add('hidden');
                     settingsPopup.style.display = 'none';
@@ -217,7 +219,7 @@ class Game {
 
         if (settingsOkBtn) {
             settingsOkBtn.addEventListener('click', () => {
-                this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+                this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
                 if (settingsPopup) {
                     settingsPopup.classList.add('hidden');
                     settingsPopup.style.display = 'none';
@@ -230,12 +232,12 @@ class Game {
         const closeHelpBtn = document.getElementById('close-help-btn');
 
         document.getElementById('help-button').addEventListener('click', () => {
-            this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
             helpPopup.classList.remove('hidden');
         });
 
         closeHelpBtn.addEventListener('click', () => {
-            this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
             helpPopup.classList.add('hidden');
         });
 
@@ -243,7 +245,7 @@ class Game {
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !helpPopup.classList.contains('hidden')) {
                 helpPopup.classList.add('hidden');
-                this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+                this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
             }
         });
     }
@@ -268,12 +270,12 @@ class Game {
      * @param {Object} progress - 저장된 게임 진행 상황 (선택적)
      */
     handleMenuSelection(targetState, progress = null) {
-        this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL);
+        this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
 
         if (targetState === STATES.PLAYING) {
             this.state.set(STATES.PLAYING);
             this.sceneManager.setScene(STATES.PLAYING, progress); // progress 전달
-            this.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+            this.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
             document.getElementById('main-menu-screen').classList.add('hidden');
 
             // 게임 HUD 표시
@@ -355,6 +357,7 @@ class Game {
         this.input.update();
     }
 }
+
 
 // 게임 기동
 window.addEventListener('DOMContentLoaded', () => {

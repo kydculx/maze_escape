@@ -111,4 +111,12 @@ export class TrapManager {
         }
         this.traps = [];
     }
+
+    /**
+     * 리소스 정리
+     */
+    dispose() {
+        this.clear();
+        this.scene.remove(this.trapGroup);
+    }
 }

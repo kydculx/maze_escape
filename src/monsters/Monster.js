@@ -389,18 +389,15 @@ export class Monster {
     /**
      * 제거
      */
-    /**
-     * 오디오 시스템 초기화 (자식 클래스에서 URL 설정 후 호출)
-     */
     _initAudioSystem() {
         if (!this.sound) return;
 
-        // SoundManager 사운드 컨트롤러 사용
+        // SoundManager 사운드 컨트롤러 사용 (autoPlay 사용)
         if (this.trackSFXUrl) {
-            this.trackSoundController = this.sound.playLoop(this.trackSFXUrl, 0); // 초기 볼륨 0
+            this.trackSoundController = this.sound.playLoop(this.trackSFXUrl, 0, true);
         }
         if (this.patrolSFXUrl) {
-            this.patrolSoundController = this.sound.playLoop(this.patrolSFXUrl, 0); // 배회 사운드 (초기 볼륨 0)
+            this.patrolSoundController = this.sound.playLoop(this.patrolSFXUrl, 0, true);
         }
     }
 
@@ -426,9 +423,7 @@ export class Monster {
             const sfxVolume = this.sound.sfxVolume || 1.0;
 
             if (isTracking && trackVolume > 0) {
-                if (!this.trackSoundController.isPlaying) {
-                    this.trackSoundController.play();
-                }
+                // SoundManager internally handles auto-start if queued
                 this.trackSoundController.setVolume(trackVolume * sfxVolume);
 
                 // 추격 중엔 배회 사운드 끄기

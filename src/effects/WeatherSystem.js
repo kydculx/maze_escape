@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { CONFIG } from '../Config.js';
+import { ASSETS } from '../Assets.js';
 
 export class WeatherSystem {
-    constructor(scene, camera, audioListener) {
+    constructor(scene, camera, soundManager) {
         this.scene = scene;
         this.camera = camera;
         this.weatherConfig = CONFIG.ENVIRONMENT.WEATHER;
+        this.sound = soundManager; // Strictly use the injected manager
 
         // Rain properties
         this.rainSystem = null;
@@ -23,9 +25,8 @@ export class WeatherSystem {
         this.lightningDuration = 0.2;
 
         // Audio
-        this.rainSound = null;
-        this.thunderSound = null;
-        this.audioListener = audioListener;
+        this.rainSoundController = null;
+        this.thunderSoundController = null;
 
         this.init();
     }
@@ -38,8 +39,8 @@ export class WeatherSystem {
             this.createLightningEffect();
             this.nextLightningTime = this.getRandomLightningInterval();
         }
-        // Initialize audio if listener is provided
-        if (this.audioListener) {
+        // Initialize audio (SoundManager is now required)
+        if (this.sound) {
             this.initAudio();
         }
 
@@ -49,26 +50,21 @@ export class WeatherSystem {
     }
 
     initAudio() {
-        const audioLoader = new THREE.AudioLoader();
+        console.log('[WeatherSystem] Initializing audio via SoundManager...');
 
-        // Rain Background Sound
-        if (CONFIG.AUDIO.RAIN_BGS_URL) {
-            this.rainSound = new THREE.Audio(this.audioListener);
-            audioLoader.load(CONFIG.AUDIO.RAIN_BGS_URL, (buffer) => {
-                this.rainSound.setBuffer(buffer);
-                this.rainSound.setLoop(true);
-                this.rainSound.setVolume(0.3);
-                this.rainSound.play();
-            });
+        if (!this.sound) {
+            console.warn('[WeatherSystem] SoundManager not found. Audio will not play.');
+            return;
         }
 
-        // Thunder Sound Effect
-        if (CONFIG.AUDIO.THUNDER_SFX_URL) {
-            this.thunderSound = new THREE.Audio(this.audioListener);
-            audioLoader.load(CONFIG.AUDIO.THUNDER_SFX_URL, (buffer) => {
-                this.thunderSound.setBuffer(buffer);
-                this.thunderSound.setVolume(1.0);
-            });
+        // Rain Background Sound - SoundManager의 루프 시스템 이용 (AutoPlay 사용)
+        if (ASSETS.AUDIO.SFX.RAIN) {
+            this.rainSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.RAIN, 0.3, true);
+        }
+
+        // Thunder Sound Effect - 로딩만 미리 해두기 (AutoPlay 사용하되 볼륨 0)
+        if (ASSETS.AUDIO.SFX.THUNDER) {
+            this.thunderSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.THUNDER, 0, true);
         }
     }
 
@@ -212,18 +208,25 @@ export class WeatherSystem {
         // Actually keep directional light high up fixed
 
         // Sound
-        if (this.thunderSound && !this.thunderSound.isPlaying) {
-            if (this.thunderSound.context.state === 'running') {
-                this.thunderSound.play();
-            }
+        if (this.sound) {
+            this.sound.playSFX(ASSETS.AUDIO.SFX.THUNDER, 1.0);
         }
 
         console.log('[Weather] Lightning triggered!');
     }
 
     stop() {
-        if (this.rainSound && this.rainSound.isPlaying) this.rainSound.stop();
-        if (this.thunderSound && this.thunderSound.isPlaying) this.thunderSound.stop();
+        console.log('[WeatherSystem] Stopping weather effects and sounds...');
+        this.isDisposed = true;
+
+        if (this.rainSoundController) {
+            this.rainSoundController.stop();
+            this.rainSoundController = null;
+        }
+        if (this.thunderSoundController) {
+            this.thunderSoundController.stop();
+            this.thunderSoundController = null;
+        }
 
         if (this.rainSystem) {
             this.scene.remove(this.rainSystem);
@@ -240,26 +243,10 @@ export class WeatherSystem {
     }
 
     pause() {
-        if (this.rainSound && this.rainSound.isPlaying) {
-            this.rainSound.pause();
-        }
-        if (this.thunderSound && this.thunderSound.isPlaying) {
-            this.thunderSound.pause();
-            this.wasThunderPlaying = true;
-        } else {
-            this.wasThunderPlaying = false;
-        }
+        // SoundManager가 중앙에서 모든 루프(빗소리 등)를 중지하므로 여기서는 비움
     }
 
     resume() {
-        console.log('[WeatherSystem] Resuming... RainEnabled:', this.weatherConfig.RAIN.ENABLED);
-        if (this.rainSound && !this.rainSound.isPlaying && this.weatherConfig.RAIN.ENABLED) {
-            this.rainSound.play();
-        }
-
-        if (this.wasThunderPlaying && this.thunderSound) {
-            this.thunderSound.play();
-            this.wasThunderPlaying = false;
-        }
+        // SoundManager가 중앙에서 모든 루프를 복구하므로 여기서는 비움
     }
 }

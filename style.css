@@ -148,7 +148,8 @@ body::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--ui-overlay-color);
+    background: rgba(0, 0, 0, 0.5);
+    /* 오버레이 투명도 조절 (기존 0.9 -> 0.5) */
     backdrop-filter: blur(5px);
     display: flex;
     justify-content: center;
@@ -167,7 +168,8 @@ body::after {
 
 /* Common Popup Content Box */
 .ui-popup-content {
-    background: var(--ui-bg-color);
+    background: rgba(20, 0, 0, 0.85);
+    /* 배경 반투명화 (기존 0.95 -> 0.85) */
     padding: 40px;
     border-radius: 5px;
     /* Sharper corners */
@@ -340,14 +342,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Portrait Mode (Default) */
 @media (orientation: portrait) {
     #main-menu-screen {
-        background-image: url('image/title_portrait.png');
+        background-image: url('./src/assets/image/title_portrait.png');
     }
 }
 
 /* Landscape Mode */
 @media (orientation: landscape) {
     #main-menu-screen {
-        background-image: url('image/title_landscape.png');
+        background-image: url('./src/assets/image/title_landscape.png');
     }
 }
 

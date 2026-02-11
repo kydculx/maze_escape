@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG, PLAYER_ACTION_STATES } from '../Config.js';
+import { ASSETS } from '../Assets.js';
 
 /**
  * 플레이어 캐릭터의 위치, 이동, 상태를 관리하는 클래스 (1인칭 전용)
@@ -170,7 +171,7 @@ export class Player {
             if (!this.isJumping) {
                 const walkSpeed = 12;
                 if (this.animationTime - this.lastFootstepTime >= Math.PI / walkSpeed) {
-                    if (this.sound) this.sound.playSFX(CONFIG.AUDIO.FOOTSTEP_SFX_URL, 0.3);
+                    if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.FOOTSTEP, 0.3);
                     this.lastFootstepTime = this.animationTime;
                 }
             }
@@ -339,7 +340,7 @@ export class Player {
         this.isJumping = true;
         this.jumpTimer = 0;
 
-        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.JUMP_SFX_URL, 0.4);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.JUMP, 0.4);
     }
 
     /**
@@ -368,7 +369,7 @@ export class Player {
         console.log("Placing trap...");
 
         // 함정 설치 사운드 재생
-        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.TRAP_SFX_URL);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.TRAP);
 
         return this.group.position.clone();
     }
@@ -430,7 +431,7 @@ export class Player {
         console.log(`Teleported to [${target.x}, ${target.y}]`);
 
         // 텔레포트 사운드 재생
-        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.TELEPORT_SFX_URL);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.TELEPORT);
 
         return true;
     }
@@ -496,7 +497,7 @@ export class Player {
         this.isFlashlightOn = !this.isFlashlightOn;
         this.flashlight.intensity = this.isFlashlightOn ? CONFIG.ITEMS.FLASHLIGHT.INTENSITY : 0;
 
-        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.FLASHLIGHT_SWITCH_SFX_URL);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.FLASHLIGHT);
         return true;
     }
 
@@ -509,7 +510,7 @@ export class Player {
         this.isSensorOn = !this.isSensorOn;
         // 사운드 재생 (켜짐/꺼짐)
         if (this.sound) {
-            this.sound.playSFX(CONFIG.AUDIO.SENSOR_TOGGLE_SFX_URL);
+            this.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.SENSOR);
         }
         return true;
     }
@@ -524,7 +525,7 @@ export class Player {
         this.disguiseTimer = CONFIG.ITEMS.ZOMBIE_DISGUISE.DURATION;
         console.log("Zombie disguise activated! Speed halved.");
 
-        if (this.sound) this.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.8);
         return true;
     }
 

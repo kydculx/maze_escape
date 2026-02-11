@@ -14,6 +14,7 @@ import { MonsterManager } from '../MonsterManager.js';
 import { WeatherSystem } from '../effects/WeatherSystem.js';
 import { TrapManager } from '../maps/TrapManager.js';
 import { SaveManager } from '../SaveManager.js';
+import { ASSETS } from '../Assets.js';
 
 /**
  * 게임 플레이 장면 클래스 (Orchestrator)
@@ -111,7 +112,7 @@ export class PlayScene extends BaseScene {
         this.camera.add(this.audioListener);
 
         // 6.5 날씨 시스템 초기화 (카메라 설정 후)
-        this.weatherSystem = new WeatherSystem(this.scene, this.camera, this.audioListener);
+        this.weatherSystem = new WeatherSystem(this.scene, this.camera, this.game.sound);
 
         this._refreshFloorMesh();
 
@@ -141,25 +142,14 @@ export class PlayScene extends BaseScene {
             () => { // onPause (메뉴 열림)
                 console.log('[PlayScene] Game Paused via Menu');
                 this.game.state.pauseGame();
-                if (this.weatherSystem) this.weatherSystem.pause();
+                // SoundManager handles BGM and all loop sounds (rain, monsters) surgically
                 if (this.game.sound) this.game.sound.pauseAll();
             },
             () => { // onResume (메뉴 닫힘)
                 console.log('[PlayScene] Game Resumed via Menu');
                 this.game.state.resumeGame();
-
-                // 1. Resume SoundManager context (BGM/SFX)
+                // SoundManager resumes everything previously playing
                 if (this.game.sound) this.game.sound.resumeAll();
-
-                // 2. Resume Three.js AudioListener context (Weather/3D Sounds)
-                if (this.audioListener && this.audioListener.context && this.audioListener.context.state === 'suspended') {
-                    this.audioListener.context.resume().then(() => {
-                        console.log('[PlayScene] AudioListener context resumed');
-                    });
-                }
-
-                // 3. Resume weather audio logic
-                if (this.weatherSystem) this.weatherSystem.resume();
             }
         );
 
@@ -184,14 +174,14 @@ export class PlayScene extends BaseScene {
                 if (pos) {
                     this.trapManager.placeTrap(pos);
                     this.ui.updateAll();
-                    if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+                    if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
                 }
             },
             onTeleport: () => {
                 const success = this.player.useTeleport();
                 if (success) {
                     this.ui.updateAll();
-                    if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
+                    if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.8);
                 }
             },
             onFlashlight: () => {
@@ -219,7 +209,7 @@ export class PlayScene extends BaseScene {
                 console.log(`[PlayScene] Progress saved: Stage ${this.stageManager.level}`);
 
                 this.resetMaze();
-                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
             },
             onRestart: () => {
                 console.log("Restarting current stage...");
@@ -235,22 +225,24 @@ export class PlayScene extends BaseScene {
 
                 this.resetMaze();
                 if (this.game.sound) {
-                    this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
-                    this.game.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+                    this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
+                    this.game.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
                 }
             },
             onMainMenu: () => {
                 console.log("Going to Main Menu...");
                 this.game.state.resumeGame(); // Reset pause state
-                if (this.game.sound) this.game.sound.resumeAll();
+                // Removed resumeAll() here to prevent sound from starting right before scene switch
 
-                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
 
                 // Switch scene and state
                 this.game.sceneManager.setScene(STATES.MAIN_MENU);
                 this.game.state.set(STATES.MAIN_MENU);
+
+                // 메인 메뉴 배경음악 다시 시작 (게임 BGM과 같은 파일이지만 새로운 인스턴스로 조용하게 시작 가능)
                 if (this.game.sound) {
-                    this.game.sound.playBGM(CONFIG.AUDIO.BGM_URL, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+                    this.game.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
                 }
 
                 // UI 정리
@@ -409,14 +401,42 @@ export class PlayScene extends BaseScene {
     }
 
     dispose() {
+        // Remove event listeners
+        if (this._onVisibilityChange) {
+            document.removeEventListener('visibilitychange', this._onVisibilityChange);
+        }
+
         if (this.weatherSystem) {
             this.weatherSystem.stop();
         }
-        // Clean up other managers if needed
+
+        // Clean up other managers first
         if (this.monsterManager) {
-            // Stop any monster sounds if they are not attached to scene
+            this.monsterManager.dispose();
+        }
+        if (this.trapManager) {
+            this.trapManager.dispose();
         }
 
+        // Clean up AudioListener
+        if (this.audioListener) {
+            if (this.camera) {
+                this.camera.remove(this.audioListener);
+            }
+            // Ensure no sound leaks
+            this.audioListener.setMasterVolume(0);
+            if (this.audioListener.context && this.audioListener.context.state === 'running') {
+                this.audioListener.context.suspend();
+            }
+        }
+
+        // BGM 및 모든 루프 사운드 강제 중지 (Nuclear Option)
+        if (this.game.sound) {
+            console.log('[PlayScene] Calling sound.stopAll()');
+            this.game.sound.stopAll();
+        }
+
+        console.log('[PlayScene] Dispose complete');
         super.dispose();
     }
 
@@ -446,7 +466,7 @@ export class PlayScene extends BaseScene {
         if (this.itemManager) {
             this.itemManager.update(deltaTime);
             this.itemManager.checkCollisions(this.player.position, CONFIG.PLAYER.PLAYER_RADIUS, (item) => {
-                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.ITEM_PICKUP_SFX_URL, 0.6);
+                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM_PICKUP, 0.6);
 
                 // 사운드 센서 아이템 처리
                 if (item.type === 'SENSOR') {
@@ -693,7 +713,7 @@ export class PlayScene extends BaseScene {
                 this.minimap.showMonsters = !this.minimap.showMonsters;
                 this.ui.updateAll();
                 console.log(`[Cheat] Monster Map Visibility: ${this.minimap.showMonsters}`);
-                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.SENSOR_TOGGLE_SFX_URL, 0.5);
+                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.SENSOR, 0.5);
             }
         }
     }
@@ -743,7 +763,7 @@ export class PlayScene extends BaseScene {
                         if (bx >= 0 && bx < width && by >= 0 && by < height) {
                             if (this.mazeGen.grid[by][bx] === 1) {
                                 console.warn(`ACTION DENIED: Wall at [${tx}, ${ty}] is too thick to break!`);
-                                if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.3); // 실패음 대용
+                                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.3); // 실패음 대용
                                 return;
                             }
                         }
@@ -764,7 +784,7 @@ export class PlayScene extends BaseScene {
                     this.ui.updateAll();
 
                     if (this.game.sound) {
-                        this.game.sound.playSFX(CONFIG.AUDIO.HAMMER_SFX_URL, 0.6);
+                        this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.HAMMER, 0.6);
                     }
                 } else {
                     console.warn(`ACTION FAIL: No wall found at [${tx}, ${ty}] (Value: ${targetVal})`);
@@ -779,7 +799,7 @@ export class PlayScene extends BaseScene {
         const success = this.player.useTeleport();
         if (success) {
             this.ui.updateAll();
-            if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.8);
+            if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.8);
         }
     }
 
@@ -788,7 +808,7 @@ export class PlayScene extends BaseScene {
         if (pos) {
             this.trapManager.placeTrap(pos);
             this.ui.updateAll();
-            if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 0.6);
+            if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
         }
     }
 
@@ -816,7 +836,7 @@ export class PlayScene extends BaseScene {
         this._isTransitioning = true;
 
         // 효과음
-        if (this.game.sound) this.game.sound.playSFX(CONFIG.AUDIO.CLICK_SFX_URL, 1.0);
+        if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 1.0);
 
         // 스테이지 매니저 업데이트
         this.stageManager.nextStage();
