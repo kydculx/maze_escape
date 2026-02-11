@@ -150,7 +150,10 @@ export class Player {
             this.rotationTimer += deltaTime;
             const progress = Math.min(this.rotationTimer / CONFIG.PLAYER.ROTATION_DURATION, 1);
             this.group.rotation.y = THREE.MathUtils.lerp(this.startRotationY, this.targetRotationY, progress);
-            if (progress >= 1) this.isRotating = false;
+            if (progress >= 1) {
+                this.isRotating = false;
+                this.group.rotation.y = this.targetRotationY; // Snap to target
+            }
         }
 
         // 3. 이동 처리
@@ -181,9 +184,10 @@ export class Player {
 
             if (progress >= 1) {
                 this.isMoving = false;
+                this.group.position.copy(this.targetPos); // Snap to target
                 if (!this.isJumping) {
                     this.actionState = PLAYER_ACTION_STATES.IDLE;
-                    this.group.position.y = 0; // Reset bobbing
+                    this.group.position.y = 0; // Reset bobbing strictly
                 }
             }
         }
@@ -302,7 +306,13 @@ export class Player {
         if (this.isMoving || this.isJumping) return false;
 
         const moveDistance = CONFIG.MAZE.WALL_THICKNESS;
-        const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(this.group.quaternion);
+        // 회전 중이라면 현재 회전이 아닌 '목표 회전(90도 단위)'을 기준으로 방향 계산
+        const currentRotation = this.isRotating ? this.targetRotationY : this.group.rotation.y;
+
+        // 방향 벡터 계산 (-z가 정면)
+        const direction = new THREE.Vector3(0, 0, -1);
+        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), currentRotation);
+
         const nextPos = this.group.position.clone().add(direction.multiplyScalar(moveDistance * stepDir));
 
         if (!this.checkCollision(nextPos.x, nextPos.z)) {
