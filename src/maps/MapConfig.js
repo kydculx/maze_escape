@@ -73,6 +73,6 @@ export const MAP_CONFIG = {
 export const STAGE_CONFIG = {
     INITIAL_LEVEL: 1,       // 게임 시작 레벨
     INITIAL_SIZE: 7,       // 레벨 1의 미로 크기 (15x15 그리드 = 7x7 이동 가능 구역)
-    SIZE_INCREMENT: 1,      // 레벨 업 당 미로 크기 증가량 (홀수 유지를 위해 짝수로 증가 권장)
-    MAX_SIZE: 31            // 미로의 최대 크기 제한
+    SIZE_INCREMENT: 2,      // 레벨 업 당 미로 크기 증가량 (홀수 유지를 위해 짝수로 증가 권장)
+    MAX_SIZE: 35            // 미로의 최대 크기 제한
 };
