@@ -329,6 +329,26 @@ input[type="range"]::-webkit-slider-thumb:hover {
     /* Inherits from .ui-popup via HTML class, specific overrides here if needed */
     z-index: 100;
     /* Lower than ingame menu/help which might be 2000 */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Darken slightly for readability over image */
+    background-blend-mode: overlay;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Portrait Mode (Default) */
+@media (orientation: portrait) {
+    #main-menu-screen {
+        background-image: url('image/title_portrait.png');
+    }
+}
+
+/* Landscape Mode */
+@media (orientation: landscape) {
+    #main-menu-screen {
+        background-image: url('image/title_landscape.png');
+    }
 }
 
 /* Reuse common styles for menu options */
