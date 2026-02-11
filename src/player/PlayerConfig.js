@@ -20,6 +20,7 @@ export const PLAYER_CONFIG = {
     JUMP_EFFECT: {
         MAX_EXTRA_VISIBILITY: 10,  // 점프 시 추가로 확보되는 안개 가시거리
         VISIBILITY_THRESHOLD: 0.50, // 가시거리가 넓어지기 시작하는 높이 임계값 (0~1)
+        SPECIAL_MULTIPLIER: 1.5,   // 아이템 점프 시 높이 배율 추가
         FIRST_PERSON_TILT: 1.2,    // 1인칭 점프 시 아래를 내려다보는 강도
         BOB_FREQUENCY: 12,        // 이동 시 상하 흔들림 속도
         BOB_AMPLITUDE: 0.05,      // 이동 시 상하 흔들림 크기

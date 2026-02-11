@@ -100,8 +100,8 @@ export const ITEM_CONFIG = {
     // 사운드 센서(Sound Sensor) 관련 설정
     SENSOR: {
         DURATION: 30.0,           // 센서 배터리 지속 시간 (초)
-        RECHARGE_DELAY: 3.0,      // 사용 중단 후 충전 시작까지 걸리는 시간
-        RECHARGE_DURATION: 5.0,   // 완전 방전에서 완충까지 걸리는 시간 (고속 충전)
+        RECHARGE_DELAY: 2.0,      // 사용 중단 후 충전 시작까지 걸리는 시간
+        RECHARGE_DURATION: 10.0,   // 완전 방전에서 완충까지 걸리는 시간 (고속 충전)
         FLICKER_THRESHOLD: 3.0,   // 배터리 부족 경고 시점 (초)
         COLOR: 0x00ffff           // 센서 UI 색상
     },
@@ -114,8 +114,8 @@ export const ITEM_CONFIG = {
     // 손전등(Flashlight) 관련 세부 설정
     FLASHLIGHT: {
         DURATION: 30.0,           // 배터리 지속 시간 (초)
-        RECHARGE_DURATION: 30.0,  // 완충 시간
-        RECHARGE_DELAY: 3.0,      // 충전 대기 시간
+        RECHARGE_DURATION: 10.0,  // 완충 시간
+        RECHARGE_DELAY: 2.0,      // 충전 대기 시간
         INTENSITY: 50,            // 조명 강도
         DISTANCE: 5,              // 조명 도달 거리
         ANGLE: Math.PI / 7,       // 조명 퍼짐 각도

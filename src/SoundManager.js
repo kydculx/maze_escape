@@ -14,9 +14,9 @@ export class SoundManager {
         // 저장된 볼륨 설정 로드
         const savedSettings = SaveManager.loadSettings();
         console.log('[SoundManager] Loaded settings from localStorage:', savedSettings);
-        this.bgmVolume = savedSettings.bgmVolume;
-        this.sfxVolume = savedSettings.sfxVolume;
-        this.weatherVolume = savedSettings.weatherVolume !== undefined ? savedSettings.weatherVolume : 1.0;
+        this.bgmVolume = typeof savedSettings.bgmVolume === 'number' ? savedSettings.bgmVolume : 1.0;
+        this.sfxVolume = typeof savedSettings.sfxVolume === 'number' ? savedSettings.sfxVolume : 1.0;
+        this.weatherVolume = typeof savedSettings.weatherVolume === 'number' ? savedSettings.weatherVolume : 1.0;
         console.log('[SoundManager] BGM Volume:', this.bgmVolume, 'SFX Volume:', this.sfxVolume, 'Weather Volume:', this.weatherVolume);
 
         this.enabled = true;
@@ -290,6 +290,7 @@ export class SoundManager {
      * @param {number} volume - 볼륨 (0~1)
      */
     setMasterVolume(volume) {
+        if (isNaN(volume)) return;
         this.masterVolume = Math.max(0, Math.min(1, volume));
         this._updateBGMVolume();
     }
@@ -298,6 +299,7 @@ export class SoundManager {
      * BGM 볼륨 설정 (0~1)
      */
     setBGMVolume(volume) {
+        if (isNaN(volume)) return;
         this.bgmVolume = Math.max(0, Math.min(1, volume));
         this._updateBGMVolume();
         // 볼륨 변경 시 저장
@@ -309,6 +311,7 @@ export class SoundManager {
      * SFX 볼륨 설정 (0~1)
      */
     setSFXVolume(volume) {
+        if (isNaN(volume)) return;
         this.sfxVolume = Math.max(0, Math.min(1, volume));
         // 볼륨 변경 시 저장
         console.log('[SoundManager] Saving SFX volume:', this.sfxVolume);
@@ -319,6 +322,7 @@ export class SoundManager {
      * 날씨 효과음 볼륨 설정 (0~1)
      */
     setWeatherVolume(volume) {
+        if (isNaN(volume)) return;
         this.weatherVolume = Math.max(0, Math.min(1, volume));
 
         // 실시간으로 모든 날씨 루프 볼륨 업데이트

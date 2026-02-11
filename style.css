@@ -592,7 +592,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     z-index: 98;
     display: none;
     /* JS에서 센서 켜면 block으로 변경 */
-    opacity: 0.7;
 }
 
 .radar-circle {
@@ -601,10 +600,39 @@ input[type="range"]::-webkit-slider-thumb:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    border: 2px solid rgba(0, 255, 255, 0.3);
+    border: 2px solid rgba(0, 255, 0, 0.4);
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 0, 0, 0.05) 0%, rgba(255, 0, 0, 0.0) 70%);
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.1);
+    /* 레이더 느낌의 배경: 어두운 초록 그라데이션 + 동심원 격자 */
+    background:
+        repeating-radial-gradient(circle, transparent 0, transparent 32px, rgba(0, 255, 0, 0.1) 33px, rgba(0, 255, 0, 0.1) 34px),
+        radial-gradient(circle, rgba(0, 40, 0, 0.4) 0%, rgba(0, 10, 0, 0.7) 100%);
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.15), inset 0 0 30px rgba(0, 40, 0, 0.6);
+    overflow: hidden;
+}
+
+/* 레이더 스윕(회전하는 선) 효과 */
+.radar-circle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: conic-gradient(from 0deg, transparent 0%, rgba(0, 255, 0, 0.2) 10%, rgba(0, 255, 0, 0.4) 25%, transparent 25%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: radar-sweep 4s linear infinite;
+    z-index: 1;
+}
+
+@keyframes radar-sweep {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }
 
 /* 레이더 중심 플레이어 표시 제거됨 */
@@ -616,35 +644,31 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 0;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
-    border-bottom: 12px solid #ff3333;
+    border-bottom: 12px solid #00ff00;
+    /* 초록색으로 변경 */
     /* 삼각형 형태 */
     background-color: transparent;
     border-radius: 0;
     transform: translate(-50%, -50%) rotate(0deg);
-    /* 회전 추가 가능 (옵션) */
-    box-shadow: none;
-    /* filter로 glow 대체 */
-    filter: drop-shadow(0 0 4px #ff0000);
+    z-index: 10;
+    /* 스윕 효과보다 위에 표시 */
+    filter: drop-shadow(0 0 6px #00ff00);
 }
 
 /* 맥동 애니메이션 추가 */
 @keyframes radar-pulse {
-
-    /* scale제거하면 회전 유지 가능? transform 전체 덮어씀 */
-    /* JS에서 rotate를 동적으로 주므로, 여기서 transform 건드리면 회전 풀림. */
-    /* 해결: scale 대신 opacity만, 혹은 filter drop-shadow 강도 조절 */
     0% {
-        filter: drop-shadow(0 0 2px #ff0000);
+        filter: drop-shadow(0 0 2px #00ff00);
         opacity: 0.8;
     }
 
     50% {
-        filter: drop-shadow(0 0 8px #ff0000);
+        filter: drop-shadow(0 0 10px #00ff00);
         opacity: 1;
     }
 
     100% {
-        filter: drop-shadow(0 0 2px #ff0000);
+        filter: drop-shadow(0 0 2px #00ff00);
         opacity: 0.8;
     }
 }
@@ -964,7 +988,7 @@ input[type="range"]::-webkit-slider-thumb {
     flex-direction: column-reverse;
     gap: 15px;
     pointer-events: auto;
-    z-index: 100;
+    z-index: 1000;
 }
 
 

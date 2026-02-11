@@ -42,10 +42,12 @@ export class UIManager {
             weatherSlider: document.getElementById('weather-volume-slider'),
             bgmVal: document.getElementById('bgm-volume-val'),
             sfxVal: document.getElementById('sfx-volume-val'),
-            weatherVal: document.getElementById('weather-volume-val')
+            weatherVal: document.getElementById('weather-volume-val'),
+            itemActions: document.getElementById('item-actions')
         };
 
-
+        this._cleanupFns = [];
+        this._lastItemOrder = ""; // Optimization: only reorder on change
     }
 
     /**
@@ -244,9 +246,6 @@ export class UIManager {
     updateItemButtons() {
         if (!this.player) return;
 
-        const container = document.getElementById('item-actions');
-        if (!container) return;
-
         // 아이템 타입과 엘리먼트 매핑
         const typeToElement = {
             'HAMMER': this.elements.hammer,
@@ -259,25 +258,31 @@ export class UIManager {
         };
 
         const itemOrder = this.player.inventory.itemOrder || [];
+        const orderKey = itemOrder.join(',');
 
-        // 1. 현재 획득한 순서대로 DOM 재배치 및 가시성 설정
-        itemOrder.forEach(type => {
-            const el = typeToElement[type];
-            if (el) {
-                // 부모 컨테이너가 flex-direction: column-reverse이므로 
-                // 순서대로 appendChild를 하면 아래서 위로 쌓입니다.
-                container.appendChild(el);
-                el.classList.remove('hidden');
-            }
-        });
+        // 최적화: 유의미한 변화가 있을 때만 DOM을 조작합니다.
+        if (this._lastItemOrder !== orderKey) {
+            console.log('[UIManager] Updating item HUD order:', orderKey);
 
-        // 2. 획득하지 않은 아이템은 숨김
-        Object.keys(typeToElement).forEach(type => {
-            if (!itemOrder.includes(type)) {
+            // 1. 현재 획득한 순서대로 DOM 재배치 및 가시성 설정
+            itemOrder.forEach(type => {
                 const el = typeToElement[type];
-                if (el) el.classList.add('hidden');
-            }
-        });
+                if (el) {
+                    this.elements.itemActions.appendChild(el);
+                    el.classList.remove('hidden');
+                }
+            });
+
+            // 2. 획득하지 않은 아이템은 숨김
+            Object.keys(typeToElement).forEach(type => {
+                if (!itemOrder.includes(type)) {
+                    const el = typeToElement[type];
+                    if (el) el.classList.add('hidden');
+                }
+            });
+
+            this._lastItemOrder = orderKey;
+        }
 
         // 3. 각 아이템 세부 상태 업데이트 (기존 로직)
         // 망치
