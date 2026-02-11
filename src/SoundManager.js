@@ -456,6 +456,69 @@ export class SoundManager {
     }
 
     /**
+     * 브라우저 가시성 변경 핸들러 (백그라운드 전환 시 일시정지)
+     * @param {boolean} isVisible - 현재 화면이 보이는지 여부
+     */
+    handleVisibilityChange(isVisible) {
+        console.log(`[SoundManager] Visibility changed: ${isVisible ? 'VISIBLE' : 'HIDDEN'}`);
+
+        if (!this.initialized) return;
+
+        if (isVisible) {
+            // 1. Web Audio API 컨텍스트 재개
+            if (this.context && this.context.state === 'suspended') {
+                this.context.resume().then(() => {
+                    console.log('[SoundManager] AudioContext resumed after visibility change.');
+                });
+            }
+
+            // 2. HTML 오디오 엘리먼트들 재개 (BGM 등)
+            for (const audio of this.allAudioElements) {
+                if (audio && audio.wasPlayingBeforeBackground) {
+                    audio.play().catch(e => console.warn('[SoundManager] Audio resume failed:', e));
+                    audio.wasPlayingBeforeBackground = false;
+                }
+            }
+
+            // 3. 루프 사운드들 재개
+            for (const controller of this.activeLoops) {
+                if (controller.wasPlayingBeforeBackground) {
+                    controller.play();
+                    controller.wasPlayingBeforeBackground = false;
+                }
+            }
+        } else {
+            // 4. Web Audio API 컨텍스트 일시정지
+            if (this.context && this.context.state === 'running') {
+                this.context.suspend().then(() => {
+                    console.log('[SoundManager] AudioContext suspended for background.');
+                });
+            }
+
+            // 5. HTML 오디오 엘리먼트들 일시정지
+            for (const audio of this.allAudioElements) {
+                if (audio && !audio.paused) {
+                    audio.wasPlayingBeforeBackground = true;
+                    audio.pause();
+                } else if (audio) {
+                    audio.wasPlayingBeforeBackground = false;
+                }
+            }
+
+            // 6. 루프 사운드들 상태 저장 (Web Audio API가 suspend되어도 개별 source 관리를 위해 처리)
+            for (const controller of this.activeLoops) {
+                if (controller.isPlaying) {
+                    controller.wasPlayingBeforeBackground = true;
+                    // Note: controller.play() 내부에서 !this.context 체크가 있으므로 
+                    // 실제 source stop은 suspend가 처리하지만 안전을 위해 플래그만 세팅
+                } else {
+                    controller.wasPlayingBeforeBackground = false;
+                }
+            }
+        }
+    }
+
+    /**
      * 모든 사운드 강제 중지 (장면 전환 시 안전장치)
      * 컨텍스트를 서스펜드하지 않아 버튼음 등은 계속 작동 가능하게 함
      */

@@ -60,6 +60,13 @@ class Game {
 
         window.addEventListener('resize', () => this.onResize());
 
+        // 백그라운드 전환 시 오디오 일시정지 처리
+        document.addEventListener('visibilitychange', () => {
+            if (this.sound) {
+                this.sound.handleVisibilityChange(document.visibilityState === 'visible');
+            }
+        });
+
         // 핀치 줌 및 브라우저 확대/축소 방지
         this.preventZoom();
 

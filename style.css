@@ -575,9 +575,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .hud-item .count.highlight {
+    font-family: 'Creepster', cursive;
     color: #ff0000;
-    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    font-size: 1.4em;
+    text-shadow: 0 0 15px rgba(255, 0, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.9);
+    font-size: 2.5rem;
+    margin: 5px 0;
 }
 
 /* 중앙 조준점 */
