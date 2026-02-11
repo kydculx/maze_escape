@@ -17,7 +17,8 @@
     <!-- Horror Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Roboto+Slab:wght@400;700&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Butcherman&family=East+Sea+Dokdo&family=Roboto+Slab:wght@400;700&display=swap"
         rel="stylesheet">
 
     <link rel="stylesheet" href="./style.css">
@@ -184,17 +185,14 @@
     </div>
 
     <!-- 메인 메뉴 화면 오버레이 -->
-    <div id="main-menu-screen" class="ui-popup hidden">
-        <div class="ui-popup-content">
-            <h2>MAIN MENU</h2>
-            <div class="menu-options">
-                <!-- 게임 UI (HUD) -->
-
-                <button id="new-game-button" class="ui-btn">새로하기</button>
-                <button id="continue-button" class="ui-btn disabled">이어하기</button>
-                <button id="rankings-button" class="ui-btn">랭킹</button>
-                <button id="settings-button" class="ui-btn">설정</button>
-                <button id="help-button" class="ui-btn">도움말</button>
+    <div id="main-menu-screen" class="ui-popup main-menu-overlay hidden">
+        <div class="main-menu-container">
+            <div class="menu-options minimalist-menu">
+                <button id="new-game-button" class="menu-link-btn">새로하기</button>
+                <button id="continue-button" class="menu-link-btn disabled">이어하기</button>
+                <button id="settings-button" class="menu-link-btn">설정</button>
+                <button id="rankings-button" class="menu-link-btn">랭킹</button>
+                <button id="help-button" class="menu-link-btn">도움말</button>
             </div>
         </div>
     </div>
