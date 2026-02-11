@@ -109,12 +109,14 @@ class Game {
                 // 모바일 전체화면 요청 (사용자 상호작용 내에서 실행되어야 함)
                 if (document.documentElement.requestFullscreen) {
                     document.documentElement.requestFullscreen().then(() => {
-                        // 전체화면 성공 시 화면 방향 잠금 시도 (모바일)
+                        // 전체화면 성공 시 화면 방향 잠금 시도 (모바일) - 제거됨 (가로모드 허용)
+                        /*
                         if (screen.orientation && screen.orientation.lock) {
                             screen.orientation.lock('portrait').catch(err => {
                                 console.log('Screen orientation lock failed:', err);
                             });
                         }
+                        */
                     }).catch((err) => {
                         console.log('Fullscreen request failed:', err);
                     });
@@ -316,7 +318,7 @@ class Game {
             camera.aspect = aspect;
 
             // 반응형 FOV (가로 모드 보정)
-            const baseFov = CONFIG.CAMERA.FOV;
+            const baseFov = CONFIG.PLAYER.CAMERA.FOV;
             if (aspect > 1) {
                 const rad = (baseFov * Math.PI) / 180;
                 camera.fov = (2 * Math.atan(Math.tan(rad / 2) / aspect) * 180) / Math.PI;
