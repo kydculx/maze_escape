@@ -356,11 +356,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     justify-content: center;
     align-items: center;
     perspective: 400px;
-    border: 2px solid rgba(139, 0, 0, 0.5);
-    border-radius: 5px;
-    background: rgba(0, 0, 0, 0.6);
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
-    /* 크기에 맞춰 조정 */
 }
 
 #minimap-canvas {

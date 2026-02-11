@@ -147,9 +147,18 @@ export class PlayScene extends BaseScene {
             () => { // onResume (메뉴 닫힘)
                 console.log('[PlayScene] Game Resumed via Menu');
                 this.game.state.resumeGame();
-                // Context Resume First!
+
+                // 1. Resume SoundManager context (BGM/SFX)
                 if (this.game.sound) this.game.sound.resumeAll();
-                // Then resume weather audio
+
+                // 2. Resume Three.js AudioListener context (Weather/3D Sounds)
+                if (this.audioListener && this.audioListener.context && this.audioListener.context.state === 'suspended') {
+                    this.audioListener.context.resume().then(() => {
+                        console.log('[PlayScene] AudioListener context resumed');
+                    });
+                }
+
+                // 3. Resume weather audio logic
                 if (this.weatherSystem) this.weatherSystem.resume();
             }
         );

@@ -1,7 +1,8 @@
 {
     "name": "Maze Escape",
     "short_name": "MazeEscape",
-    "start_url": ".",
+    "start_url": "./index.html",
+    "scope": ".",
     "display": "fullscreen",
     "orientation": "any",
     "background_color": "#000000",
