@@ -159,11 +159,13 @@ class Game {
             }
         });
 
-        // 랭킹 (Rankings)
+        // 랭킹 (Rankings) - 비활성화 (사용자 요청)
+        /*
         document.getElementById('rankings-button').addEventListener('click', () => {
             this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
             alert('랭킹 시스템을 불러오고 있습니다...');
         });
+        */
 
 
 
