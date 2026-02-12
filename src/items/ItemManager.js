@@ -15,6 +15,9 @@ export class ItemManager {
         this.itemGroup = new THREE.Group();
         this.itemGroup.name = 'game-items'; // maze- 로 시작하면 MazeView.clear()에서 삭제됨
         this.scene.add(this.itemGroup);
+
+        // 스테이지별 비소모성 아이템 획득 여부 추적 (지도 등 유일성 보장)
+        this.stageSpawnedNonConsumables = new Set();
     }
 
     /**
@@ -24,6 +27,7 @@ export class ItemManager {
      */
     spawnItems(count = null, level = 1) {
         this.clearItems();
+        this.stageSpawnedNonConsumables.clear(); // 스테이지 시작 시 초기화
 
         const emptyCells = [];
         for (let y = 1; y < this.mazeGen.height - 1; y++) {
@@ -61,8 +65,6 @@ export class ItemManager {
         const offsetX = -(this.mazeGen.width * thickness) / 2;
         const offsetZ = -(this.mazeGen.height * thickness) / 2;
 
-        // 비소모성 아이템 추적 (맵당 1개씩만)
-        const spawnedNonConsumables = new Set();
 
         for (let i = 0; i < spawnCount; i++) {
             const cell = emptyCells[i];
@@ -73,7 +75,7 @@ export class ItemManager {
                 const isConsumable = itemConfig.CONSUMABLE ?? true; // 기본값은 소모성
 
                 // 소모성이면 항상 가능, 비소모성이면 아직 생성 안 된 것만
-                return isConsumable || !spawnedNonConsumables.has(typeKey);
+                return isConsumable || !this.stageSpawnedNonConsumables.has(typeKey);
             });
 
             // 사용 가능한 아이템이 없으면 건너뛰기
@@ -84,7 +86,7 @@ export class ItemManager {
 
             // 비소모성이면 추적 목록에 추가
             if (!visualConfig.CONSUMABLE) {
-                spawnedNonConsumables.add(typeKey);
+                this.stageSpawnedNonConsumables.add(typeKey);
             }
 
             const item = new Item(typeKey, this.config, visualConfig);
@@ -97,7 +99,7 @@ export class ItemManager {
             this.itemGroup.add(item.group);
         }
 
-        console.log(`${this.items.length} items spawned (${spawnedNonConsumables.size} unique non-consumables).`);
+        console.log(`${this.items.length} items spawned (${this.stageSpawnedNonConsumables.size} unique non-consumables).`);
     }
 
     /**
@@ -216,5 +218,74 @@ export class ItemManager {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
+    }
+
+    /**
+     * 일정 시간마다 아이템을 하나 더 소환 (최대 수량 유지용)
+     */
+    spawnExtraItem(level, maxCount) {
+        // 1. 현재 맵에 깔린 수량이 이미 최대치면 중단 (사용자 요청: 맵에 생성된 갯수를 말함)
+        if (this.items.length >= maxCount) return;
+
+        // 2. 현재 레벨에서 해금된 아이템 필터링
+        const unlockedTypes = Object.keys(this.config.TYPES).filter(typeKey => {
+            const unlockLevel = this.config.UNLOCK_LEVELS?.[typeKey] ?? 1;
+            const isUnlocked = level >= unlockLevel;
+            const itemConfig = this.config.TYPES[typeKey];
+            const isConsumable = itemConfig.CONSUMABLE ?? true;
+
+            // 이미 드롭된 비소모성 아이템(지도 등)은 스테이지당 1개 생성 제한
+            return isUnlocked && (isConsumable || !this.stageSpawnedNonConsumables.has(typeKey));
+        });
+
+        if (unlockedTypes.length === 0) return;
+
+        // 3. 빈 칸 찾기 (현재 아이템이 없는 곳)
+        const emptyCells = [];
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const width = this.mazeGen.width;
+        const height = this.mazeGen.height;
+        const offsetX = -(width * thickness) / 2;
+        const offsetZ = -(height * thickness) / 2;
+
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                if (this.mazeGen.grid[y][x] === 0) {
+                    // 입구/출구 제외
+                    const isEntrance = (x === this.mazeGen.entrance.x && y === this.mazeGen.entrance.y);
+                    const isExit = (x === this.mazeGen.exit.x && y === this.mazeGen.exit.y);
+                    if (isEntrance || isExit) continue;
+
+                    // 아이템이 이미 있는지 체크
+                    const isOccupied = this.items.some(item => {
+                        const ix = Math.round((item.group.position.x - offsetX - thickness / 2) / thickness);
+                        const iy = Math.round((item.group.position.z - offsetZ - thickness / 2) / thickness);
+                        return ix === x && iy === y;
+                    });
+                    if (!isOccupied) emptyCells.push({ x, y });
+                }
+            }
+        }
+
+        if (emptyCells.length === 0) return;
+
+        // 4. 아이템 스폰
+        const cell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        const typeKey = unlockedTypes[Math.floor(Math.random() * unlockedTypes.length)];
+        const visualConfig = this.config.TYPES[typeKey];
+
+        const item = new Item(typeKey, this.config, visualConfig);
+        item.group.position.x = offsetX + (cell.x * thickness) + thickness / 2;
+        item.group.position.z = offsetZ + (cell.y * thickness) + thickness / 2;
+
+        this.items.push(item);
+        this.itemGroup.add(item.group);
+
+        // 비소모성인 경우 기록 (지도 등)
+        if (!visualConfig.CONSUMABLE) {
+            this.stageSpawnedNonConsumables.add(typeKey);
+        }
+
+        console.log(`[ItemManager] Ghost spawn: ${typeKey} at [${cell.x}, ${cell.y}] (Current: ${this.items.length}/${maxCount})`);
     }
 }

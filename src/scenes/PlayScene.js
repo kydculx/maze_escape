@@ -121,11 +121,11 @@ export class PlayScene extends BaseScene {
         this._refreshFloorMesh();
 
         this.itemManager = new ItemManager(this.scene, this.mazeGen, CONFIG.ITEMS);
+        this.itemSpawnTimer = 0; // 아이템 생성 타이머 초기화
 
-        // 레벨에 따른 아이템 개수 (레벨 1: 3-5개, 이후 레벨당 +1, 최대 20개)
-        const baseItems = 3;
-        const itemCount = Math.min(20, baseItems + Math.floor(this.stageManager.level / 2));
-        this.itemManager.spawnItems(itemCount);
+        // 레벨에 따른 아이템 개수 설정
+        this._updateMaxItemCount();
+        this.itemManager.spawnItems(this.maxItemCount, this.stageManager.level);
 
         this.trapManager = new TrapManager(this.scene);
         this.switchManager = new SwitchManager(this.scene, this.mazeGen, this.game.sound);
@@ -424,10 +424,9 @@ export class PlayScene extends BaseScene {
         if (this.itemManager) {
             this.itemManager.mazeGen = this.mazeGen;
 
-            // 레벨에 따른 아이템 개수
-            const baseItems = 3;
-            const itemCount = Math.min(20, baseItems + Math.floor(this.stageManager.level / 2));
-            this.itemManager.spawnItems(itemCount, this.stageManager.level);
+            // 레벨에 따른 아이템 개수 (중앙 관리되는 공식 사용)
+            this._updateMaxItemCount();
+            this.itemManager.spawnItems(this.maxItemCount, this.stageManager.level);
         }
         if (this.monsterManager) {
             this.monsterManager.mazeGen = this.mazeGen;
@@ -465,7 +464,10 @@ export class PlayScene extends BaseScene {
         const floorSize = Math.max(this.mazeGen.width, this.mazeGen.height) * CONFIG.MAZE.WALL_THICKNESS + 10;
         const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(floorSize, floorSize),
-            new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 })
+            new THREE.MeshStandardMaterial({
+                color: CONFIG.MAZE.BG_FLOOR.COLOR,
+                roughness: 1
+            })
         );
         floor.name = 'floor-mesh';
         floor.rotation.x = -Math.PI / 2;
@@ -528,6 +530,45 @@ export class PlayScene extends BaseScene {
             // 거리 체크 (손이 닿는 거리 내에서만 가능하도록)
             if (intersects[0].distance < CONFIG.MAZE.WALL_THICKNESS) {
                 this.switchManager.interact(hit, (gx, gy, side) => {
+                    // 1. 벽 내려가는 애니메이션 시작 (사운드 매니저 및 방향 정보 전달)
+                    // 몬스터 소환 확률 체크 (애니메이션 시작 전에 미리 생성하여 "벽 뒤에 대기" 연출)
+                    if (Math.random() < CONFIG.MAZE.SWITCH.ZOMBIE_SPAWN_CHANCE) {
+                        let ox = gx;
+                        let oy = gy;
+
+                        // side는 플레이어가 상호작용한 '면' (N, S, W, E)
+                        // 플레이어는 해당 자리에 있었으므로 '뒤'는 그 반대 방향
+                        if (side === 'N') oy = gy + 1;      // 북쪽 면 터치 -> 뒤는 남쪽(+y)
+                        else if (side === 'S') oy = gy - 1; // 남쪽 면 터치 -> 뒤는 북쪽(-y)
+                        else if (side === 'W') ox = gx + 1; // 서쪽 면 터치 -> 뒤는 동쪽(+x)
+                        else if (side === 'E') ox = gx - 1; // 동쪽 면 터치 -> 뒤는 서쪽(-x)
+
+                        if (ox >= 0 && ox < this.mazeGen.width && oy >= 0 && oy < this.mazeGen.height) {
+                            // 벽 뒤의 공간이 길(0)인 경우에만 생성 (기존 규칙 유지)
+                            if (this.mazeGen.grid[oy][ox] === 0) {
+                                const wolfMinStage = CONFIG.MONSTERS.WOLF_ZOMBIE.SPAWN_MIN_STAGE;
+                                const type = this.stageManager.level >= wolfMinStage ?
+                                    (Math.random() > 0.5 ? CONFIG.MONSTERS.TYPES.WOLF_ZOMBIE : CONFIG.MONSTERS.TYPES.ZOMBIE) :
+                                    CONFIG.MONSTERS.TYPES.ZOMBIE;
+
+                                const monster = this.monsterManager.spawnMonsterAt(type, ox, oy, this.stageManager.level);
+
+                                // 정확히 벽의 반대편 경계면에 가깝게 배치
+                                const thick = CONFIG.MAZE.WALL_THICKNESS;
+                                const offsetX = -(this.mazeGen.width * thick) / 2;
+                                const offsetZ = -(this.mazeGen.height * thick) / 2;
+
+                                if (side === 'N') monster.position.z = offsetZ + (gy + 1) * thick + 0.1;
+                                else if (side === 'S') monster.position.z = offsetZ + gy * thick - 0.1;
+                                else if (side === 'W') monster.position.x = offsetX + (gx + 1) * thick + 0.1;
+                                else if (side === 'E') monster.position.x = offsetX + gx * thick - 0.1;
+
+                                // 플레이어를 바라보게 설정 (lookAt 사용)
+                                monster.group.lookAt(this.player.position.x, 0, this.player.position.z);
+                            }
+                        }
+                    }
+
                     // 1. 벽 내려가는 애니메이션 시작 (사운드 매니저 및 방향 정보 전달)
                     this.mazeView.animateWallRemoval(gx, gy, 3.5, this.game.sound, side, () => {
                         // 2. 애니메이션 완료 후 실제 데이터 업데이트 (이때부터 통과 가능)
@@ -598,6 +639,15 @@ export class PlayScene extends BaseScene {
 
         // 1. 플레이어 업데이트
         this.player.update(deltaTime);
+
+        // 1.1 아이템 자동 생성 업데이트
+        if (this.itemManager && this.game.state.is(STATES.PLAYING)) {
+            this.itemSpawnTimer += deltaTime;
+            if (this.itemSpawnTimer >= CONFIG.ITEMS.SPAWN_INTERVAL) {
+                this.itemSpawnTimer = 0;
+                this.itemManager.spawnExtraItem(this.stageManager.level, this.maxItemCount);
+            }
+        }
 
         // 1.0 체력 회복 중일 때 UI 업데이트
         if (this.ui && this.player.idleTimer >= CONFIG.PLAYER.REGEN_DELAY && this.player.health < this.player.maxHealth) {
@@ -1005,6 +1055,13 @@ export class PlayScene extends BaseScene {
         // 미로 재생성 (공통 로직 사용)
         this._rebuildMaze();
 
+        // 아이템 개수 및 타이머 초기화
+        this._updateMaxItemCount();
+        this.itemSpawnTimer = 0;
+        if (this.itemManager) {
+            this.itemManager.spawnItems(this.maxItemCount, this.stageManager.level);
+        }
+
         // Save checkpoint for this new stage
         if (this.player) this.player.saveCheckpoint();
 
@@ -1093,9 +1150,12 @@ export class PlayScene extends BaseScene {
         return pool;
     }
 
-    /**
-     * 장면 해제 및 리소스 정리
-     */
+    _updateMaxItemCount() {
+        // 아이템 개수 = 현재 스테이지 레벨 (SPAWN_COUNT 제한)
+        this.maxItemCount = Math.min(CONFIG.ITEMS.SPAWN_COUNT, this.stageManager.level);
+        console.log(`[PlayScene] Max items for stage: ${this.maxItemCount}`);
+    }
+
     /**
      * 장면 해제 및 리소스 정리
      */

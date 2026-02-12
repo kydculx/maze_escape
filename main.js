@@ -13,6 +13,13 @@ import { ASSETS } from './src/Assets.js';
  */
 class Game {
     constructor() {
+        // 0. 폰트 로딩 대기 (FOUT 방지)
+        document.body.classList.add('fonts-loading');
+        document.fonts.ready.then(() => {
+            console.log('[Game] All fonts loaded');
+            document.body.classList.remove('fonts-loading');
+        });
+
         // 1. 핵심 모듈 초기화
         this.state = new GameState(STATES.SPLASH); // 스플래시 화면부터 시작
         this.input = new InputHandler();

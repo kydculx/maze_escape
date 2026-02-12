@@ -40,6 +40,18 @@ const wallDungeonBUrl = new URL('./assets/textures/dungeon_B_wall.png', import.m
 const floorDungeonBUrl = new URL('./assets/textures/dungeon_B_floor.png', import.meta.url).href;
 const wallDungeonCUrl = new URL('./assets/textures/dungeon_C_wall.png', import.meta.url).href;
 const floorDungeonCUrl = new URL('./assets/textures/dungeon_C_floor.png', import.meta.url).href;
+
+// [New Themes]
+const wallSlimeUrl = new URL('./assets/textures/wall_slime.png', import.meta.url).href;
+const floorSlimeUrl = new URL('./assets/textures/floor_slime.png', import.meta.url).href;
+const wallMagmaUrl = new URL('./assets/textures/wall_magma.png', import.meta.url).href;
+const floorMagmaUrl = new URL('./assets/textures/floor_magma.png', import.meta.url).href;
+const wallGhostlyUrl = new URL('./assets/textures/wall_ghostly.png', import.meta.url).href;
+const floorGhostlyUrl = new URL('./assets/textures/floor_ghostly.png', import.meta.url).href;
+const wallWoodenUrl = new URL('./assets/textures/wall_wooden.png', import.meta.url).href;
+const floorWoodenUrl = new URL('./assets/textures/floor_wooden.png', import.meta.url).href;
+const wallFleshUrl = new URL('./assets/textures/wall_flesh.png', import.meta.url).href;
+const floorFleshUrl = new URL('./assets/textures/floor_flesh.png', import.meta.url).href;
 const zombieSkinUrl = new URL('./assets/textures/zombie_skin_v3.png', import.meta.url).href;
 const zombieClothesUrl = new URL('./assets/textures/zombie_clothes_v2.png', import.meta.url).href;
 const zombieHeadOverhaulUrl = new URL('./assets/textures/zombie_head_v3.png', import.meta.url).href;
@@ -87,6 +99,13 @@ export const ASSETS = {
             TYPE_A: { WALL: wallDungeonAUrl, FLOOR: floorDungeonAUrl },
             TYPE_B: { WALL: wallDungeonBUrl, FLOOR: floorDungeonBUrl },
             TYPE_C: { WALL: wallDungeonCUrl, FLOOR: floorDungeonCUrl }
+        },
+        NEW_THEMES: {
+            BIO_LAB: { WALL: wallSlimeUrl, FLOOR: floorSlimeUrl },
+            VOLCANIC: { WALL: wallMagmaUrl, FLOOR: floorMagmaUrl },
+            ETHER_VOID: { WALL: wallGhostlyUrl, FLOOR: floorGhostlyUrl },
+            OLD_CABIN: { WALL: wallWoodenUrl, FLOOR: floorWoodenUrl },
+            ORGANIC: { WALL: wallFleshUrl, FLOOR: floorFleshUrl }
         },
         ZOMBIE: {
             SKIN: zombieSkinUrl,

@@ -80,7 +80,7 @@ export class MazeView {
         const floorGeometry = new THREE.PlaneGeometry(config.WALL_THICKNESS, config.WALL_THICKNESS);
         const floorMaterial = new THREE.MeshStandardMaterial({
             map: floorTexture,
-            color: 0x777777,
+            color: config.FLOOR_COLOR,
             roughness: 0.35,         // 물웅덩이 효과를 위한 매끄러운 바닥
             metalness: 0.2
         });
@@ -255,7 +255,7 @@ export class MazeView {
             if (elapsed < shakeDuration) {
                 // Phase 1: Large Shake (강력한 초기 진동)
                 // 스위치가 붙은 면에 따라 흔들리는 축 결정
-                const intensity = 0.08; // 초기 진동 강도 강화
+                const intensity = 0.04; // 초기 진동 강도 강화
                 const freq = 40;
                 const offset = Math.sin(elapsed * freq) * intensity;
 

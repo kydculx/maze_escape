@@ -151,6 +151,45 @@ export class MonsterManager {
     }
 
     /**
+     * 특정 위치에 특정 타입의 몬스터 스폰 (스위치 이벤트 등)
+     * @param {string} monsterType 
+     * @param {number} gx 
+     * @param {number} gy 
+     * @param {number} level 
+     * @returns {Monster} 생성된 몬스터 인스턴스
+     */
+    spawnMonsterAt(monsterType, gx, gy, level) {
+        const monsterOptions = {
+            sound: this.sound,
+            level,
+            onAttack: (m) => {
+                if (this.onMonsterAttack) this.onMonsterAttack(m);
+            }
+        };
+
+        let monster;
+        if (monsterType === CONFIG.MONSTERS.TYPES.WOLF_ZOMBIE) {
+            monster = new WolfZombie(this.scene, this.mazeGen, monsterOptions);
+        } else {
+            monster = new Zombie(this.scene, this.mazeGen, monsterOptions);
+        }
+
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const offsetX = -(this.mazeGen.width * thickness) / 2;
+        const offsetZ = -(this.mazeGen.height * thickness) / 2;
+
+        monster.position.set(
+            offsetX + gx * thickness + thickness / 2,
+            0,
+            offsetZ + gy * thickness + thickness / 2
+        );
+
+        this.monsters.push(monster);
+        console.log(`[MonsterManager] Spawned ${monsterType} at grid [${gx}, ${gy}]`);
+        return monster;
+    }
+
+    /**
      * 빈 칸(길) 좌표 목록 가져오기 (입구/출구 제외 권장)
      */
     _getEmptyCells() {

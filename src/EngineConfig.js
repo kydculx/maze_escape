@@ -19,13 +19,8 @@ export const ENGINE_CONFIG = {
             // 메뉴/스플래시 화면용 조명 설정
             MENU_AMBIENT: {
                 COLOR: 0xffffff,      // 주변광 색상
-                INTENSITY: 0.05       // 주변광 강도 (0~1)
+                INTENSITY: 0.0       // 주변광 강도 (0~1)
             },
-            MENU_POINT: {
-                COLOR: 0xffffff,      // 포인트 라이트 색상
-                INTENSITY: 1,         // 포인트 라이트 강도
-                POSITION: { x: 5, y: 5, z: 5 } // 조명 위치 (x, y, z)
-            }
         },
         // 날씨 설정
         WEATHER: {
@@ -50,7 +45,7 @@ export const ENGINE_CONFIG = {
                 HEIGHT: 12            // 번개 생성 높이 (벽 높이 위)
             },
             FOG: {
-                COLOR: 0x050505,      // 어두운 안개 색상 (비오는 날)
+                COLOR: 0x000000,      // 어두운 안개 색상 (비오는 날)
                 NEAR: 2,
                 FAR: 10               // 시야를 좁게 하여 공포감 조성
             }

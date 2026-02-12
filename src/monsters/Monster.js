@@ -522,7 +522,21 @@ export class Monster {
      * 제거
      */
     destroy() {
-        this.scene.remove(this.group);
+        if (this.group) {
+            this.group.traverse(child => {
+                if (child.isMesh) {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(m => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
+            this.scene.remove(this.group);
+        }
 
         // 오디오 정리
         if (this.trackSoundController) {

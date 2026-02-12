@@ -375,10 +375,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 100%;
 }
 
-.minimalist-menu {
+.menu-options.minimalist-menu {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 5px;
+    /* 25px -> 5px */
     align-items: center;
 }
 
@@ -386,12 +387,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background: none;
     border: none;
     color: #cc0000;
-    font-family: 'East Sea Dokdo', 'Butcherman', cursive;
+    /* 한글 지원 호러/스타일리시 폰트 옵션:
+       - 'East Sea Dokdo', cursive (강렬한 붓글씨, 공포 최적화)
+       - 'Kirang Haerang', cursive (기괴하고 독특한 비율의 복고풍)
+       - 'Yeon Sung', cursive (전통적인 붓글씨 느낌)
+       - 'Gaegu', cursive (아이의 일기 같은 기묘한 손글씨)
+       
+       영어 전용 호러 폰트 (메뉴명이 영어일 때 추천):
+       - 'Metal Mania', cursive (현재 적용)
+       - 'Eater', cursive (침식된 듯한 느낌)
+       - 'Nosifer', cursive (피 흘리는 느낌)
+    */
+    font-family: 'East Sea Dokdo', cursive;
     font-size: 3.5rem;
     /* East Sea Dokdo is relatively thin, so increasing size */
     letter-spacing: 1px;
     cursor: pointer;
-    padding: 12px;
+    padding: 2px 12px;
+    /* 12px -> 2px (vertical) */
     text-shadow: 0 0 10px rgba(0, 0, 0, 0.8), 2px 2px 4px #000;
     transition: none;
     outline: none;

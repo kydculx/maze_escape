@@ -3,6 +3,7 @@
  */
 export const ITEM_CONFIG = {
     SPAWN_COUNT: 20, // 매 스테이지 시작 시 생성될 아이템의 총 개수 (무작위 위치)
+    SPAWN_INTERVAL: 15.0, // 아이템 자동 생성 주기 (초)
 
     // 레벨별 아이템 해금 시점 (Level Unlocks)
     UNLOCK_LEVELS: {
@@ -28,7 +29,7 @@ export const ITEM_CONFIG = {
             TYPE: 'FLASHLIGHT',
             COLOR: 0xffffff,  // 흰색
             SCALE: 0.15,
-            CONSUMABLE: false // 획득 즉시 장착/배터리 충전 (지속형 아이템)
+            CONSUMABLE: true  // 획득 시 배터리 충전 (여러 번 등장 가능)
         },
         MAP: {
             TYPE: 'MAP',
@@ -58,7 +59,7 @@ export const ITEM_CONFIG = {
             TYPE: 'SENSOR',
             COLOR: 0x00ffff,  // 청록색
             SCALE: 0.2,
-            CONSUMABLE: false // 획득 즉시 장착 (지속형)
+            CONSUMABLE: true  // 획득 시 배터리 충전 (여러 번 등장 가능)
         },
         ZOMBIE_DISGUISE: {
             TYPE: 'ZOMBIE_DISGUISE',

@@ -12,47 +12,92 @@ export const MAP_CONFIG = {
             WALL: ASSETS.TEXTURES.WALL_BRICK,
             FLOOR: ASSETS.TEXTURES.FLOOR_STONE,
             WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
             LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
             FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
             BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
-            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.0 }
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
         },
         ORIGINAL_STONE: {
             WALL: ASSETS.TEXTURES.WALL_GOTHIC,
             FLOOR: ASSETS.TEXTURES.FLOOR_STONE,
             WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
             LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
             FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
             BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
-            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.0 }
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
         },
         TYPE_A: { // Grim & Damp
             WALL: ASSETS.TEXTURES.DUNGEON.TYPE_A.WALL,
             FLOOR: ASSETS.TEXTURES.DUNGEON.TYPE_A.FLOOR,
             WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
             LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
             FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
             BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
-            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.0 }
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
         },
         TYPE_B: { // Iron Prison
             WALL: ASSETS.TEXTURES.DUNGEON.TYPE_B.WALL,
             FLOOR: ASSETS.TEXTURES.DUNGEON.TYPE_B.FLOOR,
             WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
             LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
             FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
             BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
-            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.0 }
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
         },
         TYPE_C: { // Ancient Catacombs
             WALL: ASSETS.TEXTURES.DUNGEON.TYPE_C.WALL,
             FLOOR: ASSETS.TEXTURES.DUNGEON.TYPE_C.FLOOR,
             WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
             LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
             FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
             BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
-            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.0 }
-        }
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
+        },
+        BIO_LAB: {
+            WALL: ASSETS.TEXTURES.NEW_THEMES.BIO_LAB.WALL,
+            FLOOR: ASSETS.TEXTURES.NEW_THEMES.BIO_LAB.FLOOR,
+            WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
+            LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
+            FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
+            BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
+        },
+        VOLCANIC: {
+            WALL: ASSETS.TEXTURES.NEW_THEMES.VOLCANIC.WALL,
+            FLOOR: ASSETS.TEXTURES.NEW_THEMES.VOLCANIC.FLOOR,
+            WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
+            LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
+            FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
+            BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
+        },
+        ETHER_VOID: {
+            WALL: ASSETS.TEXTURES.NEW_THEMES.ETHER_VOID.WALL,
+            FLOOR: ASSETS.TEXTURES.NEW_THEMES.ETHER_VOID.FLOOR,
+            WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
+            LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
+            FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
+            BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
+        },
+        OLD_CABIN: {
+            WALL: ASSETS.TEXTURES.NEW_THEMES.OLD_CABIN.WALL,
+            FLOOR: ASSETS.TEXTURES.NEW_THEMES.OLD_CABIN.FLOOR,
+            WALL_COLOR: 0xffffff,
+            FLOOR_COLOR: 0xffffff,
+            LIGHTING: { AMBIENT_INTENSITY: 0.5, SUN_INTENSITY: 0.2 },
+            FOG: { COLOR: 0x101010, NEAR: 0, FAR: 3, FAR_FLASHLIGHT: 5 },
+            BG_FLOOR: { SIZE: [30, 30], COLOR: 0x111111, POSITION_Y: -2 },
+            MATERIAL: { ROUGHNESS: 0.8, METALNESS: 0.1, EMISSIVE: 0x000000, EMISSIVE_INTENSITY: 0.1 }
+        },
     },
 
     // 현재 테마 설정
@@ -74,7 +119,8 @@ export const MAP_CONFIG = {
         SIZE: 0.2,                // 스위치 크기 (0.3mBox)
         DEPTH: 0.1,               // 벽에서 튀어나온 정도
         SPAWN_CHANCE: 1,          // 유효한 위치에 스위치가 생성될 확률 (0.0~1.0)
-        MIN_WALL_SEGMENT: 3       // 스위치 배치를 위한 최소 외길(갈래길 없는 통로) 길이
+        MIN_WALL_SEGMENT: 4,      // 스위치 배치를 위한 최소 외길(갈래길 없는 통로) 길이
+        ZOMBIE_SPAWN_CHANCE: 0.5  // 스위치 작동 시 벽 뒤에서 좀비가 나타날 확률
     }
 };
 
