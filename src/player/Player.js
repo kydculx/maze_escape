@@ -184,7 +184,7 @@ export class Player {
             if (!this.isJumping) {
                 const walkSpeed = 12;
                 if (this.animationTime - this.lastFootstepTime >= Math.PI / walkSpeed) {
-                    if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.FOOTSTEP, 0.1);
+                    if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.FOOTSTEP, 0.5);
                     this.lastFootstepTime = this.animationTime;
                 }
             }
