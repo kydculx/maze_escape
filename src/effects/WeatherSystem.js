@@ -229,6 +229,19 @@ export class WeatherSystem {
         console.log(`[Weather] Lightning triggered at (${lx.toFixed(1)}, ${ly}, ${lz.toFixed(1)})`);
     }
 
+    /**
+     * 스테이지 테마 변경 등에 맞춰 라이트닝 복구용 원본 색상 갱신
+     */
+    updateOriginalColors() {
+        if (this.scene.background) {
+            this.originalBackgroundColor = this.scene.background.clone();
+        }
+        if (this.scene.fog) {
+            this.originalFogColor = this.scene.fog.color.clone();
+        }
+        console.log('[WeatherSystem] Original colors updated for new stage theme');
+    }
+
     stop() {
         console.log('[WeatherSystem] Stopping weather effects and sounds...');
         this.isDisposed = true;

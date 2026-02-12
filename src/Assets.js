@@ -24,6 +24,7 @@ const sensorToggleSfxUrl = new URL('./assets/audio/eff_sensor_switch.mp3', impor
 const teleportSfxUrl = new URL('./assets/audio/eff_teleport.mp3', import.meta.url).href;
 const hammerSfxUrl = new URL('./assets/audio/eff_hammer_smash.mp3', import.meta.url).href;
 const trapSfxUrl = new URL('./assets/audio/eff_trap.mp3', import.meta.url).href;
+const wallCollapseSfxUrl = new URL('./assets/audio/eff_wall_collapse.mp3', import.meta.url).href;
 
 // [Textures]
 const wallBrickUrl = new URL('./assets/textures/wall_brick.png', import.meta.url).href;
@@ -70,7 +71,8 @@ export const ASSETS = {
                 SENSOR: sensorToggleSfxUrl,
                 TELEPORT: teleportSfxUrl,
                 HAMMER: hammerSfxUrl,
-                TRAP: trapSfxUrl
+                TRAP: trapSfxUrl,
+                WALL_COLLAPSE: wallCollapseSfxUrl
             }
         }
     },

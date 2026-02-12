@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../Config.js';
+import { ASSETS } from '../Assets.js';
 
 /**
  * 미로의 시각적 표현(3D 메쉬)을 관리하는 클래스
@@ -107,6 +108,7 @@ export class MazeView {
                     wall.castShadow = true;
                     wall.receiveShadow = true;
                     wall.name = 'maze-wall';
+                    wall.userData = { gridX: x, gridY: y }; // 위치 데이터 추가
                     group.add(wall);
                 }
             }
@@ -206,6 +208,97 @@ export class MazeView {
                 }
             });
         });
+    }
+
+    /**
+     * 특정 벽이 진동하며 아래로 내려가게 애니메이션
+     */
+    animateWallRemoval(gridX, gridY, duration, soundManager = null, side = 'N', onComplete = null) {
+        if (!this.mazeMesh) return;
+
+        // 해당 좌표의 벽 메쉬 찾기
+        let targetWall = null;
+        this.mazeMesh.traverse(child => {
+            if (child.name === 'maze-wall' && child.userData.gridX === gridX && child.userData.gridY === gridY) {
+                targetWall = child;
+            }
+        });
+
+        if (!targetWall) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        const shakeDuration = 0.5; // 진동 시간 (초)
+        const slideDuration = Math.max(0.1, duration - shakeDuration); // 슬라이딩 시간
+
+        const startX = targetWall.position.x;
+        const startZ = targetWall.position.z;
+        const startY = targetWall.position.y;
+        const targetY = -CONFIG.MAZE.WALL_HEIGHT / 2;
+
+        const startTime = performance.now();
+        let collapseSoundPlayed = false;
+
+        const animate = () => {
+            const now = performance.now();
+            const elapsed = (now - startTime) / 1000;
+
+            // 흔들림 시작 시점에 효과음 재생
+            if (!collapseSoundPlayed) {
+                if (soundManager) {
+                    soundManager.playSFX(ASSETS.AUDIO.SFX.ITEM.WALL_COLLAPSE, 0.7);
+                }
+                collapseSoundPlayed = true;
+            }
+
+            if (elapsed < shakeDuration) {
+                // Phase 1: Large Shake (강력한 초기 진동)
+                // 스위치가 붙은 면에 따라 흔들리는 축 결정
+                const intensity = 0.08; // 초기 진동 강도 강화
+                const freq = 40;
+                const offset = Math.sin(elapsed * freq) * intensity;
+
+                if (side === 'N' || side === 'S') {
+                    targetWall.position.x = startX + offset;
+                    targetWall.position.z = startZ;
+                } else {
+                    targetWall.position.x = startX;
+                    targetWall.position.z = startZ + offset;
+                }
+            } else {
+                // Phase 2: Slide Down with Micro-shake (미세 진동과 함께 가라앉음)
+
+                const slideElapsed = elapsed - shakeDuration;
+                const progress = Math.min(slideElapsed / slideDuration, 1);
+
+                // 슬라이딩 중 미세한 덜덜거림 (마찰 표현)
+                const microIntensity = 0.005;
+                const microFreq = 60;
+                const microOffset = Math.sin(elapsed * microFreq) * microIntensity;
+
+                if (side === 'N' || side === 'S') {
+                    targetWall.position.x = startX + microOffset;
+                    targetWall.position.z = startZ;
+                } else {
+                    targetWall.position.x = startX;
+                    targetWall.position.z = startZ + microOffset;
+                }
+
+                // Ease-in
+                const ease = progress * progress;
+                targetWall.position.y = startY + (targetY - startY) * ease;
+
+                if (progress >= 1) {
+                    if (onComplete) onComplete();
+                    return; // 애니메이션 종료
+                }
+            }
+
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
     }
 
     disposeObject(obj) {

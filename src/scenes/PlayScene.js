@@ -13,6 +13,7 @@ import { StageManager } from '../StageManager.js';
 import { MonsterManager } from '../MonsterManager.js';
 import { WeatherSystem } from '../effects/WeatherSystem.js';
 import { TrapManager } from '../maps/TrapManager.js';
+import { SwitchManager } from '../maps/SwitchManager.js';
 import { SaveManager } from '../SaveManager.js';
 import { ASSETS } from '../Assets.js';
 
@@ -127,6 +128,12 @@ export class PlayScene extends BaseScene {
         this.itemManager.spawnItems(itemCount);
 
         this.trapManager = new TrapManager(this.scene);
+        this.switchManager = new SwitchManager(this.scene, this.mazeGen, this.game.sound);
+        this.switchManager.spawnSwitches();
+
+        // Raycaster for switch interaction
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
 
         this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound, (monster) => {
             if (this.ui) {
@@ -236,6 +243,7 @@ export class PlayScene extends BaseScene {
             },
             onRestart: () => {
                 console.log("Restarting current stage...");
+                this.game.state.set(STATES.PLAYING); // 게임 상태를 다시 PLAYING으로 명시적 변경
                 this.game.state.resumeGame(); // Ensure game is running
                 if (this.game.sound) this.game.sound.resumeAll();
 
@@ -320,6 +328,23 @@ export class PlayScene extends BaseScene {
             if (this.game.sound) this.game.sound.resumeAll();
         };
 
+        // Interaction event
+        this._onInteract = (event) => {
+            if (!this.game.state.is(STATES.PLAYING)) return;
+
+            // Mouse or Touch coordinate normalization
+            const x = event.clientX || (event.touches ? event.touches[0].clientX : 0);
+            const y = event.clientY || (event.touches ? event.touches[0].clientY : 0);
+
+            this.mouse.x = (x / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(y / window.innerHeight) * 2 + 1;
+
+            this._checkSwitchInteraction();
+        };
+
+        window.addEventListener('mousedown', this._onInteract);
+        window.addEventListener('touchstart', this._onInteract, { passive: false });
+
         this.ui.updateAll();
     }
 
@@ -360,6 +385,11 @@ export class PlayScene extends BaseScene {
     _rebuildMaze() {
         // 스테이지 변경 시 테마 랜덤 변경
         this._randomizeTheme(); // 테마 변경
+
+        // 테마 변경에 따른 날씨 시스템 색상 동기화 (라이트닝 복구용)
+        if (this.weatherSystem) {
+            this.weatherSystem.updateOriginalColors();
+        }
 
         const size = this.stageManager.mazeSize;
         this.mazeGen = new MazeGenerator(size, size);
@@ -414,6 +444,10 @@ export class PlayScene extends BaseScene {
         }
         if (this.trapManager) {
             this.trapManager.clear();
+        }
+        if (this.switchManager) {
+            this.switchManager.mazeGen = this.mazeGen;
+            this.switchManager.spawnSwitches();
         }
         this.ui.updateAll();
     }
@@ -479,10 +513,44 @@ export class PlayScene extends BaseScene {
         }
     }
 
+    /**
+     * 레이캐스팅을 통한 스위치 상호작용 체크
+     */
+    _checkSwitchInteraction() {
+        if (!this.switchManager || !this.camera) return;
+
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        // 스위치 그룹 내의 객체들만 검사
+        const intersects = this.raycaster.intersectObjects(this.switchManager.switchGroup.children, true);
+
+        if (intersects.length > 0) {
+            const hit = intersects[0].object;
+            // 거리 체크 (손이 닿는 거리 내에서만 가능하도록)
+            if (intersects[0].distance < CONFIG.MAZE.WALL_THICKNESS) {
+                this.switchManager.interact(hit, (gx, gy, side) => {
+                    // 1. 벽 내려가는 애니메이션 시작 (사운드 매니저 및 방향 정보 전달)
+                    this.mazeView.animateWallRemoval(gx, gy, 3.5, this.game.sound, side, () => {
+                        // 2. 애니메이션 완료 후 실제 데이터 업데이트 (이때부터 통과 가능)
+                        this.mazeGen.grid[gy][gx] = 0;
+
+                        // 3. 전체 시각적 요소 갱신 (Atomic Refresh)
+                        this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
+                        // 미니맵 및 월드 갱신
+                        this.ui.updateAll();
+                    });
+                });
+            }
+        }
+    }
+
     dispose() {
         // Remove event listeners
         if (this._onVisibilityChange) {
             document.removeEventListener('visibilitychange', this._onVisibilityChange);
+        }
+        if (this._onInteract) {
+            window.removeEventListener('mousedown', this._onInteract);
+            window.removeEventListener('touchstart', this._onInteract);
         }
 
         if (this.weatherSystem) {
@@ -1038,7 +1106,6 @@ export class PlayScene extends BaseScene {
         }
 
         if (this.monsterManager) {
-            this.monsterManager.clear();
             this.monsterManager.clear();
         }
         if (this.itemManager) {

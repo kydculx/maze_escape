@@ -258,4 +258,91 @@ export class MazeGenerator {
             }
         }
     }
+
+    /**
+     * 스위치를 배치할 수 있는 유효한 벽 위치 목록을 반환
+     * 조건: 
+     * 1. 막다른 길(Dead End)을 기점으로 함
+     * 2. 해당 막다른 길까지의 경로가 segmentLength 이상 외길(갈래길 없음)이어야 함
+     * 3. 막다른 길을 둘러싼 벽 중 반대편이 통로인 '1겹 벽'에 설치
+     */
+    getValidSwitchPositions(segmentLength = 5) {
+        const positions = [];
+        const deadEnds = [];
+
+        // 1. 모든 막다른 길(이웃 길이 1개인 곳) 찾기
+        for (let y = 1; y < this.height - 1; y++) {
+            for (let x = 1; x < this.width - 1; x++) {
+                if (this.grid[y][x] === 0) {
+                    let pathNeighbors = [];
+                    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                    for (const [dx, dy] of dirs) {
+                        const nx = x + dx, ny = y + dy;
+                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                            if (this.grid[ny][nx] === 0) pathNeighbors.push([nx, ny]);
+                        }
+                    }
+                    if (pathNeighbors.length === 1) {
+                        deadEnds.push({ x, y, startNeighbor: pathNeighbors[0] });
+                    }
+                }
+            }
+        }
+
+        // 2. 각 막다른 길에서 외길 구간 길이 체크
+        deadEnds.forEach(de => {
+            let length = 1;
+            let current = [de.x, de.y];
+            let prev = null;
+            let isStraight = true;
+
+            while (length < segmentLength) {
+                const neighbors = [];
+                const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                for (const [dx, dy] of dirs) {
+                    const nx = current[0] + dx, ny = current[1] + dy;
+                    if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && this.grid[ny][nx] === 0) {
+                        if (!prev || (nx !== prev[0] || ny !== prev[1])) {
+                            neighbors.push([nx, ny]);
+                        }
+                    }
+                }
+
+                // 갈래길이 나오면 탈락
+                if (neighbors.length !== 1) {
+                    isStraight = false;
+                    break;
+                }
+
+                prev = current;
+                current = neighbors[0];
+                length++;
+            }
+
+            if (isStraight && length >= segmentLength) {
+                // 3. 막다른 길 주변의 벽 중 '1겹 벽' 찾기
+                const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                for (const [dx, dy] of dirs) {
+                    const wx = de.x + dx, wy = de.y + dy; // 타겟 벽 후보
+
+                    // 외곽벽 및 마스크 체크
+                    if (wx <= 0 || wx >= this.width - 1 || wy <= 0 || wy >= this.height - 1 || !this.mask[wy][wx]) continue;
+
+                    if (this.grid[wy][wx] === 1) {
+                        // 반대편이 통로인가? (1겹 벽 확인)
+                        const ox = wx + dx, oy = wy + dy;
+                        if (ox >= 0 && ox < this.width && oy >= 0 && oy < this.height && this.grid[oy][ox] === 0) {
+                            positions.push({
+                                x: wx,
+                                y: wy,
+                                orientation: dx !== 0 ? 'HORIZONTAL' : 'VERTICAL'
+                            });
+                        }
+                    }
+                }
+            }
+        });
+
+        return positions;
+    }
 }

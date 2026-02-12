@@ -67,7 +67,15 @@ export const MAP_CONFIG = {
     get BG_FLOOR() { return this.THEMES[this.CURRENT_THEME].BG_FLOOR; },
     get MATERIAL() { return this.THEMES[this.CURRENT_THEME].MATERIAL; },
     SHAPE: 'RECTANGLE',           // 미로 모양 (RECTANGLE, DIAMOND, CIRCLE, TRIANGLE)
-
+    // 벽 스위치 설정
+    SWITCH: {
+        COLOR: 0xff0000,          // 스위치 기본 색상 (레드)
+        ACTIVE_COLOR: 0x00ff00,   // 활성화된 색상 (그린)
+        SIZE: 0.2,                // 스위치 크기 (0.3mBox)
+        DEPTH: 0.1,               // 벽에서 튀어나온 정도
+        SPAWN_CHANCE: 1,          // 유효한 위치에 스위치가 생성될 확률 (0.0~1.0)
+        MIN_WALL_SEGMENT: 3       // 스위치 배치를 위한 최소 외길(갈래길 없는 통로) 길이
+    }
 };
 
 export const STAGE_CONFIG = {
