@@ -3,11 +3,12 @@ import { CONFIG } from '../Config.js';
 import { ASSETS } from '../Assets.js';
 
 export class WeatherSystem {
-    constructor(scene, camera, soundManager) {
+    constructor(scene, camera, soundManager, cameraController) {
         this.scene = scene;
         this.camera = camera;
         this.weatherConfig = CONFIG.ENVIRONMENT.WEATHER;
         this.sound = soundManager; // Strictly use the injected manager
+        this.cameraController = cameraController; // For shake effects
 
         // Rain properties
         this.rainSystem = null;
@@ -23,6 +24,11 @@ export class WeatherSystem {
         this.nextLightningTime = 0;
         this.isLightningActive = false;
         this.lightningDuration = 0.2;
+
+        // Wind properties
+        this.windStrength = this.weatherConfig.WIND.BASE_STRENGTH;
+        this.windAngle = Math.random() * Math.PI * 2;
+        this.windTimer = 0;
 
         // Audio
         this.rainSoundController = null;
@@ -59,7 +65,7 @@ export class WeatherSystem {
 
         // Rain Background Sound - SoundManager의 루프 시스템 이용 (AutoPlay 사용, weather 카테고리)
         if (ASSETS.AUDIO.SFX.RAIN) {
-            this.rainSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.RAIN, 0.3, true, 'weather');
+            this.rainSoundController = this.sound.playLoop(ASSETS.AUDIO.SFX.RAIN, 1.0, true, 'weather');
         }
 
         // Thunder Sound Effect - 로딩만 미리 해두기 (AutoPlay 사용하되 볼륨 0, weather 카테고리)
@@ -74,7 +80,7 @@ export class WeatherSystem {
         // Use a BoxGeometry for 3D rain drops (allows thickness)
         const geometry = new THREE.BoxGeometry(rainConfig.SIZE, rainConfig.LENGTH, rainConfig.SIZE);
         const material = new THREE.MeshBasicMaterial({
-            color: rainConfig.COLOR,
+            color: rainConfig.COLOR || 0xaaaaaa,
             transparent: true,
             opacity: 0.6
         });
@@ -107,7 +113,7 @@ export class WeatherSystem {
         // Use PointLight for local "overhead" effect
         // Distance 50 정도면 충분히 주변 밝힘. Decay 2는 물리적으로 정확.
         this.lightningLight = new THREE.PointLight(lightConfig.COLOR, 0, 100, 2);
-        this.lightningLight.position.set(0, lightConfig.HEIGHT || 15, 0);
+        this.lightningLight.position.set(0, lightConfig.HEIGHT);
         // 그림자? 성능 문제로 일단 끔. PointLight 그림자는 무거움.
         // 하지만 "벽 위쪽 느낌"을 내려면 그림자가 있으면 좋음.
         // 일단 빛의 위치 변화만으로도 그림자 방향이 바뀌는 느낌(MeshStandardMaterial의 normal map 반응)은 남.
@@ -133,14 +139,23 @@ export class WeatherSystem {
                 this.rainSystem.getMatrixAt(i, this.dummy.matrix);
                 this.dummy.position.setFromMatrixPosition(this.dummy.matrix);
 
-                // Gravity
+                // Gravity + Wind
                 this.dummy.position.y -= this.rainVelocities[i] * deltaTime;
+
+                // 바람의 영향을 받아 빗줄기 각도 조절
+                const windCfg = this.weatherConfig.WIND;
+                const windX = Math.cos(this.windAngle) * this.windStrength;
+                const windZ = Math.sin(this.windAngle) * this.windStrength;
+
+                this.dummy.position.x += windX * deltaTime;
+                this.dummy.position.z += windZ * deltaTime;
 
                 // Reset logic
                 if (this.dummy.position.y < 0) {
                     this.dummy.position.y = rainConfig.HEIGHT;
-                    this.dummy.position.x = playerPosition.x + (Math.random() - 0.5) * rainConfig.RANGE_X;
-                    this.dummy.position.z = playerPosition.z + (Math.random() - 0.5) * rainConfig.RANGE_Z;
+                    // 유효 범위 내에서 랜덤 재배치 (바람에 의해 밀려난 만큼 offset 고려)
+                    this.dummy.position.x = playerPosition.x + (Math.random() - 0.5) * rainConfig.RANGE_X - windX * 0.5;
+                    this.dummy.position.z = playerPosition.z + (Math.random() - 0.5) * rainConfig.RANGE_Z - windZ * 0.5;
                 }
 
                 this.dummy.updateMatrix();
@@ -179,9 +194,8 @@ export class WeatherSystem {
                     this.lightningAmbient.intensity = intensity * 0.5;
 
                     // Flash Background & Fog
-                    // Interpolate between original dark and bright flash color based on intensity
-                    const flashColor = new THREE.Color(0x8899aa); // Blueish white flash
-                    const factor = intensity / this.weatherConfig.LIGHTNING.INTENSITY; // 0.0 to 1.0
+                    const flashColor = new THREE.Color(0x8899aa);
+                    const factor = intensity / this.weatherConfig.LIGHTNING.INTENSITY;
 
                     if (this.scene.background) {
                         this.scene.background.lerpColors(this.originalBackgroundColor, flashColor, factor * 0.5);
@@ -197,6 +211,13 @@ export class WeatherSystem {
                     this.triggerLightning(playerPosition);
                 }
             }
+        }
+
+        // 3. Update Wind Variation
+        if (this.weatherConfig.WIND.ENABLED) {
+            this.windTimer += deltaTime * this.weatherConfig.WIND.FREQUENCY;
+            this.windStrength = this.weatherConfig.WIND.BASE_STRENGTH +
+                Math.sin(this.windTimer) * this.weatherConfig.WIND.VARIATION;
         }
     }
 
@@ -222,8 +243,16 @@ export class WeatherSystem {
 
         // Sound (weather 카테고리 지정)
         if (this.sound) {
-            // 천둥 소리도 랜덤 피치/볼륨? 일단 기본
+            // 천둥 소리
             this.sound.playSFX(ASSETS.AUDIO.SFX.THUNDER, 1.0, 'weather');
+        }
+
+        // Camera Shake (번개 발생 시 카메라 흔듬)
+        if (this.cameraController && this.weatherConfig.SHAKE) {
+            this.cameraController.shake(
+                this.weatherConfig.SHAKE.LIGHTNING_INTENSITY,
+                this.weatherConfig.SHAKE.LIGHTNING_DURATION
+            );
         }
 
         console.log(`[Weather] Lightning triggered at (${lx.toFixed(1)}, ${ly}, ${lz.toFixed(1)})`);

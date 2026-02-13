@@ -184,7 +184,7 @@ export class Player {
             if (!this.isJumping) {
                 const walkSpeed = 12;
                 if (this.animationTime - this.lastFootstepTime >= Math.PI / walkSpeed) {
-                    if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.FOOTSTEP, 0.5);
+                    if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.FOOTSTEP);
                     this.lastFootstepTime = this.animationTime;
                 }
             }
@@ -388,7 +388,7 @@ export class Player {
         this.isJumping = true;
         this.jumpTimer = 0;
 
-        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.JUMP, 0.4);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.JUMP);
     }
 
     /**
@@ -509,8 +509,12 @@ export class Player {
                 console.log("Flashlight acquired/recharged!");
                 break;
             case 'MAP':
-                this.inventory.hasMap = true;
                 console.log("Map acquired!");
+                break;
+            case 'MAP_PIECE':
+                console.log("Map piece acquired!", item.metadata);
+                // 지도는 이제 소모성 조각 방식이므로 inventory 보관 대신 즉시 효과 발동
+                // PlayScene에서 item.metadata.regionIndex를 사용하여 처리하도록 유도
                 break;
             case 'HAMMER':
                 this.inventory.hammerCount++;
@@ -601,7 +605,7 @@ export class Player {
         this.disguiseTimer = CONFIG.ITEMS.ZOMBIE_DISGUISE.DURATION;
         console.log("Zombie disguise activated! Speed halved.");
 
-        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.8);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
         return true;
     }
 

@@ -30,7 +30,7 @@ export const ENGINE_CONFIG = {
                 COLOR: 0xaaaaaa,      // 비 색상 (약간 회색)
                 SPEED_Y: 25,          // 낙하 속도
                 RANGE_X: 40,          // 생성 범위 X (플레이어 기준)
-                RANGE_Z: 40,          // 생성 범위 Z (플레이어 기준)
+                RANGE_Z: 10,          // 생성 범위 Z (플레이어 기준)
                 HEIGHT: 30,           // 생성 높이
                 SIZE: 0.001,           // 빗줄기 굵기
                 LENGTH: 0.5           // 빗줄기 길이
@@ -48,12 +48,18 @@ export const ENGINE_CONFIG = {
                 COLOR: 0x000000,      // 어두운 안개 색상 (비오는 날)
                 NEAR: 2,
                 FAR: 10               // 시야를 좁게 하여 공포감 조성
+            },
+            WIND: {
+                ENABLED: true,
+                BASE_STRENGTH: 5.0,   // 바람의 기본 강도 (비가 휩쓸리는 정도)
+                VARIATION: 2.0,       // 바람 강도의 변화폭
+                FREQUENCY: 0.5        // 바람 변화 주기
+            },
+            SHAKE: {
+                LIGHTNING_INTENSITY: 0.1, // 번개 시 흔들림 강도
+                LIGHTNING_DURATION: 0.4    // 번개 시 흔들림 지속 시간
             }
         }
     },
 
-    // [4] 사운드 리소스 및 설정 (Audio Assets)
-    AUDIO: {
-        DEFAULT_BGM_VOLUME: 0.4
-    }
 };

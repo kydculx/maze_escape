@@ -247,7 +247,7 @@ export class MazeView {
             // 흔들림 시작 시점에 효과음 재생
             if (!collapseSoundPlayed) {
                 if (soundManager) {
-                    soundManager.playSFX(ASSETS.AUDIO.SFX.ITEM.WALL_COLLAPSE, 0.7);
+                    soundManager.playSFX(ASSETS.AUDIO.SFX.ITEM.WALL_COLLAPSE);
                 }
                 collapseSoundPlayed = true;
             }

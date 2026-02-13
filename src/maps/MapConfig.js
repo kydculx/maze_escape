@@ -118,8 +118,8 @@ export const MAP_CONFIG = {
         ACTIVE_COLOR: 0x00ff00,   // 활성화된 색상 (그린)
         SIZE: 0.2,                // 스위치 크기 (0.3mBox)
         DEPTH: 0.1,               // 벽에서 튀어나온 정도
-        SPAWN_CHANCE: 1,          // 유효한 위치에 스위치가 생성될 확률 (0.0~1.0)
-        MIN_WALL_SEGMENT: 4,      // 스위치 배치를 위한 최소 외길(갈래길 없는 통로) 길이
+        SPAWN_CHANCE: 0.5,          // 유효한 위치에 스위치가 생성될 확률 (0.0~1.0)
+        MIN_WALL_SEGMENT: 3,      // 스위치 배치를 위한 최소 외길(갈래길 없는 통로) 길이
         ZOMBIE_SPAWN_CHANCE: 0.5  // 스위치 작동 시 벽 뒤에서 좀비가 나타날 확률
     }
 };

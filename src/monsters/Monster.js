@@ -61,15 +61,9 @@ export class Monster {
     _initCommonProperties(options) {
         // 1. 속도 계산
         const config = this._getConfig();
-        const level = options.level || 1;
-        const baseSpeed = config.SPEED;
-        const speedIncrease = config.SPEED_INCREASE_PER_LEVEL || 0;
-        const maxMultiplier = config.MAX_SPEED_MULTIPLIER || 1;
+        this.speed = config.SPEED;
 
-        const speedMultiplier = Math.min(maxMultiplier, 1 + (level * speedIncrease));
-        this.speed = baseSpeed * speedMultiplier;
-
-        console.log(`${this.type} spawned at level ${level}: speed ${this.speed.toFixed(2)}x (base: ${baseSpeed}, multiplier: ${speedMultiplier.toFixed(2)})`);
+        console.log(`${this.type} spawned: speed ${this.speed.toFixed(2)} (base: ${config.SPEED})`);
 
         // 2. Freeze 상태
         this.isFrozen = false;

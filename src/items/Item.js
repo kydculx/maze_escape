@@ -8,6 +8,7 @@ export class Item {
         this.type = type;
         this.config = config; // 전역 ITEMS 설정
         this.visual = visualConfig; // KEY, GEM 등 세부 설정
+        this.metadata = {}; // 추가 데이터 (예: 지도 조각의 영역 인덱스)
 
         this.group = new THREE.Group();
         this.mesh = this._createMesh();
@@ -132,7 +133,36 @@ export class Item {
 
                 return group;
             }
-            case 'MAP': {
+            case 'MAP_PIECE': {
+                // 고대 두루마리 지도 조각 (기존 MAP 모델 재사용 또는 약간 변형)
+                const mapGroup = new THREE.Group();
+
+                // 말린 종이 본체
+                const scrollGeo = new THREE.CylinderGeometry(scale * 0.3, scale * 0.3, scale * 1.5, 16);
+                const scrollMat = new THREE.MeshStandardMaterial({
+                    color: 0xf5deb3,
+                    roughness: 0.9
+                });
+                const scroll = new THREE.Mesh(scrollGeo, scrollMat);
+                scroll.rotation.z = Math.PI / 2;
+                scroll.castShadow = true;
+                mapGroup.add(scroll);
+
+                // 붉은 끈 (한쪽에만 묶음)
+                const ribbonGeo = new THREE.TorusGeometry(scale * 0.31, scale * 0.05, 8, 32);
+                const ribbonMat = new THREE.MeshStandardMaterial({
+                    color: 0xcc0000,
+                    roughness: 0.4
+                });
+                const ribbon = new THREE.Mesh(ribbonGeo, ribbonMat);
+                ribbon.rotation.y = Math.PI / 2;
+                ribbon.position.x = scale * 0.4;
+                ribbon.castShadow = true;
+                mapGroup.add(ribbon);
+
+                return mapGroup;
+            }
+            case 'MAP': { // 레거시 지원용 (기존 MAP 아이템 로직이 남아있을 경우 대비)
                 // 고대 두루마리 지도
                 const mapGroup = new THREE.Group();
 

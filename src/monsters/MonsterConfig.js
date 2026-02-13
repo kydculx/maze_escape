@@ -36,8 +36,6 @@ export const MONSTER_CONFIG = {
         SAFE_SPAWN_DISTANCE: 6,          // 플레이어로부터의 안전 생성 거리 (이 거리 밖에서만 생성)
         PATROL_AUDIO_MAX_DIST: 10,        // 배회 사운드가 들리는 최대 거리
         // 레벨별 난이도 조정
-        SPEED_INCREASE_PER_LEVEL: 0.05,   // 레벨당 속도 증가율 (5%)
-        MAX_SPEED_MULTIPLIER: 1.5,         // 속도 증가 최대 한계 (기본 속도의 2배)
         ATTACK_RANGE: 0.8,                // 공격 사거리 (월드 유닛)
         ATTACK_COOLDOWN: 2.0,             // 공격 쿨다운 (초)
         SPAWN_MIN_STAGE: 1                // 스테이지 1 이상에서 등장
@@ -60,8 +58,6 @@ export const MONSTER_CONFIG = {
         PATROL_AUDIO_MAX_DIST: 10,        // 소리가 더 멀리까지 들림
         SPAWN_MIN_STAGE: 11,               // 스테이지 11 이상에서만 등장
         // 레벨별 난이도 조정
-        SPEED_INCREASE_PER_LEVEL: 0.05,   // 레벨당 속도 증가율 (6% - 더 가파르게 증가)
-        MAX_SPEED_MULTIPLIER: 1.5,        // 최대 2.5배속까지 빨라짐
         ATTACK_RANGE: 0.8,               // 공격 사거리
         ATTACK_COOLDOWN: 1.5              // 공격 쿨다운 (좀비보다 빠름)
     }

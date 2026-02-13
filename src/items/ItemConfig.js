@@ -3,12 +3,12 @@
  */
 export const ITEM_CONFIG = {
     SPAWN_COUNT: 20, // 매 스테이지 시작 시 생성될 아이템의 총 개수 (무작위 위치)
-    SPAWN_INTERVAL: 15.0, // 아이템 자동 생성 주기 (초)
+    SPAWN_INTERVAL: 10.0, // 아이템 자동 생성 주기 (초)
 
     // 레벨별 아이템 해금 시점 (Level Unlocks)
     UNLOCK_LEVELS: {
         FLASHLIGHT: 1,   // 시작부터 등장
-        MAP: 1,          // 시작부터 등장
+        MAP_PIECE: 1,    // 시작부터 등장
         SENSOR: 6,       // 레벨 6부터 등장
         ZOMBIE_DISGUISE: 6, // 레벨 6부터 등장 (가면)
         JUMP: 11,        // 레벨 11부터 등장
@@ -31,11 +31,11 @@ export const ITEM_CONFIG = {
             SCALE: 0.15,
             CONSUMABLE: true  // 획득 시 배터리 충전 (여러 번 등장 가능)
         },
-        MAP: {
-            TYPE: 'MAP',
+        MAP_PIECE: {
+            TYPE: 'MAP_PIECE',
             COLOR: 0xffaa00,  // 주황색
             SCALE: 0.2,
-            CONSUMABLE: false // 획득 즉시 미니맵 활성화 (영구/스테이지 한정)
+            CONSUMABLE: true // 획득 즉시 해당 구역 미니맵 활성화
         },
         HAMMER: {
             TYPE: 'HAMMER',
@@ -78,7 +78,11 @@ export const ITEM_CONFIG = {
             ENTRANCE: '#ffff00',  // 입구 마커 색상
             EXIT: '#0000ff'       // 출구 마커 색상
         },
-        ROTATION_FOLLOW: true     // 플레이어 회전에 따라 미니맵 회전 여부
+        ROTATION_FOLLOW: true,     // 플레이어 회전에 따라 미니맵 회전 여부
+        DIVISION: {
+            BASE_FACTOR: 2,        // 최소 2x2 분할
+            INCREMENT_FACTOR: 10   // 10레벨마다 분할 수 증가 (예: 20레벨 -> 3x3)
+        }
     },
     // 망치(Hammer) 관련 세부 설정
     HAMMER: {

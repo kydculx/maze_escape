@@ -91,6 +91,31 @@ export class ItemManager {
 
             const item = new Item(typeKey, this.config, visualConfig);
 
+            // 지도 조각인 경우 구역 인덱스 할당
+            if (typeKey === 'MAP_PIECE') {
+                const division = CONFIG.ITEMS.MAP.DIVISION;
+                const rows = division.BASE_FACTOR + Math.floor(level / division.INCREMENT_FACTOR);
+                const cols = rows;
+                const totalPieces = rows * cols;
+
+                // 스테이지 내에서 아직 생성되지 않은 조각 인덱스 찾기
+                const usedIndices = this.items
+                    .filter(it => it.type === 'MAP_PIECE')
+                    .map(it => it.metadata.regionIndex);
+
+                let regionIndex = 0;
+                for (let idx = 0; idx < totalPieces; idx++) {
+                    if (!usedIndices.includes(idx)) {
+                        regionIndex = idx;
+                        break;
+                    }
+                }
+                item.metadata.regionIndex = regionIndex;
+                item.metadata.rows = rows;
+                item.metadata.cols = cols;
+                console.log(`[ItemManager] Spawned MAP_PIECE with regionIndex ${regionIndex} (${rows}x${cols})`);
+            }
+
             // 월드 좌표로 변환
             item.group.position.x = offsetX + (cell.x * thickness) + thickness / 2;
             item.group.position.z = offsetZ + (cell.y * thickness) + thickness / 2;
@@ -275,6 +300,28 @@ export class ItemManager {
         const visualConfig = this.config.TYPES[typeKey];
 
         const item = new Item(typeKey, this.config, visualConfig);
+
+        // 지도 조각 메타데이터 추가 (Extra Spawn 시에도 동일하게 적용)
+        if (typeKey === 'MAP_PIECE') {
+            const division = CONFIG.ITEMS.MAP.DIVISION;
+            const rows = division.BASE_FACTOR + Math.floor(level / division.INCREMENT_FACTOR);
+            const cols = rows;
+            const totalPieces = rows * cols;
+            const usedIndices = this.items.filter(it => it.type === 'MAP_PIECE').map(it => it.metadata.regionIndex);
+
+            // 모든 조각이 이미 있으면 무작위
+            let regionIndex = 0;
+            const available = [];
+            for (let idx = 0; idx < totalPieces; idx++) if (!usedIndices.includes(idx)) available.push(idx);
+
+            if (available.length > 0) regionIndex = available[Math.floor(Math.random() * available.length)];
+            else regionIndex = Math.floor(Math.random() * totalPieces);
+
+            item.metadata.regionIndex = regionIndex;
+            item.metadata.rows = rows;
+            item.metadata.cols = cols;
+        }
+
         item.group.position.x = offsetX + (cell.x * thickness) + thickness / 2;
         item.group.position.z = offsetZ + (cell.y * thickness) + thickness / 2;
 

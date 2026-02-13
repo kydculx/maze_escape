@@ -20,6 +20,10 @@ export class CameraController {
         // 플레이어 그룹에 카메라 추가 (부모-자식 관계 설정으로 자동 추적)
         this.player.group.add(this.camera);
 
+        // 흔들림(Shake) 설정
+        this.shakeIntensity = 0;
+        this.shakeTimer = 0;
+
         // 초기 시점 설정 (1인칭)
         this.setFirstPerson();
     }
@@ -80,6 +84,29 @@ export class CameraController {
             this.player.group.localToWorld(worldForward);
             this.camera.lookAt(worldForward);
         }
+
+        // 3. 카메라 흔들림(Shake) 적용
+        if (this.shakeTimer > 0) {
+            this.shakeTimer -= deltaTime;
+            const factor = this.shakeTimer / this.shakeDuration;
+            const currentIntensity = this.shakeIntensity * factor;
+
+            this.camera.position.x += (Math.random() - 0.5) * currentIntensity;
+            this.camera.position.y += (Math.random() - 0.5) * currentIntensity;
+        } else {
+            // 흔들림이 끝나면 위치 복구 (1인칭 높이로)
+            this.camera.position.x = 0;
+            this.camera.position.y = camCfg.FIRST_PERSON_HEIGHT;
+        }
+    }
+
+    /**
+     * 카메라 흔들기 효과 시작
+     */
+    shake(intensity, duration) {
+        this.shakeIntensity = intensity;
+        this.shakeDuration = duration;
+        this.shakeTimer = duration;
     }
 
     setFirstPerson() {

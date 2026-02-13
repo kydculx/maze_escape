@@ -122,7 +122,7 @@ export class SwitchManager {
         sameWallSwitches.forEach(s => s.userData.processing = true);
 
         // 1. 효과음
-        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.FLASHLIGHT, 1.0);
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.FLASHLIGHT);
 
         // 2. 애니메이션 실행
         sameWallSwitches.forEach(s => {

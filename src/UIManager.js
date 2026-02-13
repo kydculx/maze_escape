@@ -60,9 +60,9 @@ export class UIManager {
     /**
      * 전체 UI 동기화
      */
-    updateAll() {
+    updateAll(force = false) {
         this.updateHUD();
-        this.updateItemButtons();
+        this.updateItemButtons(force);
         this.updateHealthBar();
     }
 
@@ -140,9 +140,9 @@ export class UIManager {
             movesEl.textContent = this.stageManager.moveCount;
         }
 
-        // 5. 미니맵 가시성
+        // 5. 미니맵 가시성 (기본적으로 표시)
         if (this.elements.minimap) {
-            this.elements.minimap.style.display = this.player.inventory.hasMap ? 'block' : 'none';
+            this.elements.minimap.style.display = 'flex';
         }
 
         // 6. 좀비 위장 오버레이
@@ -271,8 +271,13 @@ export class UIManager {
     /**
      * 아이템 버튼 활성/비활성 상태 갱신
      */
-    updateItemButtons() {
+    updateItemButtons(force = false) {
         if (!this.player) return;
+
+        // 아이템-액션 컨테이너 표시 상태 확인
+        if (this.elements.itemActions && this.elements.itemActions.style.display === 'none') {
+            this.elements.itemActions.style.display = 'flex';
+        }
 
         // 아이템 타입과 엘리먼트 매핑
         const typeToElement = {
@@ -282,14 +287,15 @@ export class UIManager {
             'TRAP': this.elements.trap,
             'TELEPORT': this.elements.teleport,
             'ZOMBIE_DISGUISE': this.elements.disguise,
-            'SENSOR': this.elements.sensor
+            'SENSOR': this.elements.sensor,
+            'MAP_PIECE': this.elements.map // 기존 맵 버튼 연결 유지 (필요 시)
         };
 
         const itemOrder = this.player.inventory.itemOrder || [];
         const orderKey = itemOrder.join(',');
 
-        // 최적화: 유의미한 변화가 있을 때만 DOM을 조작합니다.
-        if (this._lastItemOrder !== orderKey) {
+        // 최적화: 유의미한 변화가 있을 때만 DOM을 조작합니다. (다만 force=true면 강제로 실행)
+        if (force || this._lastItemOrder !== orderKey) {
             console.log('[UIManager] Updating item HUD order:', orderKey);
 
             // 1. 현재 획득한 순서대로 DOM 재배치 및 가시성 설정
@@ -372,10 +378,9 @@ export class UIManager {
             this.elements.sensor.classList.toggle('locked', this.player.sensorTimer <= 0);
         }
 
-        // 미니맵 표시 여부 (지도 아이템 획득 시)
+        // 미니맵 표시 여부 (기본 활성)
         if (this.elements.minimap) {
-            const hasMap = this.player.inventory.hasMap;
-            this.elements.minimap.style.display = hasMap ? 'flex' : 'none';
+            this.elements.minimap.style.display = 'flex';
         }
     }
 

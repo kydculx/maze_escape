@@ -23,7 +23,6 @@ import { ASSETS } from '../Assets.js';
 export class PlayScene extends BaseScene {
     constructor(game, progress = null) {
         super(game);
-        console.log('[PlayScene] Constructor called');
         this.savedProgress = progress; // 저장된 진행 상황 보관
         this.init();
     }
@@ -51,24 +50,35 @@ export class PlayScene extends BaseScene {
     }
 
     _initScene() {
-        // 1. 환경 설정 (안개)
+        this._initEnvironment();
+        this._initWorld();
+        this._initEntities();
+        this._initInteraction();
+        this._initUI();
+    }
+
+    /**
+     * 환경 설정 (안개, 배경, 초기 조명)
+     */
+    _initEnvironment() {
         this._randomizeTheme(); // 초기 테마 랜덤 설정
 
-        // 1. 환경 설정 (안개)
         const fogCfg = CONFIG.MAZE.FOG;
         this.scene.background = new THREE.Color(fogCfg.COLOR);
         this.scene.fog = new THREE.Fog(fogCfg.COLOR, fogCfg.NEAR, fogCfg.FAR);
 
-        // 2. 조명 추가
         this._initLights();
+    }
 
-        // 3. StageManager 먼저 초기화 (미로 크기 결정을 위해)
+    /**
+     * 미로 데이터, 뷰 및 기본적인 지형 초기화
+     */
+    _initWorld() {
         this.stageManager = new StageManager();
 
-        // 저장된 진행 상황이 있으면 해당 스테이지로 시작
+        // 저장된 진행 상황 로드 및 스테이지 설정
         if (this.savedProgress) {
             this.stageManager.level = this.savedProgress.highestStage;
-            // 레벨에 맞는 미로 크기 계산
             this.stageManager.mazeSize = Math.min(
                 CONFIG.STAGE.INITIAL_SIZE + (this.savedProgress.highestStage - 1) * CONFIG.STAGE.SIZE_INCREMENT,
                 CONFIG.STAGE.MAX_SIZE
@@ -77,11 +87,9 @@ export class PlayScene extends BaseScene {
         }
 
         this.minimap = new Minimap();
-
-        // 4. 미로 로직 및 뷰 초기화 (StageManager의 mazeSize 사용)
         this.mazeGen = new MazeGenerator(this.stageManager.mazeSize, this.stageManager.mazeSize);
 
-        // 모양 결정 (설정값이 있으면 강제 적용, 없으면 레벨 기반 랜덤)
+        // 미로 모양 결정
         let shape = CONFIG.MAZE.SHAPE;
         if (!shape) {
             const availableShapes = this._getAvailableShapes(this.stageManager.level);
@@ -94,36 +102,31 @@ export class PlayScene extends BaseScene {
         this.mazeView = new MazeView(this.scene);
         this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
 
-        // 5. 플레이어 초기화
+        this._refreshFloorMesh();
+    }
+
+    /**
+     * 플레이어, 카메라, NPC 및 각종 매니저 초기화
+     */
+    _initEntities() {
+        // 플레이어
         const startPos = this.mazeGen.getStartWorldPosition(CONFIG.MAZE);
         this.player = new Player(this.scene, this.mazeGen, this.game.sound);
+        this.player.reset(startPos, this._calculateInitialAngle());
 
-        const initialAngle = this._calculateInitialAngle();
-        this.player.reset(startPos, initialAngle);
-
-        // 저장된 아이템 로드
-        if (this.savedProgress && this.savedProgress.items) {
-            this._loadSavedItems(this.savedProgress.items);
-            console.log('[PlayScene] Loaded saved items:', this.savedProgress.items);
-        }
-
-        // 6. 카메라 및 매니저들
+        // 카메라
         this.cameraController = new CameraController(this.player, this.scene);
         this.camera = this.cameraController.camera;
 
-        // 6.1 오디오 리스너 초기화 (3D 사운드용)
+        // 오디오 리스너
         this.audioListener = new THREE.AudioListener();
         this.camera.add(this.audioListener);
 
-        // 6.5 날씨 시스템 초기화 (카메라 설정 후)
-        this.weatherSystem = new WeatherSystem(this.scene, this.camera, this.game.sound);
-
-        this._refreshFloorMesh();
-
+        // 날씨 및 시스템 매니저
+        this.weatherSystem = new WeatherSystem(this.scene, this.camera, this.game.sound, this.cameraController);
         this.itemManager = new ItemManager(this.scene, this.mazeGen, CONFIG.ITEMS);
-        this.itemSpawnTimer = 0; // 아이템 생성 타이머 초기화
+        this.itemSpawnTimer = 0;
 
-        // 레벨에 따른 아이템 개수 설정
         this._updateMaxItemCount();
         this.itemManager.spawnItems(this.maxItemCount, this.stageManager.level);
 
@@ -131,58 +134,77 @@ export class PlayScene extends BaseScene {
         this.switchManager = new SwitchManager(this.scene, this.mazeGen, this.game.sound);
         this.switchManager.spawnSwitches();
 
-        // Raycaster for switch interaction
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
-
+        // 몬스터
         this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound, (monster) => {
-            if (this.ui) {
-                this.ui.showBittenEffect();
-                this.ui.triggerDamageEffect();
-            }
-            if (this.player) {
-                const isDead = this.player.takeDamage(10); // 한 번 공격당할 때 10 대미지
-                if (this.ui) this.ui.updateHealthBar();
-
-                if (isDead) {
-                    console.log("Player is dead! Game Over.");
-                    this.game.state.set(STATES.GAME_OVER);
-                    if (this.ui) this.ui.showDeathScreen(); // 전용 사망 화면 표시
-                }
-            }
+            this._onPlayerBitten();
         });
 
-        // 레벨에 따른 좀비 생성 (Config의 SPAWN_RULES 기준)
+        // 몬스터 스폰
         const spawnRules = CONFIG.MONSTERS.SPAWN_RULES;
         const zombieCount = Math.min(
             spawnRules.MAX_MONSTER_COUNT,
             Math.max(0, spawnRules.BASE_COUNT + Math.floor((this.stageManager.level - 1) / spawnRules.COUNT_CALC_DIVISOR))
         );
-
         this.monsterManager.spawnZombies(zombieCount, this.stageManager.level);
+    }
 
-        // Save initial checkpoint
-        if (this.player) this.player.saveCheckpoint();
+    /**
+     * 상호작용 관련 초기화 (Raycaster, Mouse)
+     */
+    _initInteraction() {
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
 
-        // 6. UI 매니저 초기화 및 바인딩
+        this._onInteract = (event) => {
+            if (!this.game.state.is(STATES.PLAYING)) return;
+            const x = event.clientX || (event.touches ? event.touches[0].clientX : 0);
+            const y = event.clientY || (event.touches ? event.touches[0].clientY : 0);
+            this.mouse.x = (x / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(y / window.innerHeight) * 2 + 1;
+            this._checkSwitchInteraction();
+        };
+
+        window.addEventListener('mousedown', this._onInteract);
+        window.addEventListener('touchstart', this._onInteract, { passive: false });
+    }
+
+    /**
+     * UI 매니저 초기화 및 상태 설정
+     */
+    _initUI() {
         this.ui = new UIManager(this.player, this.mazeGen, this.stageManager);
+        this._bindUIEvents();
 
-        // 메뉴 열림/닫힘 시 일시정지 처리 콜백 등록
+        // 초기 HUD 상태 설정
+        this.ui.showInGameHUD(true);
+        if (this.savedProgress && this.savedProgress.items) {
+            console.log('[PlayScene] Loading saved items from progress:', this.savedProgress.items);
+            this._loadSavedItems(this.savedProgress.items);
+        }
+        this.ui.updateAll(true);
+        this.ui.initSettings(this.game.sound);
+
+        // 초기 체크포인트 저장
+        if (this.player) this.player.saveCheckpoint();
+    }
+
+    /**
+     * UI 이벤트 버튼 및 콜백 바인딩
+     */
+    _bindUIEvents() {
+        // 일시정지 콜백
         this.ui.registerPauseCallbacks(
-            () => { // onPause (메뉴 열림)
-                console.log('[PlayScene] Game Paused via Menu');
+            () => { // onPause
                 this.game.state.pauseGame();
-                // SoundManager handles BGM and all loop sounds (rain, monsters) surgically
                 if (this.game.sound) this.game.sound.pauseAll();
             },
-            () => { // onResume (메뉴 닫힘)
-                console.log('[PlayScene] Game Resumed via Menu');
+            () => { // onResume
                 this.game.state.resumeGame();
-                // SoundManager resumes everything previously playing
                 if (this.game.sound) this.game.sound.resumeAll();
             }
         );
 
+        // 버튼 기능 바인딩
         this.ui.bindButtons({
             onHammer: () => this._useHammer(),
             onJump: () => {
@@ -191,12 +213,8 @@ export class PlayScene extends BaseScene {
             },
             onMap: () => this.resetMaze(),
             onCheat: () => {
-                if (this.itemManager) {
-                    this.itemManager.spawnNearbyItems(this.player.position, this.stageManager.level);
-                }
-                if (this.minimap) {
-                    this.minimap.showMonsters = true;
-                }
+                if (this.itemManager) this.itemManager.spawnNearbyItems(this.player.position, this.stageManager.level);
+                if (this.minimap) this.minimap.showMonsters = true;
                 this.ui.updateAll();
             },
             onTrap: () => {
@@ -204,14 +222,13 @@ export class PlayScene extends BaseScene {
                 if (pos) {
                     this.trapManager.placeTrap(pos);
                     this.ui.updateAll();
-                    if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
+                    if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
                 }
             },
             onTeleport: () => {
-                const success = this.player.useTeleport();
-                if (success) {
+                if (this.player.useTeleport()) {
                     this.ui.updateAll();
-                    if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.8);
+                    if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
                 }
             },
             onFlashlight: () => {
@@ -223,91 +240,18 @@ export class PlayScene extends BaseScene {
                 this.ui.updateAll();
             },
             onDisguise: () => {
-                const success = this.player.useDisguise();
-                if (success) this.ui.updateAll();
+                if (this.player.useDisguise()) this.ui.updateAll();
             },
             onPrevStage: () => {
                 this.stageManager.prevStage();
                 this.resetMaze();
             },
-            onNextStage: () => {
-                this.stageManager.nextStage();
-
-                // 새로운 최고 스테이지 도달 시 저장
-                const currentItems = this._getCurrentItems();
-                SaveManager.saveProgress(this.stageManager.level, currentItems);
-                console.log(`[PlayScene] Progress saved: Stage ${this.stageManager.level}`);
-
-                this.resetMaze();
-                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
-            },
-            onRestart: () => {
-                console.log("Restarting current stage...");
-                this.game.state.set(STATES.PLAYING); // 게임 상태를 다시 PLAYING으로 명시적 변경
-                this.game.state.resumeGame(); // Ensure game is running
-                if (this.game.sound) this.game.sound.resumeAll();
-
-                // Restore player state to start of stage
-                if (this.player) this.player.restoreCheckpoint();
-                // Reset stage stats (time, moves) - managed by StageManager or here?
-                // StageManager.resetStats() clears everything, but we might want to keep total game time?
-                // For now, let's reset stage specific stats in StageManager
-                this.stageManager.resetStats();
-
-                this.resetMaze();
-                if (this.game.sound) {
-                    this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
-                    this.game.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
-                }
-            },
-            onMainMenu: () => {
-                console.log("Going to Main Menu...");
-                this.game.state.resumeGame(); // Reset pause state
-                // Removed resumeAll() here to prevent sound from starting right before scene switch
-
-                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
-
-                // Switch scene and state
-                this.game.sceneManager.setScene(STATES.MAIN_MENU);
-                this.game.state.set(STATES.MAIN_MENU);
-
-                // 메인 메뉴 배경음악 다시 시작 (게임 BGM과 같은 파일이지만 새로운 인스턴스로 조용하게 시작 가능)
-                if (this.game.sound) {
-                    this.game.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
-                }
-
-                // UI 정리
-                document.getElementById('ui-overlay').style.display = 'none';
-                document.getElementById('item-actions').style.display = 'none';
-                document.getElementById('cheat-hud').style.display = 'none';
-                document.getElementById('minimap-container').style.display = 'none';
-                document.getElementById('radar-container').style.display = 'none';
-                document.getElementById('disguise-overlay').style.display = 'none';
-
-                // Continue 버튼 상태 업데이트
-                if (this.game.updateContinueButton) {
-                    this.game.updateContinueButton();
-                    console.log('[PlayScene] Updated Continue button state');
-                }
-
-                // Show Main Menu
-                const mainMenu = document.getElementById('main-menu-screen');
-                if (mainMenu) {
-                    mainMenu.classList.remove('hidden');
-                    // Ensure it's visible if hidden via CSS directly
-                    mainMenu.style.display = 'flex';
-                }
-                if (this.ui) this.ui.showInGameHUD(false);
-            }
+            onNextStage: () => this._onNextStageRequest(),
+            onRestart: () => this._onRestart(),
+            onMainMenu: () => this._onMainMenu()
         });
 
-        // 인게임 화면 진입 시 HUD 표시
-        if (this.ui) this.ui.showInGameHUD(true);
-
-        // 설정 창 초기화
-        this.ui.initSettings(this.game.sound);
-
-        // Override UIManager internal toggle logic to hook into pause system
+        // 메뉴 토글 로직 확장
         const originalToggleMenu = this.ui.toggleMenu.bind(this.ui);
         this.ui.toggleMenu = () => {
             originalToggleMenu();
@@ -327,25 +271,95 @@ export class PlayScene extends BaseScene {
             this.game.state.resumeGame();
             if (this.game.sound) this.game.sound.resumeAll();
         };
+    }
 
-        // Interaction event
-        this._onInteract = (event) => {
-            if (!this.game.state.is(STATES.PLAYING)) return;
+    /**
+     * 플레이어가 몬스터에게 공격받았을 때 처리
+     */
+    _onPlayerBitten() {
+        if (this.ui) {
+            this.ui.showBittenEffect();
+            this.ui.triggerDamageEffect();
+        }
+        if (this.player) {
+            const isDead = this.player.takeDamage(10);
+            if (this.ui) this.ui.updateHealthBar();
 
-            // Mouse or Touch coordinate normalization
-            const x = event.clientX || (event.touches ? event.touches[0].clientX : 0);
-            const y = event.clientY || (event.touches ? event.touches[0].clientY : 0);
+            if (isDead) {
+                this.game.state.set(STATES.GAME_OVER);
+                if (this.ui) this.ui.showDeathScreen();
+            }
+        }
+    }
 
-            this.mouse.x = (x / window.innerWidth) * 2 - 1;
-            this.mouse.y = -(y / window.innerHeight) * 2 + 1;
+    /**
+     * 다음 스테이지 요청 처리
+     */
+    _onNextStageRequest() {
+        this.stageManager.nextStage();
+        SaveManager.saveProgress(this.stageManager.level, this._getCurrentItems());
+        this.resetMaze();
+        if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+    }
 
-            this._checkSwitchInteraction();
-        };
+    /**
+     * 현재 스테이지 다시 시작
+     */
+    _onRestart() {
+        console.log("Restarting current stage...");
+        this.game.state.set(STATES.PLAYING);
+        this.game.state.resumeGame();
+        if (this.game.sound) {
+            this.game.sound.resumeAll();
+            this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+            this.game.sound.playBGM(ASSETS.AUDIO.BGM);
+        }
 
-        window.addEventListener('mousedown', this._onInteract);
-        window.addEventListener('touchstart', this._onInteract, { passive: false });
+        if (this.player) this.player.restoreCheckpoint();
+        this.stageManager.resetStats();
+        this.resetMaze();
+        if (this.ui) this.ui.updateAll(true);
+    }
 
-        this.ui.updateAll();
+    /**
+     * 메인 메뉴로 돌아가기
+     */
+    _onMainMenu() {
+        console.log("Going to Main Menu...");
+        this.game.state.resumeGame();
+        if (this.game.sound) {
+            this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+            this.game.sound.playBGM(ASSETS.AUDIO.BGM);
+        }
+
+        this.game.sceneManager.setScene(STATES.MAIN_MENU);
+        this.game.state.set(STATES.MAIN_MENU);
+
+        this._hideAllGameUI();
+
+        if (this.game.updateContinueButton) this.game.updateContinueButton();
+    }
+
+    /**
+     * 모든 게임 관련 UI 숨김
+     */
+    _hideAllGameUI() {
+        const uiElements = [
+            'ui-overlay', 'item-actions', 'cheat-hud',
+            'minimap-container', 'radar-container', 'disguise-overlay'
+        ];
+        uiElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        const mainMenu = document.getElementById('main-menu-screen');
+        if (mainMenu) {
+            mainMenu.classList.remove('hidden');
+            mainMenu.style.display = 'flex';
+        }
+
+        if (this.ui) this.ui.showInGameHUD(false);
     }
 
     _initLights() {
@@ -472,7 +486,6 @@ export class PlayScene extends BaseScene {
         floor.name = 'floor-mesh';
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = 0; // 타일들이 0.01에 있으므로 0에 배치
-        floor.receiveShadow = true;
         floor.receiveShadow = true;
         this.scene.add(floor);
     }
@@ -629,187 +642,180 @@ export class PlayScene extends BaseScene {
     }
 
     update(dt) {
-        // 일시정지 상태 체크
-        if (this.game.state.isPaused) {
-            return;
-        }
+        if (this.game.state.isPaused) return;
 
         const deltaTime = Math.min(dt, 0.1);
         const input = this.game.input;
 
-        // 1. 플레이어 업데이트
-        this.player.update(deltaTime);
-
-        // 1.1 아이템 자동 생성 업데이트
-        if (this.itemManager && this.game.state.is(STATES.PLAYING)) {
-            this.itemSpawnTimer += deltaTime;
-            if (this.itemSpawnTimer >= CONFIG.ITEMS.SPAWN_INTERVAL) {
-                this.itemSpawnTimer = 0;
-                this.itemManager.spawnExtraItem(this.stageManager.level, this.maxItemCount);
-            }
-        }
-
-        // 1.0 체력 회복 중일 때 UI 업데이트
-        if (this.ui && this.player.idleTimer >= CONFIG.PLAYER.REGEN_DELAY && this.player.health < this.player.maxHealth) {
-            this.ui.updateHealthBar();
-        }
-
-        // 1.1 스테이지 통계 업데이트 (시간)
-        if (this.stageManager && this.stageManager.isStageActive) {
-            this.stageManager.stageTime += deltaTime;
-        }
-
-        // 1.5 마법진 회전 애니메이션 (MazeView로 위임)
-        if (this.mazeView) {
-            this.mazeView.animateMarkers(deltaTime);
-        }
-
-        // 1.6 아이템 업데이트 및 충돌 체크
-        if (this.itemManager) {
-            this.itemManager.update(deltaTime);
-            this.itemManager.checkCollisions(this.player.position, CONFIG.PLAYER.PLAYER_RADIUS, (item) => {
-                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM_PICKUP, 0.6);
-
-                // 사운드 센서 아이템 처리
-                if (item.type === 'SENSOR') {
-                    // 효과는 Player에서 처리됨
-                }
-
-                this.player.applyItemEffect(item);
-                this.ui.updateAll();
-            });
-        }
-
-        // 1.6.5 사운드 센서 로직 (360도 레이더)
-        if (this.player.isSensorOn) {
-            const blips = [];
-
-            if (this.monsterManager && this.monsterManager.monsters) {
-                const playerPos = this.player.group.position;
-                const playerRotation = this.player.group.rotation.y;
-                // 플레이어 회전값: Three.js에서 y축 회전은 반시계 방향이 양수일 수 있음 (확인 필요)
-                // 보통 -Math.atan2(dz, dx) - rotationY 로 계산
-
-                for (const zombie of this.monsterManager.monsters) {
-                    // 소리를 내고 있는 좀비만 감지
-                    if (!zombie.isMakingSound) continue;
-
-                    const maxAudioDist = CONFIG.MONSTERS.ZOMBIE.PATROL_AUDIO_MAX_DIST || CONFIG.MONSTERS.ZOMBIE.DETECTION_RANGE;
-                    const dist = zombie.position.distanceTo(playerPos);
-                    const distInTiles = dist / CONFIG.MAZE.WALL_THICKNESS;
-
-                    if (distInTiles <= maxAudioDist) {
-                        const dx = zombie.position.x - playerPos.x;
-                        const dz = zombie.position.z - playerPos.z;
-
-                        // 좀비의 절대 각도 (x, z 평면)
-                        // Math.atan2(z, x) -> 0도가 x축 양의 방향
-                        const angleToZombie = Math.atan2(dz, dx);
-
-                        // 플레이어 기준 상대 각도
-                        // 플레이어의 rotation.y가 바라보는 방향 (Three.js 기본: -Z축이 정면일 수 있음, 모델에 따라 다름)
-                        // 현재 1인칭 카메라 로직상: rotation.y = 0 -> -Z 방향 (북쪽) 가정 시
-
-                        // 상대 각도 계산: (좀비 각도) - (플레이어 각도)
-                        // 단, 좌표계에 따라 보정이 필요함. 
-                        // 일반적으로: relativeAngle = angleToZombie - playerRotation
-
-                        // 일단 단순 차이로 전달하고 UIManager에서 시각화하며 조정
-                        // 거리 비율 (0.0 ~ 1.0)
-                        const distRadio = Math.min(1.0, distInTiles / maxAudioDist);
-
-                        blips.push({
-                            dx: dx,
-                            dz: dz,
-                            dist: dist,
-                            rotation: playerRotation,
-                            maxDist: maxAudioDist * CONFIG.MAZE.WALL_THICKNESS
-                        });
-                    }
-                }
-            }
-
-            // 방전 임박 시 깜빡임 효과 (3초 전)
-            let isRadarVisible = true;
-            if (this.player.sensorTimer < CONFIG.ITEMS.SENSOR.FLICKER_THRESHOLD) {
-                // 빠르게 깜빡임 (Flashlight과 유사한 속도)
-                // Math.sin(Date.now() * 0.02) -> 주기 약 300ms
-                isRadarVisible = Math.sin(Date.now() * 0.02) > 0;
-            }
-
-            this.ui.updateRadar(blips, isRadarVisible);
-        } else {
-            this.ui.updateRadar([], false);
-        }
-
-        // 1.7 몬스터 업데이트
-        if (this.monsterManager) {
-            this.monsterManager.update(deltaTime, this.player);
-        }
-
-        // 1.8 함정 업데이트
-        if (this.trapManager && this.monsterManager) {
-            this.trapManager.update(deltaTime, this.monsterManager.monsters);
-        }
-
-        // 1.9 안개 거리 동적 조정 (손전등 상태에 따라)
-        if (this.scene.fog) {
-            const fogColor = CONFIG.MAZE.FOG.COLOR;
-            const fogNear = CONFIG.MAZE.FOG.NEAR;
-            const fogFar = CONFIG.MAZE.FOG.FAR;
-            const flCfg = CONFIG.ITEMS.FLASHLIGHT;
-            const targetFar = this.player.isFlashlightOn ? CONFIG.MAZE.FOG.FAR_FLASHLIGHT : CONFIG.MAZE.FOG.FAR;
-            // 부드럽게 전환 (Lerp)
-            this.scene.fog.far += (targetFar - this.scene.fog.far) * deltaTime * flCfg.FOG_TRANSITION_SPEED;
-        }
-
-        // 1.95 날씨 업데이트
-        if (this.weatherSystem) {
-            this.weatherSystem.update(deltaTime, this.player.position);
-        }
-
-        // UI 상태 업데이트
-        this.ui.updateAll();
-
-        // 2. 스테이지 종료 체크 (출구 도달)
-        this._checkStageCompletion();
-
-        // 3. 카메라 컨트롤러 업데이트 (점프 효과 등)
-        const jumpProgress = this.player.isJumping ? this.player.jumpTimer / this.player.jumpDuration : 0;
-        this.cameraController.update(deltaTime, this.player.isJumping, jumpProgress);
-
-        // 3. 사용자 입력 처리
+        this._updateGameSystems(deltaTime);
+        this._updateRadar(deltaTime);
+        this._updateEnvironmentEffects(deltaTime);
+        this._updateUI(deltaTime);
         this._handleInput(input);
+        this._updateMinimap();
 
-        // 4. 미니맵 업데이트
-        if (this.minimap) {
-            // 탐험 상태 업데이트
-            this.mazeGen.markExplored(
-                this.player.position.x,
-                this.player.position.z,
-                CONFIG.MAZE.WALL_THICKNESS,
-                1 // 탐험 반경 (1칸)
-            );
+        this._checkStageCompletion();
+    }
 
-            this.minimap.draw(
-                this.mazeGen.grid,
-                this.mazeGen.explored,
-                this.player.position,
-                this.player.rotation.y,
-                this.mazeGen.width,
-                this.mazeGen.height,
-                CONFIG.MAZE.WALL_THICKNESS,
-                this.mazeGen.entrance,
-                this.mazeGen.exit,
-                this.monsterManager ? this.monsterManager.monsters : []
-            );
+    /**
+     * 핵심 게임 시스템 업데이트 (플레이어, 아이템, 몬스터 등)
+     */
+    _updateGameSystems(dt) {
+        this.player.update(dt);
+
+        if (this.itemManager) {
+            // 아이템 자동 생성
+            if (this.game.state.is(STATES.PLAYING)) {
+                this.itemSpawnTimer += dt;
+                if (this.itemSpawnTimer >= CONFIG.ITEMS.SPAWN_INTERVAL) {
+                    this.itemSpawnTimer = 0;
+                    this.itemManager.spawnExtraItem(this.stageManager.level, this.maxItemCount);
+                }
+            }
+            this.itemManager.update(dt);
+            this._checkItemCollisions();
         }
+
+        if (this.monsterManager) this.monsterManager.update(dt, this.player);
+        if (this.trapManager && this.monsterManager) this.trapManager.update(dt, this.monsterManager.monsters);
+        if (this.weatherSystem) this.weatherSystem.update(dt, this.player.position);
+
+        if (this.stageManager && this.stageManager.isStageActive) {
+            this.stageManager.stageTime += dt;
+        }
+
+        const jumpProgress = this.player.isJumping ? this.player.jumpTimer / this.player.jumpDuration : 0;
+        this.cameraController.update(dt, this.player.isJumping, jumpProgress);
+    }
+
+    /**
+     * 아이템 충돌 체크 및 획득 처리
+     */
+    _checkItemCollisions() {
+        this.itemManager.checkCollisions(this.player.position, CONFIG.PLAYER.PLAYER_RADIUS, (item) => {
+            if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM_PICKUP);
+
+            // 지도 조각인 경우 즉시 영역 공개
+            if (item.type === 'MAP_PIECE' && item.metadata) {
+                const { regionIndex, rows, cols } = item.metadata;
+                if (regionIndex !== undefined && rows && cols) {
+                    this.mazeGen.revealRegion(regionIndex, rows, cols);
+                    console.log(`[PlayScene] MAP_PIECE collected! Revealing region ${regionIndex}`);
+                }
+            }
+
+            this.player.applyItemEffect(item);
+            this.ui.updateAll();
+        });
+    }
+
+    /**
+     * 사운드 센서 레이더 업데이트
+     */
+    _updateRadar(dt) {
+        if (!this.player.isSensorOn) {
+            this.ui.updateRadar([], false);
+            return;
+        }
+
+        const blips = [];
+        if (this.monsterManager && this.monsterManager.monsters) {
+            const playerPos = this.player.group.position;
+            const playerRotation = this.player.group.rotation.y;
+
+            for (const zombie of this.monsterManager.monsters) {
+                if (!zombie.isMakingSound) continue;
+
+                const maxAudioDist = CONFIG.MONSTERS.ZOMBIE.PATROL_AUDIO_MAX_DIST || CONFIG.MONSTERS.ZOMBIE.DETECTION_RANGE;
+                const dist = zombie.position.distanceTo(playerPos);
+                const distInTiles = dist / CONFIG.MAZE.WALL_THICKNESS;
+
+                if (distInTiles <= maxAudioDist) {
+                    blips.push({
+                        dx: zombie.position.x - playerPos.x,
+                        dz: zombie.position.z - playerPos.z,
+                        dist: dist,
+                        rotation: playerRotation,
+                        maxDist: maxAudioDist * CONFIG.MAZE.WALL_THICKNESS
+                    });
+                }
+            }
+        }
+
+        let isRadarVisible = true;
+        if (this.player.sensorTimer < CONFIG.ITEMS.SENSOR.FLICKER_THRESHOLD) {
+            isRadarVisible = Math.sin(Date.now() * 0.02) > 0;
+        }
+
+        this.ui.updateRadar(blips, isRadarVisible);
+    }
+
+    /**
+     * 안개 등 환경 효과 업데이트
+     */
+    _updateEnvironmentEffects(dt) {
+        if (this.scene.fog) {
+            const targetFar = this.player.isFlashlightOn ? CONFIG.MAZE.FOG.FAR_FLASHLIGHT : CONFIG.MAZE.FOG.FAR;
+            this.scene.fog.far += (targetFar - this.scene.fog.far) * dt * CONFIG.ITEMS.FLASHLIGHT.FOG_TRANSITION_SPEED;
+        }
+        if (this.mazeView) {
+            this.mazeView.animateMarkers(dt);
+        }
+    }
+
+    /**
+     * UI 상태 업데이트 (체력, 인벤토리 등)
+     */
+    _updateUI(dt) {
+        if (this.ui) {
+            if (this.player.idleTimer >= CONFIG.PLAYER.REGEN_DELAY && this.player.health < this.player.maxHealth) {
+                this.ui.updateHealthBar();
+            }
+            this.ui.updateAll();
+        }
+    }
+
+    /**
+     * 미니맵 및 탐험 상태 업데이트
+     */
+    _updateMinimap() {
+        if (!this.minimap) return;
+
+        this.mazeGen.markExplored(
+            this.player.position.x,
+            this.player.position.z,
+            CONFIG.MAZE.WALL_THICKNESS,
+            1
+        );
+
+        this.minimap.draw(
+            this.mazeGen.grid,
+            this.mazeGen.explored,
+            this.player.position,
+            this.player.rotation.y,
+            this.mazeGen.width,
+            this.mazeGen.height,
+            CONFIG.MAZE.WALL_THICKNESS,
+            this.mazeGen.entrance,
+            this.mazeGen.exit,
+            this.monsterManager ? this.monsterManager.monsters : []
+        );
     }
 
     _handleInput(input) {
         if (!this.game.state.is(STATES.PLAYING)) return;
         if (this.player.isJumping) return;
 
+        this._handleMovementInput(input);
+        this._handleItemInput(input);
+        this._handleCheatInput(input);
+        this._handleSwipeInput(input);
+    }
+
+    /**
+     * 이동 관련 입력 처리
+     */
+    _handleMovementInput(input) {
         if (input.wasJustPressed('ArrowLeft')) {
             this.player.startRotation(Math.PI / 2);
             this.stageManager.isStageActive = true;
@@ -831,25 +837,24 @@ export class PlayScene extends BaseScene {
             }
         }
 
-        // 3. 점프 (Space)
         if (input.wasJustPressed('Space')) {
-            // 버튼 클릭 효과와 동일하게 동작
             if (this.player.inventory.jumpCount > 0) {
                 this.player.startJump(true);
                 this.ui.updateAll();
-            } else {
-                // 아이템 없으면 일반 점프라도? (현재 게임 디자인상 아이템 점프만 있는 듯)
-                // this.player.startJump(false); 
-                console.log("No jump items left");
             }
         }
+    }
 
-        // 4. 망치 사용 (E 키)
+    /**
+     * 아이템 사용 관련 입력 처리
+     */
+    _handleItemInput(input) {
+        // E 키: 망치 사용
         if (input.wasJustPressed('KeyE')) {
             this._useHammer();
         }
 
-        // 5. 텔레포트 (Q 키)
+        // Q 키: 텔레포트
         if (input.wasJustPressed('KeyQ')) {
             if (this.player.inventory.teleportCount > 0) {
                 this._useTeleport();
@@ -857,7 +862,7 @@ export class PlayScene extends BaseScene {
             }
         }
 
-        // 6. 함정 설치 (R 키)
+        // R 키: 함정 설치
         if (input.wasJustPressed('KeyR')) {
             if (this.player.inventory.trapCount > 0) {
                 this._useTrap();
@@ -865,59 +870,71 @@ export class PlayScene extends BaseScene {
             }
         }
 
-        // F키: 손전등 토글
+        // F 키: 손전등 토글
         if (input.wasJustPressed('KeyF')) {
             if (this.player.toggleFlashlight()) {
                 this.ui.updateAll();
             }
         }
 
-        // G키: 좀비 위장 사용
+        // G 키: 좀비 위장 사용
         if (input.wasJustPressed('KeyG')) {
             if (this.player.useDisguise()) {
                 this.ui.updateAll();
             }
         }
 
-        // T키: 사운드 센서 토글
+        // T 키: 사운드 센서 토글
         if (input.wasJustPressed('KeyT')) {
             if (this.player.toggleSensor()) {
                 this.ui.updateAll();
             }
         }
+    }
 
-        // 5. 스와이프 입력 처리
-        const swipe = input.consumeSwipe();
-        if (swipe) {
-            switch (swipe) {
-                case 'up': if (this.player.startMove(1)) {
-                    this.stageManager.moveCount++;
-                    this.stageManager.isStageActive = true;
-                } break;
-                case 'down': if (this.player.startMove(-1)) {
-                    this.stageManager.moveCount++;
-                    this.stageManager.isStageActive = true;
-                } break;
-                case 'left':
-                    this.player.startRotation(Math.PI / 2);
-                    this.stageManager.isStageActive = true;
-                    break;
-                case 'right':
-                    this.player.startRotation(-Math.PI / 2);
-                    this.stageManager.isStageActive = true;
-                    this.ui.updateAll(); // 회전 후 미니맵 업데이트
-                    break;
-            }
-        }
-
-        // L키: 몬스터 위치 표시 치트
+    /**
+     * 치트 관련 입력 처리
+     */
+    _handleCheatInput(input) {
         if (input.wasJustPressed('KeyL')) {
             if (this.minimap) {
                 this.minimap.showMonsters = !this.minimap.showMonsters;
                 this.ui.updateAll();
                 console.log(`[Cheat] Monster Map Visibility: ${this.minimap.showMonsters}`);
-                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.SENSOR, 0.5);
+                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.SENSOR);
             }
+        }
+    }
+
+    /**
+     * 스와이프 입력 처리 (모바일용)
+     */
+    _handleSwipeInput(input) {
+        const swipe = input.consumeSwipe();
+        if (!swipe) return;
+
+        switch (swipe) {
+            case 'up':
+                if (this.player.startMove(1)) {
+                    this.stageManager.moveCount++;
+                    this.stageManager.isStageActive = true;
+                }
+                break;
+            case 'down':
+                if (this.player.startMove(-1)) {
+                    this.stageManager.moveCount++;
+                    this.stageManager.isStageActive = true;
+                }
+                break;
+            case 'left':
+                this.player.startRotation(Math.PI / 2);
+                this.stageManager.isStageActive = true;
+                break;
+            case 'right':
+                this.player.startRotation(-Math.PI / 2);
+                this.stageManager.isStageActive = true;
+                this.ui.updateAll(); // 회전 후 미니맵 업데이트
+                break;
         }
     }
 
@@ -966,7 +983,7 @@ export class PlayScene extends BaseScene {
                         if (bx >= 0 && bx < width && by >= 0 && by < height) {
                             if (this.mazeGen.grid[by][bx] === 1) {
                                 console.warn(`ACTION DENIED: Wall at [${tx}, ${ty}] is too thick to break!`);
-                                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.3); // 실패음 대용
+                                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK); // 실패음 대용
                                 return;
                             }
                         }
@@ -987,7 +1004,7 @@ export class PlayScene extends BaseScene {
                     this.ui.updateAll();
 
                     if (this.game.sound) {
-                        this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.HAMMER, 0.6);
+                        this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.HAMMER);
                     }
                 } else {
                     console.warn(`ACTION FAIL: No wall found at [${tx}, ${ty}] (Value: ${targetVal})`);
@@ -1002,7 +1019,7 @@ export class PlayScene extends BaseScene {
         const success = this.player.useTeleport();
         if (success) {
             this.ui.updateAll();
-            if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.8);
+            if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
         }
     }
 
@@ -1011,7 +1028,7 @@ export class PlayScene extends BaseScene {
         if (pos) {
             this.trapManager.placeTrap(pos);
             this.ui.updateAll();
-            if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 0.6);
+            if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
         }
     }
 
@@ -1039,7 +1056,7 @@ export class PlayScene extends BaseScene {
         this._isTransitioning = true;
 
         // 효과음
-        if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK, 1.0);
+        if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
 
         // 스테이지 매니저 업데이트
         this.stageManager.nextStage();
@@ -1088,28 +1105,53 @@ export class PlayScene extends BaseScene {
             speedBoost: 'hammerCount',
             wallHack: 'hammerCount', // wallHack은 hammer로 통합
             teleport: 'teleportCount',
-            zombieDisguise: 'disguiseCount'
+            zombieDisguise: 'disguiseCount',
+            trap: 'trapCount'
         };
 
         for (const [saveKey, inventoryKey] of Object.entries(itemMapping)) {
             if (items[saveKey] !== undefined) {
+                let hasItem = false;
                 if (inventoryKey.startsWith('has')) {
                     // boolean 타입 아이템
-                    this.player.inventory[inventoryKey] = items[saveKey] > 0;
+                    const val = items[saveKey] > 0;
+                    this.player.inventory[inventoryKey] = val;
+                    hasItem = val;
                 } else {
                     // count 타입 아이템
-                    this.player.inventory[inventoryKey] = items[saveKey];
+                    const count = items[saveKey];
+                    this.player.inventory[inventoryKey] = count;
+                    hasItem = count > 0;
+                }
+
+                // 아이템 순서 정보 복구 (UIManager가 슬롯을 표시하도록 함)
+                if (hasItem) {
+                    let type = '';
+                    switch (saveKey) {
+                        case 'flashlight': type = 'FLASHLIGHT'; break;
+                        case 'sensor': type = 'SENSOR'; break;
+                        case 'battery': type = 'JUMP'; break;
+                        case 'speedBoost':
+                        case 'wallHack': type = 'HAMMER'; break;
+                        case 'teleport': type = 'TELEPORT'; break;
+                        case 'zombieDisguise': type = 'ZOMBIE_DISGUISE'; break;
+                        case 'trap': type = 'TRAP'; break;
+                    }
+                    if (type && !this.player.inventory.itemOrder.includes(type)) {
+                        this.player.inventory.itemOrder.push(type);
+                    }
                 }
             }
         }
 
-        // 플래시라이트/센서 상태 반영
+        // 플래시라이트/센서 상태 및 타이머 반영
         if (this.player.inventory.hasFlashlight) {
-            this.player.flashlightOn = true;
-            // 손전등 상태는 UI에서 자동으로 업데이트됨
+            this.player.flashlightTimer = CONFIG.ITEMS.FLASHLIGHT.DURATION;
+            console.log('[PlayScene] Flashlight restored with full battery');
         }
         if (this.player.inventory.hasSensor) {
-            this.player.sensorOn = true;
+            this.player.sensorTimer = CONFIG.ITEMS.SENSOR.DURATION;
+            console.log('[PlayScene] Sensor restored with full battery');
         }
     }
 
@@ -1137,7 +1179,8 @@ export class PlayScene extends BaseScene {
             speedBoost: this.player.inventory.hammerCount || 0,
             wallHack: 0, // wallHack은 hammer로 통합됨
             teleport: this.player.inventory.teleportCount || 0,
-            zombieDisguise: this.player.inventory.disguiseCount || 0
+            zombieDisguise: this.player.inventory.disguiseCount || 0,
+            trap: this.player.inventory.trapCount || 0
         };
     }
 

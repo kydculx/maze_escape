@@ -47,7 +47,7 @@ class Game {
                 this.sound.init(); // 오디오 잠금 해제 알림
                 // Only play BGM if it's not already set/playing
                 if (!this.sound.bgm && this.state.is(STATES.MAIN_MENU)) {
-                    this.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+                    this.sound.playBGM(ASSETS.AUDIO.BGM);
                 }
             }
             window.removeEventListener('click', initAudio);
@@ -304,7 +304,7 @@ class Game {
         if (targetState === STATES.PLAYING) {
             this.state.set(STATES.PLAYING);
             this.sceneManager.setScene(STATES.PLAYING, progress); // progress 전달
-            this.sound.playBGM(ASSETS.AUDIO.BGM, CONFIG.AUDIO.DEFAULT_BGM_VOLUME);
+            this.sound.playBGM(ASSETS.AUDIO.BGM);
             document.getElementById('main-menu-screen').classList.add('hidden');
 
             // 게임 HUD 표시

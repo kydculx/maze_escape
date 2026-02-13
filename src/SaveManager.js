@@ -62,15 +62,13 @@ export class SaveManager {
         try {
             const currentProgress = this.loadProgress();
 
-            // 현재 스테이지가 저장된 최고 스테이지보다 높을 때만 저장
-            if (stage > currentProgress.highestStage) {
-                const progress = {
-                    highestStage: stage,
-                    items: { ...items } // 아이템 복사
-                };
-                localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(progress));
-                console.log('Progress saved:', progress);
-            }
+            // 스테이지가 높아지면 최고 스테이지 갱신, 아이템은 항상 현재 상태로 저장
+            const progress = {
+                highestStage: Math.max(stage, currentProgress.highestStage),
+                items: { ...items } // 아이템 복사
+            };
+            localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(progress));
+            console.log('Progress saved:', progress);
         } catch (error) {
             console.warn('Failed to save progress:', error);
         }
@@ -100,7 +98,8 @@ export class SaveManager {
                 speedBoost: 0,
                 wallHack: 0,
                 teleport: 0,
-                zombieDisguise: 0
+                zombieDisguise: 0,
+                trap: 0
             }
         };
     }

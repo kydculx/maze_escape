@@ -21,7 +21,7 @@ export class SoundManager {
 
         this.enabled = true;
         this.initialized = false;
-        this.currentBGMBaseVolume = 0.5; // 현재 재생 중인 BGM의 기본 볼륨 저장
+        this.currentBGMBaseVolume = 1.0; // 현재 재생 중인 BGM의 기본 볼륨 저장
 
         // Web Audio API Context
         this.context = null;
@@ -199,7 +199,7 @@ export class SoundManager {
      * @param {string} url - 오디오 파일 경로
      * @param {number} volume - 초기 볼륨 (0~1)
      */
-    playBGM(url, volume = 0.5) {
+    playBGM(url, volume = 1.0) {
         if (!this.enabled) return;
         if (!this.initialized) this.init(); // 상호작용 내 호출 보장
 
@@ -240,7 +240,7 @@ export class SoundManager {
      * @param {number} volume - 볼륨 (0~1)
      * @param {string} category - 볼륨 카테고리 ('sfx' 또는 'weather')
      */
-    async playSFX(url, volume = 0.8, category = 'sfx') {
+    async playSFX(url, volume = 1.0, category = 'sfx') {
         if (!this.enabled) return;
 
         const categoryVolume = category === 'weather' ? this.weatherVolume : this.sfxVolume;

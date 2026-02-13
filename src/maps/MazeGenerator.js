@@ -260,6 +260,30 @@ export class MazeGenerator {
     }
 
     /**
+     * 특정 영역을 탐험한 것으로 표시 (지도 조각용)
+     * @param {number} regionIndex - 영역 인덱스 (0 ~ rows*cols-1)
+     * @param {number} rows - 분할 행 수
+     * @param {number} cols - 분할 열 수
+     */
+    revealRegion(regionIndex, rows, cols) {
+        const regionWidth = Math.ceil(this.width / cols);
+        const regionHeight = Math.ceil(this.height / rows);
+
+        const startX = (regionIndex % cols) * regionWidth;
+        const startY = Math.floor(regionIndex / cols) * regionHeight;
+
+        const endX = Math.min(startX + regionWidth, this.width);
+        const endY = Math.min(startY + regionHeight, this.height);
+
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                this.explored[y][x] = true;
+            }
+        }
+        console.log(`[MazeGenerator] Revealed region ${regionIndex} (${startX},${startY}) to (${endX},${endY})`);
+    }
+
+    /**
      * 스위치를 배치할 수 있는 유효한 벽 위치 목록을 반환
      * 조건: 
      * 1. 막다른 길(Dead End)을 기점으로 함
