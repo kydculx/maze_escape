@@ -79,53 +79,22 @@ export class UIManager {
         }
 
         // 5. 손전등 배터리 바 업데이트
-        const flBtn = document.getElementById('use-flashlight-btn');
-        if (flBtn) {
-            if (this.player.inventory.hasFlashlight) {
-                flBtn.classList.remove('locked');
-                if (this.player.isFlashlightOn) flBtn.classList.add('active');
-                else flBtn.classList.remove('active');
-
-                // 배터리 바
-                const bar = flBtn.querySelector('.battery-bar-fill');
-                if (bar) {
-                    const ratio = this.player.flashlightTimer / CONFIG.ITEMS.FLASHLIGHT.DURATION;
-                    // bar.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
-                    bar.style.height = `${Math.max(0, Math.min(100, ratio * 100))}%`;
-
-                    // 색상 변경 (부족하면 빨강)
-                    if (ratio < 0.2) bar.style.backgroundColor = '#ff3333';
-                    else bar.style.backgroundColor = '#00ff00';
-                }
-            } else {
-                flBtn.classList.add('locked');
-                flBtn.classList.remove('active');
-            }
-        }
+        this._updateBatteryBar(
+            this.player.inventory.hasFlashlight,
+            this.player.isFlashlightOn,
+            this.player.flashlightTimer,
+            CONFIG.ITEMS.FLASHLIGHT.DURATION,
+            'use-flashlight-btn'
+        );
 
         // 6. 사운드 센서 배터리 바 업데이트
-        const sensorBtn = document.getElementById('use-sensor-btn');
-        if (sensorBtn) {
-            if (this.player.inventory.hasSensor) {
-                sensorBtn.classList.remove('locked');
-                if (this.player.isSensorOn) sensorBtn.classList.add('active');
-                else sensorBtn.classList.remove('active');
-
-                // 배터리 바
-                const bar = sensorBtn.querySelector('.battery-bar-fill');
-                if (bar) {
-                    const ratio = this.player.sensorTimer / CONFIG.ITEMS.SENSOR.DURATION;
-                    // bar.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
-                    bar.style.height = `${Math.max(0, Math.min(100, ratio * 100))}%`;
-
-                    if (ratio < 0.2) bar.style.backgroundColor = '#ff3333';
-                    else bar.style.backgroundColor = '#00ff00'; // 손전등과 동일한 녹색
-                }
-            } else {
-                sensorBtn.classList.add('locked');
-                sensorBtn.classList.remove('active');
-            }
-        }
+        this._updateBatteryBar(
+            this.player.inventory.hasSensor,
+            this.player.isSensorOn,
+            this.player.sensorTimer,
+            CONFIG.ITEMS.SENSOR.DURATION,
+            'use-sensor-btn'
+        );
         // 4. 스테이지 시간 및 이동 수 표시
         const timeEl = document.getElementById('stat-time');
         const movesEl = document.getElementById('stat-moves');
@@ -594,15 +563,7 @@ export class UIManager {
             const angle = Math.atan2(normY, normX);
             const deg = (angle * 180 / Math.PI) + 90;
             el.style.transform = `translate(-50%, -50%) rotate(${deg}deg)`;
-
-            el.style.opacity = 1.0;
-
-            container.appendChild(el);
-
-            // 거리가 멀면 투명도 조절 or 크기 조절 (거리는 유지하되 위치만 고정?)
-            // 일단 다 선명하게 표시하거나, 거리에 따른 투명도만 남길 수도 있음.
-            // "위치가 표시되면 안 되고" -> 거리 정보 숨김. 투명도도 1로 고정.
-            el.style.opacity = 1.0;
+            el.style.opacity = '1.0';
 
             container.appendChild(el);
         });
@@ -666,6 +627,33 @@ export class UIManager {
     showInGameHUD(visible) {
         if (this.elements.healthContainer) {
             this.elements.healthContainer.classList.toggle('hidden', !visible);
+        }
+    }
+
+    /**
+     * 아이템 버튼의 배터리 바 업데이트 (공용 헬퍼)
+     */
+    _updateBatteryBar(hasItem, isOn, currentTimer, maxDuration, btnId) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+
+        if (hasItem) {
+            btn.classList.remove('locked');
+            if (isOn) btn.classList.add('active');
+            else btn.classList.remove('active');
+
+            const bar = btn.querySelector('.battery-bar-fill');
+            if (bar) {
+                const ratio = currentTimer / maxDuration;
+                bar.style.height = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+
+                // 색상 변경 (부족하면 빨강)
+                if (ratio < 0.2) bar.style.backgroundColor = '#ff3333';
+                else bar.style.backgroundColor = '#00ff00';
+            }
+        } else {
+            btn.classList.add('locked');
+            btn.classList.remove('active');
         }
     }
 

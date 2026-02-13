@@ -396,7 +396,7 @@ export class PlayScene extends BaseScene {
      */
     _hideAllGameUI() {
         const uiElements = [
-            'ui-overlay', 'item-actions', 'cheat-hud',
+            'ui-overlay', 'item-actions', 'cheat-hud', 'menu-btn',
             'minimap-container', 'radar-container', 'disguise-overlay'
         ];
         uiElements.forEach(id => {

@@ -1252,11 +1252,11 @@ input[type="range"]::-webkit-slider-thumb {
     font-size: 24px;
     cursor: pointer;
     transition: all 0.3s;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    z-index: 2100;
-    /* Higher than ui-popup and others */
+    z-index: 1000;
+    /* Behind popups (2000) */
     pointer-events: auto !important;
 }
 
@@ -1567,13 +1567,6 @@ input[type="range"]::-webkit-slider-thumb {
     gap: 15px;
     transition: background 0.2s;
 }
-
-/* 호버 효과 제거 (모바일 최적화)
-.item-card:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(0, 255, 255, 0.2);
-}
-*/
 
 .item-card .icon {
     font-size: 2rem;

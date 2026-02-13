@@ -331,6 +331,12 @@ class Game {
                 console.error('[Game] cheat-hud element not found!');
             }
 
+            const menuBtn = document.getElementById('menu-btn');
+            if (menuBtn) {
+                menuBtn.style.display = 'flex';
+                console.log('[Game] menu-btn display set to flex');
+            }
+
             // 실제 버튼들의 기능 연동은 PlayScene 내의 UIManager가 담당하도록 위임
             // (PlayScene.js에서 this.ui.initSettings(this.game.sound) 호출)
         }
