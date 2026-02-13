@@ -19,6 +19,9 @@ const wolfPatrolSfx = new URL('./assets/audio/eff_wolf_patrol.mp3', import.meta.
 const wolfTrackSfx = new URL('./assets/audio/eff_wolf_track.mp3', import.meta.url).href;
 const wolfAttackSfx = new URL('./assets/audio/eff_wolf_attack.mp3', import.meta.url).href;
 const damageSfxUrl = new URL('./assets/audio/eff_damage.mp3', import.meta.url).href;
+const deathSfxUrl = new URL('./assets/audio/eff_death.mp3', import.meta.url).href;
+const gameOverSfxUrl = new URL('./assets/audio/eff_game_over.mp3', import.meta.url).href;
+const gameClearSfxUrl = new URL('./assets/audio/eff_game_clear.mp3', import.meta.url).href;
 
 const flashlightSwitchSfxUrl = new URL('./assets/audio/eff_flashlight_switch.mp3', import.meta.url).href;
 const sensorToggleSfxUrl = new URL('./assets/audio/eff_sensor_switch.mp3', import.meta.url).href;
@@ -70,6 +73,9 @@ export const ASSETS = {
             FOOTSTEP: footstepSfxUrl,
             JUMP: jumpSfxUrl,
             DAMAGE: damageSfxUrl,
+            DEATH: deathSfxUrl,
+            GAME_OVER: gameOverSfxUrl,
+            GAME_CLEAR: gameClearSfxUrl,
             ITEM_PICKUP: itemPickupSfxUrl,
             ZOMBIE: {
                 PATROL: zombiePatrolSfx,

@@ -537,38 +537,22 @@ export class UIManager {
             return;
         }
 
-        const radius = 90; // 컨테이너 반지름 (100px) - 여유분
+        const radius = 45; // 컨테이너 반지름 (50px) - 여유분
 
         blips.forEach(blip => {
-            // Three.js (World Space): X=Right, Z=South, Y=Up.
-            // Player Rotation Y: CCW around Y axis.
-            // We want to rotate the relative vector (dx, dz) by -playerRotation to align with player's forward.
-            // Formula for rotating point (x, y) by theta:
-            // x' = x cos(theta) - y sin(theta)
-            // y' = x sin(theta) + y cos(theta)
-            // Here, theta = -playerRotation.
-            // Let's use the rotation formula derived from testing:
-            // rx = dx * cos(rot) - dz * sin(rot)  (Maps to Screen X)
-            // ry = dx * sin(rot) + dz * cos(rot)  (Maps to Screen Y)
-            // Wait, let's re-verify with positive rotation (Left Turn).
-            // If I turn Left 90 (rot = PI/2), North (0, -100) should be to my Right (+X).
-            // cos(90)=0, sin(90)=1.
-            // rx = 0*0 - (-100)*1 = 100. (Right). Correct.
-            // ry = 0*1 + (-100)*0 = 0. (Center Y). Correct.
-
+            // ... (rotation logic remains same)
             const rot = blip.rotation;
             const rx = blip.dx * Math.cos(rot) - blip.dz * Math.sin(rot);
             const ry = blip.dx * Math.sin(rot) + blip.dz * Math.cos(rot);
 
             // 거리 비율 고정 (0.9) - 방향만 표시
-            // 방향 벡터 정규화
             const dist = Math.sqrt(rx * rx + ry * ry);
             const normX = rx / dist;
             const normY = ry / dist;
 
-            // 화면상 위치 (Center: 100, 100)
-            const screenX = 100 + normX * (0.9 * radius);
-            const screenY = 100 + normY * (0.9 * radius);
+            // 화면상 위치 (Center: 50, 50)
+            const screenX = 50 + normX * (0.9 * radius);
+            const screenY = 50 + normY * (0.9 * radius);
 
             const el = document.createElement('div');
             el.className = 'radar-blip';

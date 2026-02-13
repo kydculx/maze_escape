@@ -235,13 +235,20 @@
                             <ul>
                                 <li><span class="key">↑</span><span class="key">↓</span> : 전진 / 후진</li>
                                 <li><span class="key">←</span><span class="key">→</span> : 시점 회전</li>
-                                <li><span class="key">Space</span> : 점프 🚀</li>
-                                <li><span class="key">F</span> : 손전등 🔦</li>
-                                <li><span class="key">T</span> : 센서 📡</li>
-                                <li><span class="key">C</span> : C4 폭탄 🧨</li>
-                                <li><span class="key">Q</span> : 순간이동 🔮</li>
-                                <li><span class="key">R</span> : 함정 🕸️</li>
-                                <li><span class="key">G</span> : 가면 착용 🎭</li>
+                                <li class="control-item"><span class="key">Space</span> <span class="icon"
+                                        id="control-icon-jump"></span> 점프</li>
+                                <li class="control-item"><span class="key">F</span> <span class="icon"
+                                        id="control-icon-flashlight"></span> 손전등</li>
+                                <li class="control-item"><span class="key">T</span> <span class="icon"
+                                        id="control-icon-sensor"></span> 센서</li>
+                                <li class="control-item"><span class="key">C</span> <span class="icon"
+                                        id="control-icon-c4"></span> C4 폭탄</li>
+                                <li class="control-item"><span class="key">Q</span> <span class="icon"
+                                        id="control-icon-teleport"></span> 순간이동</li>
+                                <li class="control-item"><span class="key">R</span> <span class="icon"
+                                        id="control-icon-trap"></span> 함정</li>
+                                <li class="control-item"><span class="key">G</span> <span class="icon"
+                                        id="control-icon-mask"></span> 가면 착용</li>
                             </ul>
                         </div>
                         <div class="control-column">
@@ -262,56 +269,56 @@
                     <h3>🎒 아이템 가이드</h3>
                     <div class="item-grid">
                         <div class="item-card">
-                            <span class="icon">🔦</span>
+                            <span class="icon" id="help-icon-flashlight">🔦</span>
                             <div class="info">
                                 <strong>손전등 (Flashlight)</strong>
                                 <p>어두운 곳을 밝힙니다. 끄면 자동 충전됩니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">📡</span>
+                            <span class="icon" id="help-icon-sensor">📡</span>
                             <div class="info">
                                 <strong>음파 탐지기 (Sonar)</strong>
                                 <p>휴대용 소나로 주변 좀비를 정교하게 감지합니다. 끄면 자동 충전됩니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">➰</span>
+                            <span class="icon" id="help-icon-jump">➰</span>
                             <div class="info">
                                 <strong>점프 (Jump)</strong>
                                 <p>제자리에서 높이 뛰어올라 미로를 내려다봅니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">🧨</span>
+                            <span class="icon" id="help-icon-c4">🧨</span>
                             <div class="info">
                                 <strong>C4 폭탄 (C4)</strong>
                                 <p>강력한 폭발물입니다. 설치 후 2초 뒤에 벽을 파쇄하며 폭발합니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">🔮</span>
+                            <span class="icon" id="help-icon-teleport">🔮</span>
                             <div class="info">
                                 <strong>순간이동 (Teleport)</strong>
                                 <p>무작위 안전한 장소로 순간이동합니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">🕸️</span>
+                            <span class="icon" id="help-icon-trap">🕸️</span>
                             <div class="info">
                                 <strong>곰 함정 (Bear Trap)</strong>
                                 <p>바닥에 기계식 덫을 설치하여 밟은 좀비를 강력하게 결박합니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">🗺️</span>
+                            <span class="icon" id="help-icon-map">🗺️</span>
                             <div class="info">
                                 <strong>지도 (Map)</strong>
                                 <p>미로 전체 구조를 확인합니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">🎭</span>
+                            <span class="icon" id="help-icon-mask">🎭</span>
                             <div class="info">
                                 <strong>좀비 가면 (Mask)</strong>
                                 <p>좀비 얼굴 가루를 바른 정교한 가면입니다. 10초간 스텔스 상태가 되지만 속도가 감소합니다.</p>

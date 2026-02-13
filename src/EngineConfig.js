@@ -52,8 +52,8 @@ export const ENGINE_CONFIG = {
             WIND: {
                 ENABLED: true,
                 BASE_STRENGTH: 5.0,   // 바람의 기본 강도 (비가 휩쓸리는 정도)
-                VARIATION: 2.0,       // 바람 강도의 변화폭
-                FREQUENCY: 0.5        // 바람 변화 주기
+                VARIATION: 10.0,       // 바람 강도의 변화폭
+                FREQUENCY: 1        // 바람 변화 주기 (0.1 ~ 1.0)
             },
             SHAKE: {
                 LIGHTNING_INTENSITY: 0.1, // 번개 시 흔들림 강도

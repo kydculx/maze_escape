@@ -142,6 +142,8 @@ export class SpikeTrapManager {
 
             // marker 내부의 바닥 가시 그룹 참조
             const floorSpike = marker.getObjectByName('trap-floor-spikes') || null;
+            const centerSpike = floorSpike ? floorSpike.getObjectByName('center-spike') : null;
+            const crossGlint = centerSpike ? centerSpike.getObjectByName('cross-glint-group') : null;
 
             this.traps.push({
                 tileGridX: c.tileGridX,
@@ -153,7 +155,10 @@ export class SpikeTrapManager {
                 cooldownTimer: 0,
                 marker,
                 pulseOffset: Math.random() * Math.PI * 2,
+                rotationSpeed: 1.5 + Math.random() * 2.5, // 회전 속도 다양화
                 floorSpike,
+                centerSpike,
+                crossGlint,
                 floorState: 'IDLE',
                 floorTimer: 0,
                 floorHeight: 0
@@ -246,7 +251,46 @@ export class SpikeTrapManager {
                 trap.floorSpike.position.y = restY + trap.floorHeight;
             }
 
-            /* 맥동 애니메이션 제거됨 */
+            // 5-2) 중앙 가시 반짝임 효과 (Sharp Sparkle/Glint)
+            if (trap.centerSpike && trap.centerSpike.material) {
+                // 더 날카롭고 강렬한 반짝임을 위해 고차항 파워 함수 사용 (주기 대폭 상향으로 빈도 감소)
+                const time = performance.now();
+                const glintTime = time * 0.0015 + trap.pulseOffset; // 0.004 -> 0.0015 (약 2.5배 느려짐)
+
+                // 1. 기본 주기적 반짝임 (매우 좁은 피크)
+                const baseGlint = Math.pow(Math.max(0, Math.sin(glintTime)), 60); // 파워 상향 (더 좁은 구멍)
+
+                // 2. 고주파 지터 (시각적 아리함 유지)
+                const shimmer = Math.sin(time * 0.05) * 0.15;
+
+                // 3. 무작위 돌발 광풍 (Glint - 확률 더 낮춤)
+                let extraFlash = 0;
+                if (Math.sin(glintTime * 0.41) > 0.99) { // 0.98 -> 0.99 (확률 절반 이하)
+                    extraFlash = Math.pow(Math.max(0, Math.sin(time * 0.01)), 5) * 4.0;
+                }
+
+                // 강도 조합
+                const intensity = 0.1 + baseGlint * 4.0 + extraFlash + shimmer;
+
+                // 십자 광광(Cross Glint) 애니메이션 동기화 (더 자연스러운 트랜지션)
+                if (trap.crossGlint) {
+                    // 강도가 일정 수준 이상일 때 서서히 나타남 (리니어 대신 커브 적용)
+                    const targetScale = Math.max(0, (intensity - 2.2) * 0.35);
+                    const currentScale = trap.crossGlint.scale.x;
+
+                    // 서서히 커지고 작아지도록 보간 (Lerp)
+                    const newScale = currentScale + (targetScale - currentScale) * 0.2;
+                    trap.crossGlint.scale.set(newScale, newScale, newScale);
+                    trap.crossGlint.visible = newScale > 0.005;
+
+                    // 무작위 회전 속도 적용
+                    trap.crossGlint.rotation.z += deltaTime * (trap.rotationSpeed || 2.0);
+                    // 가끔 무작위로 축 비틀기 (생동감)
+                    if (intensity > 4.5) {
+                        trap.crossGlint.rotation.x = Math.sin(time * 0.1) * 0.2;
+                    }
+                }
+            }
         }
     }
 
@@ -297,8 +341,49 @@ export class SpikeTrapManager {
             { x: spacing, z: spacing, y: -0.05 }         // Back Right
         ];
 
-        positions.forEach(pos => {
+        positions.forEach((pos, idx) => {
             const spike = new THREE.Mesh(floorSpikeGeom, floorSpikeMat);
+
+            // 중앙 가시(idx 0)는 별도의 이름과 독립된 재질을 가짐 (반짝임용)
+            if (idx === 0) {
+                spike.name = 'center-spike';
+                spike.material = floorSpikeMat.clone();
+
+                // 십자 광광(Cross Glint) 메쉬 추가
+                const glintGroup = new THREE.Group();
+                glintGroup.name = 'cross-glint-group';
+                glintGroup.position.y = spikeHeight * 0.5; // 가시 끝부분
+
+                const rayGeo = new THREE.PlaneGeometry(thickness * 0.18, thickness * 0.012);
+                const rayMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.7, // 약간 더 투명하게
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const ray1 = new THREE.Mesh(rayGeo, rayMat);
+                glintGroup.add(ray1);
+
+                const ray2 = new THREE.Mesh(rayGeo, rayMat);
+                ray2.rotation.z = Math.PI / 2;
+                glintGroup.add(ray2);
+
+                // 중앙의 작은 핵심 광점 (Core)
+                const coreGeo = new THREE.SphereGeometry(thickness * 0.02, 8, 8);
+                const coreMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    blending: THREE.AdditiveBlending
+                });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                glintGroup.add(core);
+
+                glintGroup.scale.set(0, 0, 0);
+                glintGroup.visible = false;
+                spike.add(glintGroup);
+            }
+
             spike.position.set(pos.x, pos.y * spikeHeight, pos.z);
             spike.castShadow = true;
             spike.receiveShadow = true;

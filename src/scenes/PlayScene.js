@@ -313,7 +313,11 @@ export class PlayScene extends BaseScene {
             this.cameraController.onPlayerDeath();
         }
 
-        // 3. 효과음 (기존 takeDamage에서 재생되지만, 추가적인 사망 효과음이 필요할 경우 여기서 처리)
+
+        // 3. 효과음 재생 (사망)
+        if (this.game.sound) {
+            this.game.sound.playSFX(ASSETS.AUDIO.SFX.DEATH);
+        }
 
         // 4. 일정 시간 후 데스 화면 표시
         setTimeout(() => {
@@ -342,7 +346,10 @@ export class PlayScene extends BaseScene {
         this.stageManager.nextStage();
         SaveManager.saveProgress(this.stageManager.level, this._getCurrentItems());
         this.resetMaze();
-        if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+        if (this.game.sound) {
+            this.game.sound.playSFX(ASSETS.AUDIO.SFX.GAME_CLEAR);
+            this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK); // 기존 클릭 소리 유지
+        }
     }
 
     /**

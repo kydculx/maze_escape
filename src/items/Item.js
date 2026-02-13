@@ -361,16 +361,16 @@ export class Item {
                 const screenGeo = new THREE.CircleGeometry(scale * 0.45, 24);
                 const screenMat = new THREE.MeshStandardMaterial({
                     color: 0x00ffff,
-                    emissive: 0x004444,
+                    emissive: 0x000000,
                     transparent: true,
-                    opacity: 0.8
+                    opacity: 1
                 });
                 const screen = new THREE.Mesh(screenGeo, screenMat);
                 screenGroup.add(screen);
 
                 // 화면 위 스캔 라인 (Glowing Line)
                 const lineGeo = new THREE.BoxGeometry(scale * 0.85, scale * 0.02, scale * 0.01);
-                const lineMat = new THREE.BasicMaterial ? new THREE.MeshBasicMaterial({ color: 0x00ffff }) : new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                const lineMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
                 const scanLine = new THREE.Mesh(lineGeo, lineMat);
                 scanLine.rotation.z = Math.PI / 4;
                 screenGroup.add(scanLine);
