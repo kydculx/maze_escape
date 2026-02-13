@@ -228,27 +228,29 @@
             <div class="popup-body">
                 <!-- 조작 방법 섹션 -->
                 <section class="help-section">
-                    <h3>🎮 조작 방법</h3>
+                    <h3>🕹️ OPERATION PROTOCOL</h3>
                     <div class="control-group">
                         <div class="control-column">
-                            <h4>PC (키보드)</h4>
+                            <h4>PC (KEYBOARD)</h4>
                             <ul>
                                 <li><span class="key">↑</span><span class="key">↓</span> : 전진 / 후진</li>
                                 <li><span class="key">←</span><span class="key">→</span> : 시점 회전</li>
                                 <li class="control-item"><span class="key">Space</span> <span class="icon"
-                                        id="control-icon-jump"></span> 점프</li>
+                                        id="control-icon-jump"></span> 수직 도약 (Jump)</li>
                                 <li class="control-item"><span class="key">F</span> <span class="icon"
-                                        id="control-icon-flashlight"></span> 손전등</li>
+                                        id="control-icon-flashlight"></span> 전술 조명 (Flashlight)</li>
                                 <li class="control-item"><span class="key">T</span> <span class="icon"
-                                        id="control-icon-sensor"></span> 센서</li>
+                                        id="control-icon-sensor"></span> 음파 탐지 (Sonar)</li>
                                 <li class="control-item"><span class="key">C</span> <span class="icon"
-                                        id="control-icon-c4"></span> C4 폭탄</li>
+                                        id="control-icon-c4"></span> 구조물 파괴 (C4)</li>
                                 <li class="control-item"><span class="key">Q</span> <span class="icon"
-                                        id="control-icon-teleport"></span> 순간이동</li>
+                                        id="control-icon-teleport"></span> 차원 전이 (Warp)</li>
                                 <li class="control-item"><span class="key">R</span> <span class="icon"
-                                        id="control-icon-trap"></span> 함정</li>
+                                        id="control-icon-trap"></span> 구속 함정 (Trap)</li>
                                 <li class="control-item"><span class="key">G</span> <span class="icon"
-                                        id="control-icon-mask"></span> 가면 착용</li>
+                                        id="control-icon-mask"></span> 생체 위장 (Disguise)</li>
+                                <li class="control-item"><span class="key">Esc</span> <span class="icon"
+                                        id="control-icon-menu"></span> 메뉴 토글 (Menu)</li>
                             </ul>
                         </div>
                         <div class="control-column">
@@ -266,62 +268,62 @@
 
                 <!-- 아이템 가이드 섹션 -->
                 <section class="help-section">
-                    <h3>🎒 아이템 가이드</h3>
+                    <h3>📦 SURVIVAL GEAR</h3>
                     <div class="item-grid">
                         <div class="item-card">
-                            <span class="icon" id="help-icon-flashlight">🔦</span>
+                            <span class="icon" id="help-icon-flashlight"></span>
                             <div class="info">
-                                <strong>손전등 (Flashlight)</strong>
-                                <p>어두운 곳을 밝힙니다. 끄면 자동 충전됩니다.</p>
+                                <strong>전술 조명 (Flashlight)</strong>
+                                <p>심연의 어둠을 밝히는 필수 장비입니다. 전력 소모 시 꺼지며, 비활성화 시 자동 충전됩니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon" id="help-icon-sensor">📡</span>
+                            <span class="icon" id="help-icon-sensor"></span>
                             <div class="info">
                                 <strong>음파 탐지기 (Sonar)</strong>
-                                <p>휴대용 소나로 주변 좀비를 정교하게 감지합니다. 끄면 자동 충전됩니다.</p>
+                                <p>초음파를 발사하여 주변의 위협(좀비)을 시각화합니다. 사용 시 전력이 소모됩니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon" id="help-icon-jump">➰</span>
+                            <span class="icon" id="help-icon-jump"></span>
                             <div class="info">
-                                <strong>점프 (Jump)</strong>
-                                <p>제자리에서 높이 뛰어올라 미로를 내려다봅니다.</p>
+                                <strong>도약 장치 (Jump)</strong>
+                                <p>압축 스프링을 이용해 수직으로 뛰어오릅니다. 공중에서 주변 미로 구조를 파악하세요.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon" id="help-icon-c4">🧨</span>
+                            <span class="icon" id="help-icon-c4"></span>
                             <div class="info">
-                                <strong>C4 폭탄 (C4)</strong>
-                                <p>강력한 폭발물입니다. 설치 후 2초 뒤에 벽을 파쇄하며 폭발합니다.</p>
+                                <strong>C4 폭약 (C4)</strong>
+                                <p>가로막힌 벽을 파괴하여 새로운 경로를 개척합니다. 폭발 반경 내에 있지 않도록 주의하십시오.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon" id="help-icon-teleport">🔮</span>
+                            <span class="icon" id="help-icon-teleport"></span>
                             <div class="info">
-                                <strong>순간이동 (Teleport)</strong>
-                                <p>무작위 안전한 장소로 순간이동합니다.</p>
+                                <strong>차원 전이 장치 (Warp)</strong>
+                                <p>알 수 없는 차원의 힘을 빌어 미로 내 무작위 위치로 즉시 전이합니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon" id="help-icon-trap">🕸️</span>
+                            <span class="icon" id="help-icon-trap"></span>
                             <div class="info">
-                                <strong>곰 함정 (Bear Trap)</strong>
-                                <p>바닥에 기계식 덫을 설치하여 밟은 좀비를 강력하게 결박합니다.</p>
+                                <strong>압착 함정 (Bear Trap)</strong>
+                                <p>강력한 스프링 함정을 설치합니다. 좀비를 수 초간 그 자리에 구속할 수 있습니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon" id="help-icon-map">🗺️</span>
+                            <span class="icon" id="help-icon-mask"></span>
                             <div class="info">
-                                <strong>지도 (Map)</strong>
-                                <p>미로 전체 구조를 확인합니다.</p>
+                                <strong>생체 위장 (Disguise)</strong>
+                                <p>특수한 마스크를 착용하여 좀비들이 자신을 동족으로 착각하게 만듭니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon" id="help-icon-mask">🎭</span>
+                            <span class="icon" id="help-icon-map"></span>
                             <div class="info">
-                                <strong>좀비 가면 (Mask)</strong>
-                                <p>좀비 얼굴 가루를 바른 정교한 가면입니다. 10초간 스텔스 상태가 되지만 속도가 감소합니다.</p>
+                                <strong>낡은 양피지 (Map)</strong>
+                                <p>미로의 구조를 처음부터 재구축합니다. 탈출 경로를 잃었을 때의 최후의 수단입니다.</p>
                             </div>
                         </div>
                     </div>

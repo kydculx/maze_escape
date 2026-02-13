@@ -50,7 +50,10 @@ export class UIManager {
             // Death screen elements
             deathScreen: document.getElementById('death-screen'),
             deathRestartBtn: document.getElementById('death-restart-btn'),
-            deathMainMenuBtn: document.getElementById('death-main-menu-btn')
+            deathMainMenuBtn: document.getElementById('death-main-menu-btn'),
+            // Help elements
+            helpPopup: document.getElementById('help-popup'),
+            closeHelpBtn: document.getElementById('close-help-btn')
         };
 
         this._cleanupFns = [];
@@ -417,21 +420,21 @@ export class UIManager {
             if (callbacks.onMainMenu) callbacks.onMainMenu();
         });
 
-        // ESC key support for toggling menu
+        // ESC key support for toggling menu and closing popups
         const onKeyDown = (e) => {
             if (e.key === 'Escape') {
-                const isSettingsOpen = !this.elements.settingsPopup.classList.contains('hidden');
-                const isMenuOpen = !this.elements.menuPopup.classList.contains('hidden');
-                const isHelpOpen = !document.getElementById('help-popup').classList.contains('hidden');
-
                 // If splash or main menu, let main.js handle it
                 if (document.getElementById('splash-screen').offsetParent !== null ||
                     document.getElementById('main-menu-screen').offsetParent !== null) {
                     return;
                 }
 
+                const isSettingsOpen = this.elements.settingsPopup && !this.elements.settingsPopup.classList.contains('hidden');
+                const isHelpOpen = this.elements.helpPopup && !this.elements.helpPopup.classList.contains('hidden');
+                const isMenuOpen = this.elements.menuPopup && !this.elements.menuPopup.classList.contains('hidden');
+
                 if (isHelpOpen) {
-                    document.getElementById('help-popup').classList.add('hidden');
+                    this.elements.helpPopup.classList.add('hidden');
                 } else if (isSettingsOpen) {
                     this.elements.settingsPopup.classList.add('hidden');
                 } else {

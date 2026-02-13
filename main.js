@@ -269,14 +269,6 @@ class Game {
             this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
             helpPopup.classList.add('hidden');
         });
-
-        // ESC 키로 팝업 닫기
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !helpPopup.classList.contains('hidden')) {
-                helpPopup.classList.add('hidden');
-                this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-            }
-        });
     }
 
     /**
