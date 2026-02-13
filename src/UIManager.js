@@ -447,6 +447,32 @@ export class UIManager {
             }
             if (callbacks.onMainMenu) callbacks.onMainMenu();
         });
+
+        // ESC key support for toggling menu
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                const isSettingsOpen = !this.elements.settingsPopup.classList.contains('hidden');
+                const isMenuOpen = !this.elements.menuPopup.classList.contains('hidden');
+                const isHelpOpen = !document.getElementById('help-popup').classList.contains('hidden');
+
+                // If splash or main menu, let main.js handle it
+                if (document.getElementById('splash-screen').offsetParent !== null ||
+                    document.getElementById('main-menu-screen').offsetParent !== null) {
+                    return;
+                }
+
+                if (isHelpOpen) {
+                    document.getElementById('help-popup').classList.add('hidden');
+                } else if (isSettingsOpen) {
+                    this.elements.settingsPopup.classList.add('hidden');
+                } else {
+                    this.toggleMenu();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        this._cleanupFns.push(() => window.removeEventListener('keydown', onKeyDown));
     }
 
     unbindButtons() {

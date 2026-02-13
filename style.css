@@ -814,7 +814,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 #cheat-hud {
     position: absolute;
     top: 20px;
-    right: 20px;
+    right: 80px;
+    /* Offset to not overlap with menu-btn */
     z-index: 1000;
     pointer-events: auto;
     display: none;
@@ -1237,6 +1238,10 @@ input[type="range"]::-webkit-slider-thumb {
 
 
 #menu-btn {
+    position: fixed;
+    /* Fixed position for stable UI */
+    top: 20px;
+    right: 20px;
     width: 45px;
     height: 45px;
     background: rgba(0, 0, 0, 0.6);
@@ -1250,7 +1255,9 @@ input[type="range"]::-webkit-slider-thumb {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 10px;
+    z-index: 2100;
+    /* Higher than ui-popup and others */
+    pointer-events: auto !important;
 }
 
 /* 호버 효과 제거 (모바일 최적화) */
