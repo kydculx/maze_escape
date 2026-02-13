@@ -81,9 +81,6 @@ export class StageManager {
         // 지도는 현재 스테이지 한정이므로 초기화
         player.inventory.hasMap = false;
 
-        // 망치는 소모성이지만 획득한 것은 유지 (운반 개념)
-        // 만약 '스테이지마다 리셋'을 원하시면 여기서 hammerCount = 0 처리
-
         // 손전등은 영구 보유이므로 유지 (충전량도 그대로 유지)
     }
 }

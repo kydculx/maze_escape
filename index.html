@@ -99,18 +99,17 @@
             </div>
         </div>
     </div>
-    +
-    + <!-- 사망 화면 (Death Screen) -->
-    + <div id="death-screen" class="ui-popup hidden">
-        + <div class="ui-popup-content">
-            + <h2>YOU DIE</h2>
-            + <p class="death-message">심연이 당신을 삼켰습니다...</p>
-            + <div class="menu-options">
-                + <button id="death-restart-btn" class="ui-btn">다시 도전</button>
-                + <button id="death-main-menu-btn" class="ui-btn">메인 메뉴</button>
-                + </div>
-            + </div>
-        + </div>
+
+    <!-- 사망 화면 (Death Screen) -->
+    <div id="death-screen" class="ui-popup hidden">
+        <div class="ui-popup-content">
+            <h2>YOU DIE</h2>
+            <div class="menu-options">
+                <button id="death-restart-btn" class="ui-btn">다시 도전</button>
+                <button id="death-main-menu-btn" class="ui-btn">메인 메뉴</button>
+            </div>
+        </div>
+    </div>
 
     <div id="game-hud">
         <!-- status-panel 제거 (아이콘에 통합) -->
@@ -139,8 +138,8 @@
             </div>
         </div>
 
-        <div id="use-hammer-btn" class="action-btn locked hidden" title="망치 사용">
-            <span class="icon">🔨</span>
+        <div id="use-c4-btn" class="action-btn locked hidden" title="C4 폭 가설">
+            <span class="icon">🧨</span>
             <span class="count">0</span>
         </div>
         <div id="use-trap-btn" class="action-btn locked hidden" title="함정 설치">
@@ -239,7 +238,7 @@
                                 <li><span class="key">Space</span> : 점프 🚀</li>
                                 <li><span class="key">F</span> : 손전등 🔦</li>
                                 <li><span class="key">T</span> : 센서 📡</li>
-                                <li><span class="key">E</span> : 망치 🔨</li>
+                                <li><span class="key">C</span> : C4 폭탄 🧨</li>
                                 <li><span class="key">Q</span> : 순간이동 🔮</li>
                                 <li><span class="key">R</span> : 함정 🕸️</li>
                                 <li><span class="key">G</span> : 가면 착용 🎭</li>
@@ -272,8 +271,8 @@
                         <div class="item-card">
                             <span class="icon">📡</span>
                             <div class="info">
-                                <strong>센서 (Sensor)</strong>
-                                <p>주변 좀비를 감지합니다. 끄면 자동 충전됩니다.</p>
+                                <strong>음파 탐지기 (Sonar)</strong>
+                                <p>휴대용 소나로 주변 좀비를 정교하게 감지합니다. 끄면 자동 충전됩니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
@@ -284,10 +283,10 @@
                             </div>
                         </div>
                         <div class="item-card">
-                            <span class="icon">🔨</span>
+                            <span class="icon">🧨</span>
                             <div class="info">
-                                <strong>망치 (Hammer)</strong>
-                                <p>얇은 벽을 부숴 지름길을 만듭니다.</p>
+                                <strong>C4 폭탄 (C4)</strong>
+                                <p>강력한 폭발물입니다. 설치 후 2초 뒤에 벽을 파쇄하며 폭발합니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
@@ -300,8 +299,8 @@
                         <div class="item-card">
                             <span class="icon">🕸️</span>
                             <div class="info">
-                                <strong>함정 (Trap)</strong>
-                                <p>바닥에 설치하여 밟은 좀비를 얼립니다.</p>
+                                <strong>곰 함정 (Bear Trap)</strong>
+                                <p>바닥에 기계식 덫을 설치하여 밟은 좀비를 강력하게 결박합니다.</p>
                             </div>
                         </div>
                         <div class="item-card">
@@ -314,8 +313,8 @@
                         <div class="item-card">
                             <span class="icon">🎭</span>
                             <div class="info">
-                                <strong>가면 (Mask)</strong>
-                                <p>10초간 좀비가 나를 못 보지만, 속도가 절반이 됩니다.</p>
+                                <strong>좀비 가면 (Mask)</strong>
+                                <p>좀비 얼굴 가루를 바른 정교한 가면입니다. 10초간 스텔스 상태가 되지만 속도가 감소합니다.</p>
                             </div>
                         </div>
                     </div>

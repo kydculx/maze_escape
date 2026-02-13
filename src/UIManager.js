@@ -13,12 +13,12 @@ export class UIManager {
         // UI 요소 캐싱
         this.elements = {
             stage: document.querySelector('#hud-stage .count'),
-            hammer: document.getElementById('use-hammer-btn'),
             jump: document.getElementById('use-jump-btn'),
             flashlight: document.getElementById('use-flashlight-btn'),
             minimap: document.getElementById('minimap-container'),
             map: document.getElementById('random-map-btn'),
             trap: document.getElementById('use-trap-btn'),
+            c4: document.getElementById('use-c4-btn'),
             teleport: document.getElementById('use-teleport-btn'),
             disguise: document.getElementById('use-disguise-btn'),
             sensor: document.getElementById('use-sensor-btn'), // Added sensor element
@@ -281,7 +281,7 @@ export class UIManager {
 
         // 아이템 타입과 엘리먼트 매핑
         const typeToElement = {
-            'HAMMER': this.elements.hammer,
+            'C4': this.elements.c4,
             'JUMP': this.elements.jump,
             'FLASHLIGHT': this.elements.flashlight,
             'TRAP': this.elements.trap,
@@ -319,12 +319,6 @@ export class UIManager {
         }
 
         // 3. 각 아이템 세부 상태 업데이트 (기존 로직)
-        // 망치
-        if (this.elements.hammer) {
-            const count = this.player.inventory.hammerCount;
-            this.elements.hammer.querySelector('.count').textContent = count.toString().padStart(2, '0');
-            this.elements.hammer.classList.toggle('locked', count <= 0);
-        }
 
         // 점프
         if (this.elements.jump) {
@@ -378,6 +372,14 @@ export class UIManager {
             this.elements.sensor.classList.toggle('locked', this.player.sensorTimer <= 0);
         }
 
+        // C4 폭탄
+        if (this.elements.c4) {
+            const count = this.player.inventory.c4Count;
+            const countEl = this.elements.c4.querySelector('.count');
+            if (countEl) countEl.textContent = count.toString().padStart(2, '0');
+            this.elements.c4.classList.toggle('locked', count <= 0);
+        }
+
         // 미니맵 표시 여부 (기본 활성)
         if (this.elements.minimap) {
             this.elements.minimap.style.display = 'flex';
@@ -395,7 +397,6 @@ export class UIManager {
         // Clear previous bindings if any
         this.unbindButtons();
 
-        this._setupButton(this.elements.hammer, callbacks.onHammer);
         this._setupButton(this.elements.jump, callbacks.onJump);
         this._setupButton(this.elements.flashlight, callbacks.onFlashlight);
         this._setupButton(this.elements.map, callbacks.onMap);
@@ -403,6 +404,7 @@ export class UIManager {
         this._setupButton(this.elements.teleport, callbacks.onTeleport);
         this._setupButton(this.elements.disguise, callbacks.onDisguise);
         this._setupButton(this.elements.sensor, callbacks.onSensor); // Added sensor binding
+        this._setupButton(this.elements.c4, callbacks.onC4);
 
         const cheatBtn = document.getElementById('cheat-btn');
         this._setupButton(cheatBtn, callbacks.onCheat);
@@ -655,5 +657,16 @@ export class UIManager {
         if (this.elements.healthContainer) {
             this.elements.healthContainer.classList.toggle('hidden', !visible);
         }
+    }
+
+    /**
+     * C4 폭탄 사용 (내부 처리)
+     */
+    _useC4() {
+        if (this.elements.c4 && this.elements.c4.classList.contains('locked')) return;
+
+        // PlayScene의 델리게이트를 통해 처리하도록 이벤트를 발생시켜야 함
+        // 현재는 bindButtons에서 callbacks.onC4로 직접 연결되어 있음
+        // 만약 추가적인 UI 처리가 필요하다면 여기서 수행
     }
 }

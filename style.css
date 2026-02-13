@@ -1187,8 +1187,11 @@ input[type="range"]::-webkit-slider-thumb {
     background: transparent;
 }
 
-#use-hammer-btn {
+
+#use-c4-btn {
     background: transparent;
+    border-color: rgba(255, 0, 0, 0.5);
+    /* Red for bomb */
 }
 
 #use-trap-btn {
@@ -1753,8 +1756,21 @@ input[type="range"]::-webkit-slider-thumb {
 /* --- Death Screen --- */
 #death-screen {
     z-index: 5000;
-    background: radial-gradient(circle, rgba(50, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.95) 100%);
+    background: radial-gradient(circle, #2a0000 0%, #000000 100%);
     backdrop-filter: blur(10px);
+    animation: death-fade-in 1.5s ease-out forwards;
+}
+
+@keyframes death-fade-in {
+    from {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    to {
+        opacity: 1;
+        visibility: visible;
+    }
 }
 
 #death-screen .ui-popup-content {
@@ -1764,17 +1780,17 @@ input[type="range"]::-webkit-slider-thumb {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 40px;
+    gap: 20px;
 }
 
 #death-screen h2 {
-    font-family: 'Nosifer', cursive;
-    font-size: 6rem;
+    font-family: 'Creepster', cursive;
+    font-size: 5rem;
     color: #ff0000;
-    text-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 5px 5px 0px #220000;
+    text-shadow: 0 0 10px #8b0000, 0 0 20px #500000, 2px 2px 0px #000;
     margin: 0;
-    letter-spacing: 10px;
-    animation: death-shake 0.2s infinite;
+    letter-spacing: 5px;
+    animation: death-shake 0.2s infinite, horror-flicker 3s infinite;
 }
 
 @keyframes death-shake {
@@ -1832,8 +1848,9 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 #death-screen .ui-btn {
-    min-width: 250px;
-    font-size: 1.8rem;
+    min-width: 150px;
+    font-size: 1rem;
+    height: 45px;
     background: rgba(40, 0, 0, 0.6);
     border-color: #ff0000;
 }

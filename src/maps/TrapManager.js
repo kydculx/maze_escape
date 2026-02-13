@@ -18,25 +18,93 @@ export class TrapManager {
      * @param {THREE.Vector3} position 
      */
     placeTrap(position) {
-        // 시각적 모델 생성 (빨간색납작한 원통)
-        const geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.05, 16);
-        const material = new THREE.MeshStandardMaterial({
-            color: 0xff0000,
-            emissive: 0x550000,
-            roughness: 0.5
+        // 초정밀 곰 덫 (Bear Trap) 모델 생성
+        const trapGroup = new THREE.Group();
+        const scale = 0.25; // 설치 시 크기 조절
+
+        // 1. 원형 프레임
+        const rimGeo = new THREE.TorusGeometry(scale * 1.1, scale * 0.05, 8, 24);
+        const metalMat = new THREE.MeshStandardMaterial({
+            color: 0x444444,
+            metalness: 0.9,
+            roughness: 0.2
         });
-        const mesh = new THREE.Mesh(geometry, material);
+        const rim = new THREE.Mesh(rimGeo, metalMat);
+        rim.rotation.x = Math.PI / 2;
+        trapGroup.add(rim);
 
-        mesh.position.copy(position);
-        mesh.position.y = 0.025; // 바닥보다 살짝 위
+        // 2. 톱니 이빨 (Jaws)
+        const jawGeo = new THREE.TorusGeometry(scale * 1.05, scale * 0.06, 8, 24, Math.PI);
+        const jawMat = new THREE.MeshStandardMaterial({
+            color: 0x777777,
+            metalness: 1.0,
+            roughness: 0.1
+        });
 
-        // 그림자 설정
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+        const leftJaw = new THREE.Mesh(jawGeo, jawMat);
+        leftJaw.rotation.x = -Math.PI / 4;
+        leftJaw.rotation.z = Math.PI / 2;
+        trapGroup.add(leftJaw);
 
-        this.trapGroup.add(mesh);
+        const rightJaw = new THREE.Mesh(jawGeo, jawMat);
+        rightJaw.rotation.x = Math.PI / 4;
+        rightJaw.rotation.z = -Math.PI / 2;
+        trapGroup.add(rightJaw);
+
+        // 톱니들
+        const toothGeo = new THREE.ConeGeometry(scale * 0.05, scale * 0.2, 4);
+        const toothMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 1.0 });
+
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 7) * Math.PI;
+            const tL = new THREE.Mesh(toothGeo, toothMat);
+            tL.position.set(Math.cos(angle) * scale * 1.05, Math.sin(angle) * scale * 1.05, 0);
+            tL.rotation.z = angle - Math.PI / 2;
+            leftJaw.add(tL);
+
+            const tR = new THREE.Mesh(toothGeo, toothMat);
+            tR.position.set(Math.cos(angle) * scale * 1.05, Math.sin(angle) * scale * 1.05, 0);
+            tR.rotation.z = angle - Math.PI / 2;
+            rightJaw.add(tR);
+        }
+
+        // 3. 중앙 압력판 (트리거)
+        const plateGeo = new THREE.CylinderGeometry(scale * 0.5, scale * 0.5, scale * 0.05, 16);
+        const plateMat = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            emissive: 0x220000,
+            roughness: 0.8
+        });
+        const plate = new THREE.Mesh(plateGeo, plateMat);
+        trapGroup.add(plate);
+
+        // 4. 스프링
+        const springGeo = new THREE.CylinderGeometry(scale * 0.12, scale * 0.12, scale * 0.4, 8);
+        const springMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5 });
+        const spring1 = new THREE.Mesh(springGeo, springMat);
+        spring1.rotation.z = Math.PI / 2;
+        spring1.position.set(scale * 1.15, 0, 0);
+        trapGroup.add(spring1);
+
+        const spring2 = new THREE.Mesh(springGeo, springMat);
+        spring2.rotation.z = Math.PI / 2;
+        spring2.position.set(-scale * 1.15, 0, 0);
+        trapGroup.add(spring2);
+
+        trapGroup.position.copy(position);
+        trapGroup.position.y = 0.01; // 바닥에 아주 가깝게
+
+        // 모든 자식 메쉬에 그림자 설정
+        trapGroup.traverse(child => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        this.trapGroup.add(trapGroup);
         this.traps.push({
-            mesh: mesh,
+            mesh: trapGroup,
             active: true
         });
 

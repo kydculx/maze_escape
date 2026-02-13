@@ -57,7 +57,7 @@ export class SwitchManager {
     _createSwitchMesh(x, gridY, z, rotationY, gx, gy, side) {
         const swCfg = CONFIG.MAZE.SWITCH;
         const group = new THREE.Group();
-        group.position.set(x, CONFIG.MAZE.WALL_HEIGHT / 3, z);
+        group.position.set(x, CONFIG.MAZE.WALL_HEIGHT / 4.5, z);
         group.rotation.y = rotationY;
 
         // 1. 금속 베이스 프레임 (검은색/어두운 회색)

@@ -18,13 +18,15 @@ const zombieAttackSfx = new URL('./assets/audio/eff_zombie_attack.mp3', import.m
 const wolfPatrolSfx = new URL('./assets/audio/eff_wolf_patrol.mp3', import.meta.url).href;
 const wolfTrackSfx = new URL('./assets/audio/eff_wolf_track.mp3', import.meta.url).href;
 const wolfAttackSfx = new URL('./assets/audio/eff_wolf_attack.mp3', import.meta.url).href;
+const damageSfxUrl = new URL('./assets/audio/eff_damage.mp3', import.meta.url).href;
 
 const flashlightSwitchSfxUrl = new URL('./assets/audio/eff_flashlight_switch.mp3', import.meta.url).href;
 const sensorToggleSfxUrl = new URL('./assets/audio/eff_sensor_switch.mp3', import.meta.url).href;
 const teleportSfxUrl = new URL('./assets/audio/eff_teleport.mp3', import.meta.url).href;
-const hammerSfxUrl = new URL('./assets/audio/eff_hammer_smash.mp3', import.meta.url).href;
 const trapSfxUrl = new URL('./assets/audio/eff_trap.mp3', import.meta.url).href;
 const wallCollapseSfxUrl = new URL('./assets/audio/eff_wall_collapse.mp3', import.meta.url).href;
+const bombTickSfxUrl = new URL('./assets/audio/eff_click.mp3', import.meta.url).href; // Ticking sound reuse click or add new
+const bombExplosionSfxUrl = new URL('./assets/audio/eff_bomb.mp3', import.meta.url).href;
 
 // [Textures]
 const wallBrickUrl = new URL('./assets/textures/wall_brick.png', import.meta.url).href;
@@ -67,6 +69,7 @@ export const ASSETS = {
             CLICK: clickSfxUrl,
             FOOTSTEP: footstepSfxUrl,
             JUMP: jumpSfxUrl,
+            DAMAGE: damageSfxUrl,
             ITEM_PICKUP: itemPickupSfxUrl,
             ZOMBIE: {
                 PATROL: zombiePatrolSfx,
@@ -82,9 +85,10 @@ export const ASSETS = {
                 FLASHLIGHT: flashlightSwitchSfxUrl,
                 SENSOR: sensorToggleSfxUrl,
                 TELEPORT: teleportSfxUrl,
-                HAMMER: hammerSfxUrl,
                 TRAP: trapSfxUrl,
-                WALL_COLLAPSE: wallCollapseSfxUrl
+                WALL_COLLAPSE: wallCollapseSfxUrl,
+                BOMB_TICK: bombTickSfxUrl,
+                EXPLOSION: bombExplosionSfxUrl
             }
         }
     },

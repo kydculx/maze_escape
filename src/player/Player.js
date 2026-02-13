@@ -11,6 +11,10 @@ export class Player {
         this.mazeGen = mazeGen;
         this.sound = soundManager;
 
+        // 중앙 관리를 위한 콜백 (PlayScene에서 할당)
+        this.onHealthChanged = null;
+        this.onDeath = null;
+
         // 플레이어 그룹 (카메라와 조명의 부모)
         this.group = new THREE.Group();
         this.scene.add(this.group);
@@ -41,11 +45,11 @@ export class Player {
             hasMap: false,
             hasFlashlight: false,
             hasSensor: false,
-            hammerCount: 0,
             jumpCount: 0,
             trapCount: 0,
             teleportCount: 0,
             disguiseCount: 0,
+            c4Count: 0,
             itemOrder: [] // 아이템 획득 순서 추적
         };
 
@@ -67,6 +71,10 @@ export class Player {
         this.health = CONFIG.PLAYER.MAX_HEALTH;
         this.maxHealth = CONFIG.PLAYER.MAX_HEALTH;
         this.damageCooldown = 0; // 대미지 무적 시간 타이머
+
+        // 실시간 구역 상태 (안전 지대, 시작점)
+        this.isInSafeZone = false;
+        this.isInStartPoint = false;
 
         this.flashlight = this._initFlashlight();
     }
@@ -313,10 +321,12 @@ export class Player {
             this.damageCooldown -= deltaTime;
         }
 
-        // 5.7 체력 회복 (Regeneration)
         const regenCfg = CONFIG.PLAYER;
         if (isIdle && this.idleTimer >= regenCfg.REGEN_DELAY && this.health < this.maxHealth) {
-            this.health = Math.min(this.health + regenCfg.REGEN_RATE * deltaTime, this.maxHealth);
+            // 안전 지대에 있으면 회복률 증가
+            const multiplier = this.isInSafeZone ? (CONFIG.MAZE.SAFE_ZONE.REGEN_MULTIPLIER || 5.0) : 1.0;
+            this.health = Math.min(this.health + (regenCfg.REGEN_RATE * multiplier) * deltaTime, this.maxHealth);
+            if (this.onHealthChanged) this.onHealthChanged(this.health);
         }
     }
 
@@ -332,6 +342,11 @@ export class Player {
         this.damageCooldown = CONFIG.PLAYER.DAMAGE_COOLDOWN;
         this.idleTimer = 0; // 공격 당하면 대기 타이머 초기화 (체력 회복 지연)
 
+        // 콜백 트리거
+        if (this.onHealthChanged) this.onHealthChanged(this.health);
+        if (this.health <= 0 && this.onDeath) this.onDeath();
+
+        if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.DAMAGE);
         console.log(`Player took ${amount} damage. Health: ${this.health}`);
         return this.health <= 0;
     }
@@ -391,23 +406,6 @@ export class Player {
         if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.JUMP);
     }
 
-    /**
-     * 망치 사용: 정면의 방향(dx, dy)을 콜백으로 전달
-     */
-    useHammer(callback) {
-        if (this.inventory.hammerCount <= 0 || this.isMoving || this.isJumping) return;
-
-        // 현재 회전(Y)을 기준으로 정면 그리드 방향 계산
-        // -z 가 정면 (y 회전 0일 때)
-        // Three.js 좌표계: sin/cos을 통해 90도 단위의 그리드 방향 dx, dy 추출
-        const dx = Math.round(-Math.sin(this.group.rotation.y));
-        const dy = Math.round(-Math.cos(this.group.rotation.y));
-
-        if (callback) {
-            callback(dx, dy);
-            if (this.inventory.hammerCount <= 0) this._updateItemOrder('HAMMER', false);
-        }
-    }
 
     /**
      * 함정 설치 시도
@@ -424,6 +422,27 @@ export class Player {
         if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.TRAP);
 
         return this.group.position.clone();
+    }
+
+    /**
+     * C4 폭탄 설치 시도
+     */
+    useC4(callback) {
+        if (this.inventory.c4Count <= 0 || this.isMoving || this.isJumping) return false;
+
+        // 정면 그리드 방향 계산
+        const dx = Math.round(-Math.sin(this.group.rotation.y));
+        const dy = Math.round(-Math.cos(this.group.rotation.y));
+
+        if (callback) {
+            const success = callback(dx, dy);
+            if (success) {
+                this.inventory.c4Count--;
+                if (this.inventory.c4Count <= 0) this._updateItemOrder('C4', false);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -516,10 +535,6 @@ export class Player {
                 // 지도는 이제 소모성 조각 방식이므로 inventory 보관 대신 즉시 효과 발동
                 // PlayScene에서 item.metadata.regionIndex를 사용하여 처리하도록 유도
                 break;
-            case 'HAMMER':
-                this.inventory.hammerCount++;
-                console.log("Hammer acquired!");
-                break;
             case 'TRAP':
                 this.inventory.trapCount++;
                 console.log("Trap acquired!");
@@ -541,6 +556,10 @@ export class Player {
             case 'ZOMBIE_DISGUISE':
                 this.inventory.disguiseCount++;
                 console.log("Zombie disguise acquired!");
+                break;
+            case 'C4':
+                this.inventory.c4Count++;
+                console.log("C4 Bomb acquired!");
                 break;
         }
 
@@ -611,6 +630,13 @@ export class Player {
 
     get isDisguised() {
         return this.disguiseTimer > 0;
+    }
+
+    /**
+     * 몬스터가 인식할 수 없는 상태인지 여부
+     */
+    get isStealthed() {
+        return this.isDisguised || this.isInSafeZone || this.isInStartPoint;
     }
 
     checkCollision(x, z) {

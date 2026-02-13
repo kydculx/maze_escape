@@ -5,6 +5,7 @@ export const STATES = {
     SPLASH: 'SPLASH',
     MAIN_MENU: 'MAIN_MENU',
     PLAYING: 'PLAYING',
+    DYING: 'DYING',
     GAME_OVER: 'GAME_OVER'
 };
 
@@ -43,7 +44,7 @@ export class GameState {
      * 게임 일시 정지
      */
     pauseGame() {
-        if (!this.isPaused && (this.current === STATES.PLAYING || this.current === STATES.GAME_OVER)) {
+        if (!this.isPaused && (this.current === STATES.PLAYING || this.current === STATES.DYING || this.current === STATES.GAME_OVER)) {
             this.isPaused = true;
             console.log("Game Paused");
         }

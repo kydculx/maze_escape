@@ -145,6 +145,20 @@ export class MazeView {
             this.markers.add(exitMarker);
         }
 
+        // 안전 지대 마커 추가
+        if (mazeGen.safeZones && mazeGen.safeZones.length > 0) {
+            const safeColor = config.SAFE_ZONE.COLOR;
+            mazeGen.safeZones.forEach(sz => {
+                const safeMarker = this.createMarkerMesh(safeColor);
+                safeMarker.position.set(
+                    offsetX + (sz.x * thickness) + thickness / 2,
+                    0.03,
+                    offsetZ + (sz.y * thickness) + thickness / 2
+                );
+                this.markers.add(safeMarker);
+            });
+        }
+
         this.scene.add(this.markers);
     }
 
@@ -296,6 +310,55 @@ export class MazeView {
             }
 
             requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
+    }
+
+    /**
+     * C4용 폭발 애니메이션 (강력한 진동 후 즉시 소멸)
+     */
+    animateWallExplosion(gridX, gridY, duration, onComplete = null) {
+        if (!this.mazeMesh) return;
+
+        let targetWall = null;
+        this.mazeMesh.traverse(child => {
+            if (child.name === 'maze-wall' && child.userData.gridX === gridX && child.userData.gridY === gridY) {
+                targetWall = child;
+            }
+        });
+
+        if (!targetWall) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        const startX = targetWall.position.x;
+        const startZ = targetWall.position.z;
+        const startTime = performance.now();
+
+        const animate = () => {
+            const now = performance.now();
+            const elapsed = (now - startTime) / 1000;
+            const progress = Math.min(elapsed / duration, 1);
+
+            if (progress < 1) {
+                // 초강력 고주파 진동 (폭발 직전의 에너지 응축 표현)
+                const intensity = 0.08 * (1 + progress * 2);
+                const freq = 100;
+                targetWall.position.x = startX + Math.sin(now * freq) * intensity;
+                targetWall.position.z = startZ + Math.cos(now * freq * 1.1) * intensity;
+
+                // 점점 투명해지거나 작아지는 효과 (Optional, scale로 처리)
+                const s = 1 - (progress * 0.2);
+                targetWall.scale.set(s, s, s);
+
+                requestAnimationFrame(animate);
+            } else {
+                // 종료 시점: 벽을 화면 밖으로 치우거나 즉시 보이지 않게 처리
+                targetWall.visible = false;
+                if (onComplete) onComplete();
+            }
         };
 
         requestAnimationFrame(animate);

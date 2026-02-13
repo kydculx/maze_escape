@@ -121,6 +121,14 @@ export const MAP_CONFIG = {
         SPAWN_CHANCE: 0.5,          // 유효한 위치에 스위치가 생성될 확률 (0.0~1.0)
         MIN_WALL_SEGMENT: 3,      // 스위치 배치를 위한 최소 외길(갈래길 없는 통로) 길이
         ZOMBIE_SPAWN_CHANCE: 0.5  // 스위치 작동 시 벽 뒤에서 좀비가 나타날 확률
+    },
+    // 안전 지대 설정 (Safe Zone)
+    SAFE_ZONE: {
+        SPAWN_DIST_FROM_START: 5, // 시작점으로부터의 최소 거리 (타일 단위)
+        COUNT_PER_MAZE: 2,        // 미로당 안전 지대 개수 (기본)
+        REGEN_MULTIPLIER: 5.0,    // 안전 지대 내 체력 회복 배율 (기본 회복량의 5배)
+        COLOR: 0x00ff88,          // 안전 지대 바닥 표시 색상 (청록색)
+        GLOW_INTENSITY: 0.8       // 안전 지대 발광 강도
     }
 };
 

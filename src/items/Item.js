@@ -205,87 +205,91 @@ export class Item {
 
                 return mapGroup;
             }
-            case 'HAMMER': {
-                // 워해머 스타일
-                const hamGroup = new THREE.Group();
+            case 'TRAP': {
+                // 초정밀 곰 덫 (Bear Trap) 모델
+                const trapGroup = new THREE.Group();
 
-                // 1. 손잡이 (가죽 감긴 느낌)
-                const handleGeo = new THREE.CylinderGeometry(scale * 0.15, scale * 0.2, scale * 2.5, 8);
-                const handleMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.8 });
-                const handle = new THREE.Mesh(handleGeo, handleMat);
-                handle.castShadow = true;
-                hamGroup.add(handle);
-
-                // 손잡이 장식 (링)
-                const gripGeo = new THREE.TorusGeometry(scale * 0.18, scale * 0.05, 4, 8);
-                const gripMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-                const grip1 = new THREE.Mesh(gripGeo, gripMat); grip1.position.y = -scale * 0.8; hamGroup.add(grip1);
-                const grip2 = new THREE.Mesh(gripGeo, gripMat); grip2.position.y = -scale * 1.0; hamGroup.add(grip2);
-
-                // 2. 헤드 (육중한 금속)
-                const headGroup = new THREE.Group();
-                headGroup.position.y = scale * 1.0;
-
-                // 중앙 블록
-                const coreGeo = new THREE.BoxGeometry(scale * 0.6, scale * 0.8, scale * 0.6);
+                // 1. 원형 프레임 (금속 고리 2개)
+                const rimGeo = new THREE.TorusGeometry(scale * 1.1, scale * 0.05, 8, 24);
                 const metalMat = new THREE.MeshStandardMaterial({
-                    color: 0x888888,
+                    color: 0x444444,
                     metalness: 0.9,
                     roughness: 0.2
                 });
-                const core = new THREE.Mesh(coreGeo, metalMat);
-                core.castShadow = true;
-                headGroup.add(core);
 
-                // 타격부 (양쪽)
-                const faceGeo = new THREE.CylinderGeometry(scale * 0.5, scale * 0.5, scale * 0.4, 8);
-                faceGeo.rotateZ(Math.PI / 2);
+                const rim1 = new THREE.Mesh(rimGeo, metalMat);
+                rim1.rotation.x = Math.PI / 2;
+                trapGroup.add(rim1);
 
-                const leftFace = new THREE.Mesh(faceGeo, metalMat);
-                leftFace.position.x = -scale * 0.5;
-                headGroup.add(leftFace);
+                // 2. 톱니 이빨 (Jaws) - 반쯤 열린 상태
+                const jawGeo = new THREE.TorusGeometry(scale * 1.05, scale * 0.06, 8, 24, Math.PI);
+                const jawMat = new THREE.MeshStandardMaterial({
+                    color: 0x777777,
+                    metalness: 1.0,
+                    roughness: 0.1
+                });
 
-                const rightFace = new THREE.Mesh(faceGeo, metalMat);
-                rightFace.position.x = scale * 0.5;
-                headGroup.add(rightFace);
-
-                hamGroup.add(headGroup);
-
-                // 3. 배치 각도 수정
-                hamGroup.rotation.z = -Math.PI / 3;
-                return hamGroup;
-            }
-            case 'TRAP': {
-                // 곰 덫 (Bear Trap) 스타일
-                const trapGroup = new THREE.Group();
-
-                // 1. 베이스 판
-                const baseGeo = new THREE.CylinderGeometry(scale * 1.2, scale * 1.2, scale * 0.1, 16);
-                const metalMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8, roughness: 0.5 });
-                const base = new THREE.Mesh(baseGeo, metalMat);
-                base.castShadow = true;
-                trapGroup.add(base);
-
-                // 2. 이빨 (Jaws) - 반쯤 열린 상태
-                const jawGeo = new THREE.TorusGeometry(scale * 1.0, scale * 0.1, 8, 16, Math.PI);
-                const toothMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.9 });
-
-                const leftJaw = new THREE.Mesh(jawGeo, toothMat);
-                leftJaw.rotation.x = -Math.PI / 4; // 약간 위로
+                const leftJaw = new THREE.Mesh(jawGeo, jawMat);
+                leftJaw.rotation.x = -Math.PI / 4;
                 leftJaw.rotation.z = Math.PI / 2;
                 trapGroup.add(leftJaw);
 
-                const rightJaw = new THREE.Mesh(jawGeo, toothMat);
-                rightJaw.rotation.x = Math.PI / 4; // 약간 위로
+                const rightJaw = new THREE.Mesh(jawGeo, jawMat);
+                rightJaw.rotation.x = Math.PI / 4;
                 rightJaw.rotation.z = -Math.PI / 2;
                 trapGroup.add(rightJaw);
 
+                // 톱니 이빨들 (작은 원뿔형)
+                const toothGeo = new THREE.ConeGeometry(scale * 0.05, scale * 0.2, 4);
+                const toothMat = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 1.0 });
+
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 7) * Math.PI;
+                    // 왼쪽 이빨
+                    const tL = new THREE.Mesh(toothGeo, toothMat);
+                    tL.position.set(
+                        Math.cos(angle) * scale * 1.05,
+                        Math.sin(angle) * scale * 1.05,
+                        0
+                    );
+                    tL.rotation.z = angle - Math.PI / 2;
+                    leftJaw.add(tL);
+
+                    // 오른쪽 이빨
+                    const tR = new THREE.Mesh(toothGeo, toothMat);
+                    tR.position.set(
+                        Math.cos(angle) * scale * 1.05,
+                        Math.sin(angle) * scale * 1.05,
+                        0
+                    );
+                    tR.rotation.z = angle - Math.PI / 2;
+                    rightJaw.add(tR);
+                }
+
                 // 3. 중앙 압력판 (트리거)
-                const triggerGeo = new THREE.CylinderGeometry(scale * 0.4, scale * 0.4, scale * 0.15, 8);
-                const triggerMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x330000 });
-                const trigger = new THREE.Mesh(triggerGeo, triggerMat);
-                trigger.position.y = scale * 0.05;
-                trapGroup.add(trigger);
+                const plateGeo = new THREE.CylinderGeometry(scale * 0.5, scale * 0.5, scale * 0.05, 16);
+                const plateMat = new THREE.MeshStandardMaterial({
+                    color: 0xff0000,
+                    emissive: 0x220000,
+                    roughness: 0.8
+                });
+                const plate = new THREE.Mesh(plateGeo, plateMat);
+                plate.position.y = 0;
+                trapGroup.add(plate);
+
+                // 4. 스프링 및 기계 장치 (양옆)
+                const springGeo = new THREE.CylinderGeometry(scale * 0.12, scale * 0.12, scale * 0.4, 8);
+                const springMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5 });
+
+                const spring1 = new THREE.Mesh(springGeo, springMat);
+                spring1.rotation.z = Math.PI / 2;
+                spring1.position.set(scale * 1.15, 0, 0);
+                trapGroup.add(spring1);
+
+                const spring2 = new THREE.Mesh(springGeo, springMat);
+                spring2.rotation.z = Math.PI / 2;
+                spring2.position.set(-scale * 1.15, 0, 0);
+                trapGroup.add(spring2);
 
                 return trapGroup;
             }
@@ -324,97 +328,203 @@ export class Item {
                 return portalGroup;
             }
             case 'SENSOR': {
-                // 레이더 장비
+                // 휴대용 고성능 음파 탐지기 (Portable Handheld Sonar) 모델 📡
                 const sensorGroup = new THREE.Group();
 
-                // 1. 삼각대 다리
-                const legGeo = new THREE.CylinderGeometry(scale * 0.05, scale * 0.05, scale * 1.5, 8);
-                const legMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-
-                for (let i = 0; i < 3; i++) {
-                    const leg = new THREE.Mesh(legGeo, legMat);
-                    const angle = (i / 3) * Math.PI * 2;
-                    leg.position.y = scale * 0.5;
-                    leg.rotation.z = 0.5; // 벌어짐
-                    leg.rotation.y = angle;
-                    // 위치 보정
-                    leg.position.x = Math.cos(angle) * scale * 0.5;
-                    leg.position.z = Math.sin(angle) * scale * 0.5;
-                    sensorGroup.add(leg);
-                }
-
-                // 2. 본체 박스
-                const bodyGeo = new THREE.BoxGeometry(scale * 0.8, scale * 0.5, scale * 0.8);
-                const bodyMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+                // 1. 단말기 본체 (세로형 직사각형 몸체)
+                const bodyGeo = new THREE.BoxGeometry(scale * 1.2, scale * 1.8, scale * 0.4);
+                const bodyMat = new THREE.MeshStandardMaterial({
+                    color: 0x333333,
+                    metalness: 0.7,
+                    roughness: 0.3
+                });
                 const body = new THREE.Mesh(bodyGeo, bodyMat);
                 body.position.y = scale * 1.2;
                 sensorGroup.add(body);
 
-                // 3. 회전하는 접시 (안테나)
-                const dishGroup = new THREE.Group();
-                dishGroup.position.y = scale * 1.5;
+                // 2. 손잡이 (Handle/Grip)
+                const handleGeo = new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 0.8, 12);
+                const handleMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1.0 });
+                const handle = new THREE.Mesh(handleGeo, handleMat);
+                handle.position.y = scale * 0.4;
+                sensorGroup.add(handle);
 
-                const dishGeo = new THREE.ConeGeometry(scale * 0.8, scale * 0.4, 16, 1, true);
-                const dishMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, side: THREE.DoubleSide });
-                const dish = new THREE.Mesh(dishGeo, dishMat);
-                dish.rotation.x = -Math.PI / 2; // 앞을 보게
-                dishGroup.add(dish);
+                // 3. 전면부 원형 소나 화면 (Radar Screen)
+                const screenGroup = new THREE.Group();
+                screenGroup.position.set(0, scale * 1.4, scale * 0.21); // 본체 전면에 부착
 
-                // 안테나 침
-                const pinGeo = new THREE.CylinderGeometry(scale * 0.05, scale * 0.05, scale * 1.0, 8);
-                const pinMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-                const pin = new THREE.Mesh(pinGeo, pinMat);
-                pin.rotation.x = -Math.PI / 2;
-                pin.position.z = scale * 0.5;
-                dishGroup.add(pin);
+                const screenRimGeo = new THREE.TorusGeometry(scale * 0.45, scale * 0.05, 8, 24);
+                const screenRimMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9 });
+                const screenRim = new THREE.Mesh(screenRimGeo, screenRimMat);
+                screenGroup.add(screenRim);
 
-                sensorGroup.add(dishGroup);
+                const screenGeo = new THREE.CircleGeometry(scale * 0.45, 24);
+                const screenMat = new THREE.MeshStandardMaterial({
+                    color: 0x00ffff,
+                    emissive: 0x004444,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const screen = new THREE.Mesh(screenGeo, screenMat);
+                screenGroup.add(screen);
+
+                // 화면 위 스캔 라인 (Glowing Line)
+                const lineGeo = new THREE.BoxGeometry(scale * 0.85, scale * 0.02, scale * 0.01);
+                const lineMat = new THREE.BasicMaterial ? new THREE.MeshBasicMaterial({ color: 0x00ffff }) : new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                const scanLine = new THREE.Mesh(lineGeo, lineMat);
+                scanLine.rotation.z = Math.PI / 4;
+                screenGroup.add(scanLine);
+
+                sensorGroup.add(screenGroup);
+
+                // 4. 상단 수신 헤드 (Acoustic Head)
+                const headGeo = new THREE.SphereGeometry(scale * 0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+                const headMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8 });
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.y = scale * 2.1;
+                sensorGroup.add(head);
+
+                // 5. 측면 상태 LED 및 버튼
+                const ledGeo = new THREE.SphereGeometry(scale * 0.05, 8, 8);
+                const ledMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                for (let i = 0; i < 3; i++) {
+                    const led = new THREE.Mesh(ledGeo, ledMat);
+                    led.position.set(scale * 0.61, scale * (1.6 - i * 0.3), 0);
+                    sensorGroup.add(led);
+                }
+
                 return sensorGroup;
             }
             case 'ZOMBIE_DISGUISE': {
-                // 가면 (Mask) - 곡면 형태 🎭
+                // 초정밀 좀비 가면 (Zombie Disguise Mask) 모델 🧟
                 const maskGroup = new THREE.Group();
 
-                // 1. 가면 본체 (원통의 일부를 잘라서 사용)
-                // CylinderGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded, thetaStart, thetaLength)
-                const maskGeo = new THREE.CylinderGeometry(
-                    scale * 1.0, scale * 0.9, scale * 1.5,
+                // 1. 가면 본체 (더 입체적인 곡면 형태)
+                const maskBodyGeo = new THREE.CylinderGeometry(
+                    scale * 1.0, scale * 0.8, scale * 1.6,
                     32, 1, true,
-                    0, Math.PI // 반원 (180도)
+                    0, Math.PI
                 );
                 const maskMat = new THREE.MeshStandardMaterial({
-                    color: 0x55aa55, // 썩은 녹색
-                    roughness: 0.6,
+                    color: 0x667755, // 창백한 녹가루색
+                    roughness: 0.8,
+                    metalness: 0.1,
                     side: THREE.DoubleSide
                 });
-                const mask = new THREE.Mesh(maskGeo, maskMat);
-                mask.rotation.y = -Math.PI / 2; // 볼록한 부분이 앞으로 오게
+                const mask = new THREE.Mesh(maskBodyGeo, maskMat);
+                mask.rotation.y = -Math.PI / 2;
                 maskGroup.add(mask);
 
-                // 2. 눈구멍 (검은색 원)
-                const eyeGeo = new THREE.CircleGeometry(scale * 0.25, 16);
-                const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                // 2. 눈구멍 & 그림자 (깊이감 부여)
+                const eyeSocketGeo = new THREE.SphereGeometry(scale * 0.35, 16, 8);
+                const socketMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1.0 });
 
-                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-                leftEye.position.set(-scale * 0.4, scale * 0.2, scale * 0.95);
-                // 곡면에 맞춰 약간 회전 (선택 사항이나 평면이라도 괜찮음)
-                leftEye.rotation.y = -0.3;
-                maskGroup.add(leftEye);
+                const leftSocket = new THREE.Mesh(eyeSocketGeo, socketMat);
+                leftSocket.scale.set(1, 0.8, 0.4);
+                leftSocket.position.set(-scale * 0.45, scale * 0.25, scale * 0.7);
+                maskGroup.add(leftSocket);
 
-                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-                rightEye.position.set(scale * 0.4, scale * 0.2, scale * 0.95);
-                rightEye.rotation.y = 0.3;
-                maskGroup.add(rightEye);
+                const rightSocket = new THREE.Mesh(eyeSocketGeo, socketMat);
+                rightSocket.scale.set(1, 0.8, 0.4);
+                rightSocket.position.set(scale * 0.45, scale * 0.25, scale * 0.7);
+                maskGroup.add(rightSocket);
 
-                // 3. 끈 (뒤쪽)
-                const strapGeo = new THREE.TorusGeometry(scale * 0.95, scale * 0.05, 8, 32, Math.PI);
-                const strapMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-                const strap = new THREE.Mesh(strapGeo, strapMat);
-                strap.rotation.y = Math.PI / 2; // 뒤쪽 반원
-                strap.rotation.z = Math.PI / 2; // 수평으로
-                maskGroup.add(strap);
+                // 3. 눈동자 (빛나는 노란색/빨간색)
+                const pupilGeo = new THREE.SphereGeometry(scale * 0.1, 8, 8);
+                const pupilMat = new THREE.MeshBasicMaterial({ color: 0xffdd00 }); // 노랑 안광
+
+                const leftPupil = new THREE.Mesh(pupilGeo, pupilMat);
+                leftPupil.position.set(-scale * 0.45, scale * 0.25, scale * 0.85);
+                maskGroup.add(leftPupil);
+
+                const rightPupil = new THREE.Mesh(pupilGeo, pupilMat);
+                rightPupil.position.set(scale * 0.45, scale * 0.25, scale * 0.85);
+                maskGroup.add(rightPupil);
+
+                // 4. 코 부분 (약간의 돌출)
+                const noseGeo = new THREE.BoxGeometry(scale * 0.15, scale * 0.4, scale * 0.2);
+                const nose = new THREE.Mesh(noseGeo, maskMat);
+                nose.position.set(0, scale * 0.05, scale * 0.95);
+                maskGroup.add(nose);
+
+                // 5. 입/턱 부분 (갈라진 턱 및 구멍)
+                const mouthGeo = new THREE.BoxGeometry(scale * 0.7, scale * 0.1, scale * 0.1);
+                const mouthMat = new THREE.MeshStandardMaterial({ color: 0x221111 }); // 어두운 입 안
+                const mouth = new THREE.Mesh(mouthGeo, mouthMat);
+                mouth.position.set(0, -scale * 0.4, scale * 0.85);
+                maskGroup.add(mouth);
 
                 return maskGroup;
+            }
+            case 'C4': {
+                // 초정밀 C4 폭탄 모델 (Dropped 아이템 버전)
+                const c4Group = new THREE.Group();
+
+                // 1. 베이스 플레이트 (검은색 금속판)
+                const baseGeo = new THREE.BoxGeometry(scale * 1.8, scale * 1.2, scale * 0.1);
+                const baseMat = new THREE.MeshStandardMaterial({
+                    color: 0x111111,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                const base = new THREE.Mesh(baseGeo, baseMat);
+                base.castShadow = true;
+                c4Group.add(base);
+
+                // 2. C4 폭약 블록 (3개, 베이지색/회색)
+                const packGeo = new THREE.BoxGeometry(scale * 0.45, scale * 0.9, scale * 0.3);
+                const packMat = new THREE.MeshStandardMaterial({
+                    color: 0xaaaaaa,
+                    roughness: 0.9
+                });
+
+                for (let i = 0; i < 3; i++) {
+                    const pack = new THREE.Mesh(packGeo, packMat);
+                    pack.position.set(scale * (-0.6 + i * 0.6), 0, scale * 0.2);
+                    c4Group.add(pack);
+                }
+
+                // 3. 타이머 유닛 (중앙)
+                const timerGeo = new THREE.BoxGeometry(scale * 0.8, scale * 0.4, scale * 0.2);
+                const timerMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+                const timer = new THREE.Mesh(timerGeo, timerMat);
+                timer.position.set(0, 0, scale * 0.4);
+                c4Group.add(timer);
+
+                // 타이머 스크린
+                const screenGeo = new THREE.PlaneGeometry(scale * 0.6, scale * 0.2);
+                const screenMat = new THREE.MeshStandardMaterial({
+                    color: 0x330000,
+                    emissive: 0xaa0000,
+                    emissiveIntensity: 0.5
+                });
+                const screen = new THREE.Mesh(screenGeo, screenMat);
+                screen.position.set(0, 0, scale * 0.11);
+                timer.add(screen);
+
+                // 4. 전선 (빨강, 파랑)
+                const wireGeo = new THREE.BoxGeometry(scale * 0.05, scale * 0.8, scale * 0.05);
+                const redWireMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+                const blueWireMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+
+                const wire1 = new THREE.Mesh(wireGeo, redWireMat);
+                wire1.position.set(-scale * 0.4, 0, scale * 0.35);
+                wire1.rotation.z = Math.PI / 4;
+                c4Group.add(wire1);
+
+                const wire2 = new THREE.Mesh(wireGeo, blueWireMat);
+                wire2.position.set(scale * 0.4, 0, scale * 0.35);
+                wire2.rotation.z = -Math.PI / 4;
+                c4Group.add(wire2);
+
+                // 5. 램프 (아이템은 고정형 램프)
+                const lampGeo = new THREE.SphereGeometry(scale * 0.1, 8, 8);
+                const lampMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const lamp = new THREE.Mesh(lampGeo, lampMat);
+                lamp.position.set(scale * 0.3, scale * 0.1, scale * 0.51);
+                c4Group.add(lamp);
+
+                return c4Group;
             }
             default:
                 geo = new THREE.BoxGeometry(scale, scale, scale);

@@ -9,12 +9,11 @@ export const ITEM_CONFIG = {
     UNLOCK_LEVELS: {
         FLASHLIGHT: 1,   // 시작부터 등장
         MAP_PIECE: 1,    // 시작부터 등장
-        SENSOR: 6,       // 레벨 6부터 등장
-        ZOMBIE_DISGUISE: 6, // 레벨 6부터 등장 (가면)
-        JUMP: 11,        // 레벨 11부터 등장
-        HAMMER: 16,      // 레벨 16부터 등장
-        TRAP: 21,        // 레벨 21부터 등장
-        TELEPORT: 26     // 레벨 26부터 등장
+        SENSOR: 1,       // 레벨 6부터 등장
+        ZOMBIE_DISGUISE: 1, // 레벨 6부터 등장 (가면)
+        JUMP: 1,        // 레벨 11부터 등장
+        TELEPORT: 1,    // 레벨 26부터 등장
+        C4: 1           // 레벨 31부터 등장
     },
 
     // 아이템 종류 및 시각적 속성 정의
@@ -37,16 +36,16 @@ export const ITEM_CONFIG = {
             SCALE: 0.2,
             CONSUMABLE: true // 획득 즉시 해당 구역 미니맵 활성화
         },
-        HAMMER: {
-            TYPE: 'HAMMER',
-            COLOR: 0x888888,  // 회색
-            SCALE: 0.2,
-            CONSUMABLE: true  // 벽 파괴 시 소모
+        C4: {
+            TYPE: 'C4',
+            COLOR: 0x333333,  // 검은색/어두운 회색
+            SCALE: 0.15,
+            CONSUMABLE: true  // 설치 시 소모
         },
         TRAP: {
             TYPE: 'TRAP',
             COLOR: 0xff0000,  // 빨간색
-            SCALE: 0.2,
+            SCALE: 0.15,      // 정교한 모델이라 크기를 약간 줄임
             CONSUMABLE: true  // 설치 시 소모
         },
         TELEPORT: {
@@ -58,7 +57,7 @@ export const ITEM_CONFIG = {
         SENSOR: {
             TYPE: 'SENSOR',
             COLOR: 0x00ffff,  // 청록색
-            SCALE: 0.2,
+            SCALE: 0.18,      // 세로형이라 살짝 줄임
             CONSUMABLE: true  // 획득 시 배터리 충전 (여러 번 등장 가능)
         },
         ZOMBIE_DISGUISE: {
@@ -84,10 +83,10 @@ export const ITEM_CONFIG = {
             INCREMENT_FACTOR: 10   // 10레벨마다 분할 수 증가 (예: 20레벨 -> 3x3)
         }
     },
-    // 망치(Hammer) 관련 세부 설정
-    HAMMER: {
-        CAN_BREAK_BOUNDARY: false,   // 맵 가장자리 벽 파괴 허용 여부 (안됨)
-        CAN_BREAK_THICK_WALLS: false // 두꺼운 벽(큰 기둥 등) 파괴 허용 여부
+    // C4 폭탄(Bomb) 관련 설정
+    BOMB: {
+        DETONATION_TIME: 2.0,     // 설치 후 터질 때까지 걸리는 시간 (초)
+        BLINK_SPEED: 0.2          // 램프 깜빡임 속도
     },
     // 함정(Trap) 관련 세부 설정
     TRAP: {

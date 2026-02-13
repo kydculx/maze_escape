@@ -197,8 +197,8 @@ export class Monster {
         }
 
         // 플레이어 감지 (추적 모드)
-        // 위장 상태일 때는 감지하지 않음
-        const canDetect = !player.isDisguised && distToPlayer < detectionRange;
+        // 위장 또는 안전구역 상태일 때는 감지하지 않음
+        const canDetect = !player.isStealthed && distToPlayer < detectionRange;
 
         if (canDetect) {
             this.state = CONFIG.MONSTERS.STATES.MOVE;

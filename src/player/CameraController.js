@@ -24,6 +24,11 @@ export class CameraController {
         this.shakeIntensity = 0;
         this.shakeTimer = 0;
 
+        // 사망 연출 설정
+        this.isDying = false;
+        this.deathTimer = 0;
+        this.deathDuration = 1.5;
+
         // 초기 시점 설정 (1인칭)
         this.setFirstPerson();
     }
@@ -85,19 +90,39 @@ export class CameraController {
             this.camera.lookAt(worldForward);
         }
 
-        // 3. 카메라 흔들림(Shake) 적용
-        if (this.shakeTimer > 0) {
-            this.shakeTimer -= deltaTime;
-            const factor = this.shakeTimer / this.shakeDuration;
-            const currentIntensity = this.shakeIntensity * factor;
+        // 3. 사망 연출 (isDying이 true인 경우 다른 모든 카메라 로직을 오버라이드)
+        if (this.isDying) {
+            this.deathTimer += deltaTime;
+            const progress = Math.min(this.deathTimer / this.deathDuration, 1.0);
 
-            this.camera.position.x += (Math.random() - 0.5) * currentIntensity;
-            this.camera.position.y += (Math.random() - 0.5) * currentIntensity;
-        } else {
-            // 흔들림이 끝나면 위치 복구 (1인칭 높이로)
-            this.camera.position.x = 0;
-            this.camera.position.y = camCfg.FIRST_PERSON_HEIGHT;
+            // 1) 아래로 기울기 (Tilt down)
+            const tiltAngle = progress * Math.PI * 0.4; // 약 72도 숙임
+
+            // 2) 높이 낮추기 (Fall to floor)
+            const fallHeight = camCfg.FIRST_PERSON_HEIGHT * (1.0 - progress * 0.4); // 바닥 거의 근처까지
+
+            this.camera.position.y = fallHeight;
+
+            const targetPos = new THREE.Vector3(
+                0,
+                fallHeight - Math.sin(tiltAngle),
+                -Math.cos(tiltAngle)
+            );
+
+            const worldTarget = targetPos.clone();
+            this.player.group.localToWorld(worldTarget);
+            this.camera.lookAt(worldTarget);
+
+            // 흔들림은 유지 (쓰러지는 느낌 강화)
+            if (this.shakeTimer > 0) {
+                this.shakeTimer -= deltaTime;
+                const factor = this.shakeTimer / this.shakeDuration;
+                this.camera.position.x += (Math.random() - 0.5) * (this.shakeIntensity * factor);
+            }
+            return;
         }
+
+        // 4. 카메라 흔들림(Shake) 적용
     }
 
     /**
@@ -107,6 +132,26 @@ export class CameraController {
         this.shakeIntensity = intensity;
         this.shakeDuration = duration;
         this.shakeTimer = duration;
+    }
+
+    /**
+     * 플레이어 사망 연출 시작
+     */
+    onPlayerDeath() {
+        this.isDying = true;
+        this.deathTimer = 0;
+        // 쓰러질 때 짧은 충격 Shake 추가
+        this.shake(0.2, 0.5);
+    }
+
+    /**
+     * 카메라 상태 초기화 (다시 시작 시 호출)
+     */
+    reset() {
+        this.isDying = false;
+        this.deathTimer = 0;
+        this.shakeTimer = 0;
+        this.setFirstPerson();
     }
 
     setFirstPerson() {

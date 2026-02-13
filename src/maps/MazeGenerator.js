@@ -19,6 +19,7 @@ export class MazeGenerator {
 
         this.entrance = null;
         this.exit = null;
+        this.safeZones = []; // [{x, y}] 리스트
     }
 
     /**
@@ -169,6 +170,9 @@ export class MazeGenerator {
         // 입구/출구 생성
         this._createEntranceAndExit();
 
+        // 안전 지대 생성
+        this._createSafeZones();
+
         return this.grid;
     }
 
@@ -212,6 +216,55 @@ export class MazeGenerator {
             this.grid[exitY][exitX] = 0;     // Open exit
             this.exit = { x: exitX, y: exitY };
         }
+    }
+
+    _createSafeZones() {
+        this.safeZones = [];
+        const deadEnds = [];
+
+        // 1. 모든 막다른 길(이웃 길이 1개인 곳) 찾기
+        for (let y = 1; y < this.height - 1; y++) {
+            for (let x = 1; x < this.width - 1; x++) {
+                if (this.grid[y][x] === 0) {
+                    // 입구/출구 제외
+                    if ((x === this.entrance.x && y === this.entrance.y) ||
+                        (x === this.exit.x && y === this.exit.y)) continue;
+
+                    let pathNeighbors = 0;
+                    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                    for (const [dx, dy] of dirs) {
+                        const nx = x + dx, ny = y + dy;
+                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                            if (this.grid[ny][nx] === 0) pathNeighbors++;
+                        }
+                    }
+                    if (pathNeighbors === 1) {
+                        deadEnds.push({ x, y });
+                    }
+                }
+            }
+        }
+
+        // 2. 입구로부터 일정 거리 이상 떨어진 막다른 길 중 선택
+        const mazeCfg = (typeof CONFIG !== 'undefined' && CONFIG.MAZE) ? CONFIG.MAZE : { SAFE_ZONE: { SPAWN_DIST_FROM_START: 5, COUNT_PER_MAZE: 2 } };
+        const safeZoneCfg = mazeCfg.SAFE_ZONE;
+
+        const candidates = deadEnds.filter(de => {
+            const dist = Math.abs(de.x - this.entrance.x) + Math.abs(de.y - this.entrance.y);
+            return dist >= safeZoneCfg.SPAWN_DIST_FROM_START;
+        });
+
+        // 3. 후보를 섞어서 필요한 개수만큼 선택
+        if (candidates.length > 0) {
+            const shuffled = candidates.sort(() => Math.random() - 0.5);
+            this.safeZones = shuffled.slice(0, safeZoneCfg.COUNT_PER_MAZE);
+        } else if (deadEnds.length > 0) {
+            // 거리가 충분한 곳이 없으면 그냥 막다른 길 중 선택
+            const shuffled = deadEnds.sort(() => Math.random() - 0.5);
+            this.safeZones = shuffled.slice(0, safeZoneCfg.COUNT_PER_MAZE);
+        }
+
+        console.log(`[MazeGenerator] ${this.safeZones.length} Safe Zones created at:`, this.safeZones);
     }
 
     /**

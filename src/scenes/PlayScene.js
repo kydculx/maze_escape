@@ -14,6 +14,8 @@ import { MonsterManager } from '../MonsterManager.js';
 import { WeatherSystem } from '../effects/WeatherSystem.js';
 import { TrapManager } from '../maps/TrapManager.js';
 import { SwitchManager } from '../maps/SwitchManager.js';
+import { SpikeTrapManager } from '../maps/SpikeTrapManager.js';
+import { BombManager } from '../items/BombManager.js';
 import { SaveManager } from '../SaveManager.js';
 import { ASSETS } from '../Assets.js';
 
@@ -114,6 +116,10 @@ export class PlayScene extends BaseScene {
         this.player = new Player(this.scene, this.mazeGen, this.game.sound);
         this.player.reset(startPos, this._calculateInitialAngle());
 
+        // 사망 및 체력 관리 중앙 콜백 설정
+        this.player.onDeath = () => this._handlePlayerDeath();
+        this.player.onHealthChanged = (health) => this._handlePlayerHealthChange(health);
+
         // 카메라
         this.cameraController = new CameraController(this.player, this.scene);
         this.camera = this.cameraController.camera;
@@ -134,6 +140,9 @@ export class PlayScene extends BaseScene {
         this.switchManager = new SwitchManager(this.scene, this.mazeGen, this.game.sound);
         this.switchManager.spawnSwitches();
 
+        // 벽 스파이크 함정 매니저
+        this.spikeTrapManager = new SpikeTrapManager(this.scene, this.mazeGen);
+
         // 몬스터
         this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound, (monster) => {
             this._onPlayerBitten();
@@ -146,6 +155,9 @@ export class PlayScene extends BaseScene {
             Math.max(0, spawnRules.BASE_COUNT + Math.floor((this.stageManager.level - 1) / spawnRules.COUNT_CALC_DIVISOR))
         );
         this.monsterManager.spawnZombies(zombieCount, this.stageManager.level);
+
+        // 폭탄 매니저
+        this.bombManager = new BombManager(this.scene, this.game.sound);
     }
 
     /**
@@ -204,9 +216,7 @@ export class PlayScene extends BaseScene {
             }
         );
 
-        // 버튼 기능 바인딩
         this.ui.bindButtons({
-            onHammer: () => this._useHammer(),
             onJump: () => {
                 this.player.startJump(true);
                 this.ui.updateAll();
@@ -225,6 +235,7 @@ export class PlayScene extends BaseScene {
                     if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
                 }
             },
+            onC4: () => this._useC4(),
             onTeleport: () => {
                 if (this.player.useTeleport()) {
                     this.ui.updateAll();
@@ -274,7 +285,7 @@ export class PlayScene extends BaseScene {
     }
 
     /**
-     * 플레이어가 몬스터에게 공격받았을 때 처리
+     * 플레이어가 몬스터에게 공격받았을 때 처리 (시각 효과 전용)
      */
     _onPlayerBitten() {
         if (this.ui) {
@@ -282,13 +293,45 @@ export class PlayScene extends BaseScene {
             this.ui.triggerDamageEffect();
         }
         if (this.player) {
-            const isDead = this.player.takeDamage(10);
-            if (this.ui) this.ui.updateHealthBar();
+            this.player.takeDamage(10);
+        }
+    }
 
-            if (isDead) {
+    /**
+     * 중앙 집중식 사망 처리
+     */
+    _handlePlayerDeath() {
+        if (this.game.state.is(STATES.DYING) || this.game.state.is(STATES.GAME_OVER)) return;
+
+        console.log("[PlayScene] Player died. Starting death sequence...");
+
+        // 1. 상태 변경 (입력 차단)
+        this.game.state.set(STATES.DYING);
+
+        // 2. 카메라 쓰러짐 연출 시작
+        if (this.cameraController) {
+            this.cameraController.onPlayerDeath();
+        }
+
+        // 3. 효과음 (기존 takeDamage에서 재생되지만, 추가적인 사망 효과음이 필요할 경우 여기서 처리)
+
+        // 4. 일정 시간 후 데스 화면 표시
+        setTimeout(() => {
+            if (this.game.state.is(STATES.DYING)) {
                 this.game.state.set(STATES.GAME_OVER);
-                if (this.ui) this.ui.showDeathScreen();
+                if (this.ui) {
+                    this.ui.showDeathScreen();
+                }
             }
+        }, 1500); // deathDuration과 일치
+    }
+
+    /**
+     * 중앙 집중식 체력 바 업데이트
+     */
+    _handlePlayerHealthChange(health) {
+        if (this.ui) {
+            this.ui.updateHealthBar();
         }
     }
 
@@ -316,6 +359,7 @@ export class PlayScene extends BaseScene {
         }
 
         if (this.player) this.player.restoreCheckpoint();
+        if (this.cameraController) this.cameraController.reset();
         this.stageManager.resetStats();
         this.resetMaze();
         if (this.ui) this.ui.updateAll(true);
@@ -458,9 +502,15 @@ export class PlayScene extends BaseScene {
         if (this.trapManager) {
             this.trapManager.clear();
         }
+        if (this.spikeTrapManager) {
+            this.spikeTrapManager.rebuild(this.mazeGen);
+        }
         if (this.switchManager) {
             this.switchManager.mazeGen = this.mazeGen;
             this.switchManager.spawnSwitches();
+        }
+        if (this.bombManager) {
+            this.bombManager.clear();
         }
         this.ui.updateAll();
     }
@@ -662,6 +712,7 @@ export class PlayScene extends BaseScene {
      */
     _updateGameSystems(dt) {
         this.player.update(dt);
+        this._updateZones();
 
         if (this.itemManager) {
             // 아이템 자동 생성
@@ -678,6 +729,8 @@ export class PlayScene extends BaseScene {
 
         if (this.monsterManager) this.monsterManager.update(dt, this.player);
         if (this.trapManager && this.monsterManager) this.trapManager.update(dt, this.monsterManager.monsters);
+        if (this.spikeTrapManager) this.spikeTrapManager.update(dt, this.player);
+        if (this.bombManager) this.bombManager.update(dt);
         if (this.weatherSystem) this.weatherSystem.update(dt, this.player.position);
 
         if (this.stageManager && this.stageManager.isStageActive) {
@@ -686,6 +739,34 @@ export class PlayScene extends BaseScene {
 
         const jumpProgress = this.player.isJumping ? this.player.jumpTimer / this.player.jumpDuration : 0;
         this.cameraController.update(dt, this.player.isJumping, jumpProgress);
+    }
+
+    /**
+     * 플레이어의 현재 위치가 안전 지대나 입구인지 체크하여 상태 업데이트
+     */
+    _updateZones() {
+        if (!this.player || !this.mazeGen) return;
+
+        const thickness = CONFIG.MAZE.WALL_THICKNESS;
+        const offsetX = -(this.mazeGen.width * thickness) / 2;
+        const offsetZ = -(this.mazeGen.height * thickness) / 2;
+        const gx = Math.floor((this.player.position.x - offsetX) / thickness);
+        const gy = Math.floor((this.player.position.z - offsetZ) / thickness);
+
+        // 1. 입구(스타팅 포인트) 체크
+        this.player.isInStartPoint = (this.mazeGen.entrance && gx === this.mazeGen.entrance.x && gy === this.mazeGen.entrance.y);
+
+        // 2. 안전 지대 체크
+        let inSafeZone = false;
+        if (this.mazeGen.safeZones) {
+            for (const sz of this.mazeGen.safeZones) {
+                if (gx === sz.x && gy === sz.y) {
+                    inSafeZone = true;
+                    break;
+                }
+            }
+        }
+        this.player.isInSafeZone = inSafeZone;
     }
 
     /**
@@ -768,9 +849,6 @@ export class PlayScene extends BaseScene {
      */
     _updateUI(dt) {
         if (this.ui) {
-            if (this.player.idleTimer >= CONFIG.PLAYER.REGEN_DELAY && this.player.health < this.player.maxHealth) {
-                this.ui.updateHealthBar();
-            }
             this.ui.updateAll();
         }
     }
@@ -849,10 +927,6 @@ export class PlayScene extends BaseScene {
      * 아이템 사용 관련 입력 처리
      */
     _handleItemInput(input) {
-        // E 키: 망치 사용
-        if (input.wasJustPressed('KeyE')) {
-            this._useHammer();
-        }
 
         // Q 키: 텔레포트
         if (input.wasJustPressed('KeyQ')) {
@@ -889,6 +963,11 @@ export class PlayScene extends BaseScene {
             if (this.player.toggleSensor()) {
                 this.ui.updateAll();
             }
+        }
+
+        // C 키: C4 폭탄 설치
+        if (input.wasJustPressed('KeyC')) {
+            this._useC4();
         }
     }
 
@@ -939,80 +1018,63 @@ export class PlayScene extends BaseScene {
     }
 
 
-    /**
-     * 망치 사용 실질 로직
-     */
-    _useHammer() {
-        if (!this.player || this.player.inventory.hammerCount <= 0) return;
 
-        const thickness = CONFIG.MAZE.WALL_THICKNESS;
-        const width = this.mazeGen.width;
-        const height = this.mazeGen.height;
-        const offsetX = -(width * thickness) / 2;
-        const offsetZ = -(height * thickness) / 2;
+    _useC4() {
+        if (!this.player || !this.bombManager) return;
 
-        // 현재 위치 좌표 계산 (Math.round를 써야 타일의 정중앙 인덱스가 잘 잡힘)
-        const px = Math.round((this.player.group.position.x - offsetX - thickness / 2) / thickness);
-        const py = Math.round((this.player.group.position.z - offsetZ - thickness / 2) / thickness);
+        const success = this.player.useC4((dx, dy) => {
+            const thickness = CONFIG.MAZE.WALL_THICKNESS;
+            const offsetX = -(this.mazeGen.width * thickness) / 2;
+            const offsetZ = -(this.mazeGen.height * thickness) / 2;
 
-        this.player.useHammer((dx, dy) => {
-            const tx = px + dx;
-            const ty = py + dy;
+            // 플레이어 그리드 위치
+            const gx = Math.floor((this.player.position.x - offsetX) / thickness);
+            const gy = Math.floor((this.player.position.z - offsetZ) / thickness);
 
-            console.log(`HAMMER ACTION: Player[${px}, ${py}] -> Target[${tx}, ${ty}] (Direction: ${dx}, ${dy})`);
+            // 타겟 그리드 위치 (플레이어 바로 앞)
+            const tx = gx + dx;
+            const ty = gy + dy;
 
-            if (tx >= 0 && tx < width && ty >= 0 && ty < height) {
+            // 유효 범위 체크
+            if (tx > 0 && tx < this.mazeGen.width - 1 && ty > 0 && ty < this.mazeGen.height - 1) {
                 const targetVal = this.mazeGen.grid[ty][tx];
-                console.log(`Grid value at target: ${targetVal}`);
+                const wallObj = this.scene.getObjectByName('maze-mesh')?.children.find(child =>
+                    child.name === 'maze-wall' &&
+                    child.userData.gridX === tx &&
+                    child.userData.gridY === ty
+                );
 
-                if (targetVal === 1) {
-                    // 1. 외곽 벽 보호
-                    if (!CONFIG.ITEMS.HAMMER.CAN_BREAK_BOUNDARY) {
-                        if (tx === 0 || tx === width - 1 || ty === 0 || ty === height - 1) {
-                            console.warn("ACTION DENIED: Cannot break outer boundary walls!");
-                            return;
-                        }
-                    }
+                // 파괴 가능한 벽인지 확인 (가장자리 제외, 해머 로직과 동일)
+                if (targetVal === 1 && wallObj) {
+                    // 폭탄 설치 위치 계산 (벽면 중앙 -> 스위치 높이와 비슷하게 조정)
+                    const bombPos = wallObj.position.clone();
+                    bombPos.y = CONFIG.MAZE.WALL_HEIGHT / 4.5; // 스위치 높이와 동일하게 
 
-                    // 2. 1겹 벽 제약 조건 체크 (뒤쪽 칸 확인)
-                    if (!CONFIG.ITEMS.HAMMER.CAN_BREAK_THICK_WALLS) {
-                        const bx = tx + dx;
-                        const by = ty + dy;
+                    // 노멀 방향 (플레이어 쪽으로 살짝 띄움)
+                    const normal = new THREE.Vector3(-dx, 0, -dy);
+                    bombPos.add(normal.clone().multiplyScalar(thickness / 2 + 0.01));
 
-                        // 뒤쪽 칸이 그리드 범위 안이고 & 거기에도 벽이 있다면? -> 두꺼운 벽임
-                        if (bx >= 0 && bx < width && by >= 0 && by < height) {
-                            if (this.mazeGen.grid[by][bx] === 1) {
-                                console.warn(`ACTION DENIED: Wall at [${tx}, ${ty}] is too thick to break!`);
-                                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK); // 실패음 대용
-                                return;
-                            }
-                        }
-                    }
+                    this.bombManager.plantBomb(bombPos, normal, () => {
+                        // 폭발 콜백: 애니메이션 시작
+                        this.mazeView.animateWallExplosion(tx, ty, 0.5, () => {
+                            // 애니메이션 완료 후 실제 데이터 업데이트
+                            this.mazeGen.grid[ty][tx] = 0;
+                            // 전체 시각적 요소 갱신 (이미지 타일 등도 바뀌어야 하므로)
+                            this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
+                            this.ui.updateAll();
+                        });
+                    }, this.game.sound);
 
-                    // 3. 미로 데이터 업데이트
-                    this.mazeGen.grid[ty][tx] = 0;
-                    this.player.inventory.hammerCount--;
-                    this.stageManager.moveCount++; // 망치 사용도 이동(턴)으로 카운트
-                    this.stageManager.isStageActive = true; // 망치질로도 스타트
-
-                    console.log(`SUCCESS: Wall at [${tx}, ${ty}] destroyed. Refreshing visuals...`);
-
-                    // 4. 시각적 메쉬 완전 갱신 (MazeView 로 위임)
-                    this.mazeView.refresh(this.mazeGen, CONFIG.MAZE);
-
-                    // 5. UI 갱신 (UIManager 로 위임)
                     this.ui.updateAll();
-
-                    if (this.game.sound) {
-                        this.game.sound.playSFX(ASSETS.AUDIO.SFX.ITEM.HAMMER);
-                    }
-                } else {
-                    console.warn(`ACTION FAIL: No wall found at [${tx}, ${ty}] (Value: ${targetVal})`);
+                    return true;
                 }
-            } else {
-                console.error("ACTION FAIL: Target coordinates out of bounds!");
             }
+            return false;
         });
+
+        if (success && this.game.sound) {
+            this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+        }
     }
 
     _useTeleport() {
@@ -1102,8 +1164,8 @@ export class PlayScene extends BaseScene {
             flashlight: 'hasFlashlight',
             sensor: 'hasSensor',
             battery: 'jumpCount',
-            speedBoost: 'hammerCount',
-            wallHack: 'hammerCount', // wallHack은 hammer로 통합
+            speedBoost: 'disguiseCount',
+            wallHack: 'c4Count',
             teleport: 'teleportCount',
             zombieDisguise: 'disguiseCount',
             trap: 'trapCount'
@@ -1132,7 +1194,8 @@ export class PlayScene extends BaseScene {
                         case 'sensor': type = 'SENSOR'; break;
                         case 'battery': type = 'JUMP'; break;
                         case 'speedBoost':
-                        case 'wallHack': type = 'HAMMER'; break;
+                        case 'wallHack': type = 'C4'; break;
+                        case 'speedBoost': type = 'ZOMBIE_DISGUISE'; break;
                         case 'teleport': type = 'TELEPORT'; break;
                         case 'zombieDisguise': type = 'ZOMBIE_DISGUISE'; break;
                         case 'trap': type = 'TRAP'; break;
@@ -1176,8 +1239,8 @@ export class PlayScene extends BaseScene {
             flashlight: this.player.inventory.hasFlashlight ? 1 : 0,
             sensor: this.player.inventory.hasSensor ? 1 : 0,
             battery: this.player.inventory.jumpCount || 0,
-            speedBoost: this.player.inventory.hammerCount || 0,
-            wallHack: 0, // wallHack은 hammer로 통합됨
+            speedBoost: this.player.inventory.disguiseCount || 0,
+            wallHack: this.player.inventory.c4Count || 0,
             teleport: this.player.inventory.teleportCount || 0,
             zombieDisguise: this.player.inventory.disguiseCount || 0,
             trap: this.player.inventory.trapCount || 0
@@ -1216,6 +1279,9 @@ export class PlayScene extends BaseScene {
         }
         if (this.trapManager) {
             this.trapManager.clear();
+        }
+        if (this.spikeTrapManager) {
+            this.spikeTrapManager.clear();
         }
         super.dispose();
         document.removeEventListener('visibilitychange', this._onVisibilityChange);
