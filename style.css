@@ -1523,8 +1523,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 #save-nickname-btn {
-    width: 80px;
-    min-width: 0;
+    width: 120px;
+    min-width: 60px;
     padding: 6px 0;
     font-size: 0.8rem;
     text-align: center;
