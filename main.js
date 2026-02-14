@@ -4,9 +4,11 @@ import { GameState, STATES } from './src/GameState.js';
 import { SceneManager } from './src/SceneManager.js';
 import { SoundManager } from './src/SoundManager.js';
 import { SaveManager } from './src/SaveManager.js';
+import { RankingManager } from './src/RankingManager.js';
 import { CONFIG } from './src/Config.js';
 import { PlayScene } from './src/scenes/PlayScene.js';
 import { ASSETS } from './src/Assets.js';
+import { UIManager } from './src/UIManager.js';
 
 /**
  * 3D 게임 엔진 메인 클래스 - 엔트리 포인트
@@ -24,6 +26,7 @@ class Game {
         this.state = new GameState(STATES.SPLASH); // 스플래시 화면부터 시작
         this.input = new InputHandler();
         this.sound = new SoundManager();
+        this.ranking = new RankingManager();
         this.sceneManager = new SceneManager(this);
 
         // 사전 로딩 시작 (비동기)
@@ -62,6 +65,7 @@ class Game {
         window.addEventListener('touchstart', initAudio);
 
         // 4. UI 및 이벤트 등록
+        this.ui = new UIManager();
         this.initUI();
 
         // 스플래시 화면은 HTML에서 기본으로 표시됨
@@ -83,6 +87,22 @@ class Game {
         // 5. 게임 루프 시작
         this.clock = new THREE.Clock();
         this.animate();
+
+        // 6. 랭킹 시스템 로그인 (익명)
+        this.ranking.signIn().then(async () => {
+            console.log('[Main] Ranking system ready');
+            // 로그인 후 서버의 최신 닉네임 정보를 가져와서 로컬 스토리지 및 UI와 동기화
+            const profile = await this.ranking.getProfile();
+            if (profile && profile.nickname) {
+                console.log(`[Main] Syncing nickname from server: ${profile.nickname}`);
+                SaveManager.saveSettings(null, null, null, profile.nickname);
+
+                // UI 입력창에도 반영
+                if (this.ui && this.ui.elements.nicknameInput) {
+                    this.ui.elements.nicknameInput.value = profile.nickname;
+                }
+            }
+        });
     }
 
     /**
@@ -120,23 +140,12 @@ class Game {
      */
     initUI() {
         const splashScreen = document.getElementById('splash-screen');
-        const mainMenuScreen = document.getElementById('main-menu-screen');
 
         // 1. 스플래시 화면 클릭 시 메인 메뉴로 전환 + 전체화면 요청
         splashScreen.addEventListener('click', () => {
             if (this.state.is(STATES.SPLASH)) {
-                // 모바일 전체화면 요청 (사용자 상호작용 내에서 실행되어야 함)
                 if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen().then(() => {
-                        // 전체화면 성공 시 화면 방향 잠금 시도 (모바일) - 제거됨 (가로모드 허용)
-                        /*
-                        if (screen.orientation && screen.orientation.lock) {
-                            screen.orientation.lock('portrait').catch(err => {
-                                console.log('Screen orientation lock failed:', err);
-                            });
-                        }
-                        */
-                    }).catch((err) => {
+                    document.documentElement.requestFullscreen().catch((err) => {
                         console.log('Fullscreen request failed:', err);
                     });
                 }
@@ -145,133 +154,103 @@ class Game {
                 this.state.set(STATES.MAIN_MENU);
                 this.sceneManager.setScene(STATES.MAIN_MENU);
                 splashScreen.classList.add('hidden');
-                mainMenuScreen.classList.remove('hidden');
+                this.ui.showMainMenu();
             }
         });
+
+        // 2. 공용 UI 초기화
+        this.bindGeneralUI();
 
         // 저장된 진행 상황 확인 및 Continue 버튼 활성화
         this.updateContinueButton();
 
-        // 2. 메인 메뉴 - 각 버튼 기능 연동
-        // 새 게임 (New Game)
-        document.getElementById('new-game-button').addEventListener('click', () => {
-            // 진행 상황 초기화
-            SaveManager.clearProgress();
-            this.handleMenuSelection(STATES.PLAYING);
-        });
-
-        // 이어하기 (Continue)
-        document.getElementById('continue-button').addEventListener('click', () => {
-            if (SaveManager.hasProgress()) {
-                const progress = SaveManager.loadProgress();
-                // 저장된 스테이지와 아이템으로 게임 시작
-                this.handleMenuSelection(STATES.PLAYING, progress);
-            }
-        });
-
-        // 랭킹 (Rankings) - 비활성화 (사용자 요청)
-        /*
-        document.getElementById('rankings-button').addEventListener('click', () => {
-            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-            alert('랭킹 시스템을 불러오고 있습니다...');
-        });
-        */
-
-
-
-        // 설정 (Settings)
-        const settingsPopup = document.getElementById('settings-popup');
-        const closeSettingsBtn = document.getElementById('close-settings-btn');
-        const settingsOkBtn = document.getElementById('settings-ok-btn');
-        const bgmSlider = document.getElementById('bgm-volume-slider');
-        const sfxSlider = document.getElementById('sfx-volume-slider');
-        const weatherSlider = document.getElementById('weather-volume-slider');
-        const bgmVal = document.getElementById('bgm-volume-val');
-        const sfxVal = document.getElementById('sfx-volume-val');
-        const weatherVal = document.getElementById('weather-volume-val');
-
-        // 설정 버튼 클릭 시 팝업 열기
-        document.getElementById('settings-button').addEventListener('click', () => {
-            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-            if (settingsPopup) {
-                // 현재 볼륨 값으로 슬라이더 초기화
-                const currentBGM = Math.round(this.sound.bgmVolume * 100);
-                const currentSFX = Math.round(this.sound.sfxVolume * 100);
-                const currentWeather = Math.round(this.sound.weatherVolume * 100);
-
-                bgmSlider.value = currentBGM;
-                bgmVal.textContent = `${currentBGM}%`;
-                sfxSlider.value = currentSFX;
-                sfxVal.textContent = `${currentSFX}%`;
-                weatherSlider.value = currentWeather;
-                weatherVal.textContent = `${currentWeather}%`;
-
-                console.log('[Main] Opening settings - BGM:', currentBGM, '% SFX:', currentSFX, '% Weather:', currentWeather, '%');
-
-                settingsPopup.classList.remove('hidden');
-                settingsPopup.style.display = 'flex';
-            }
-        });
-
-        // 볼륨 슬라이더 이벤트
-        if (bgmSlider) {
-            bgmSlider.addEventListener('input', () => {
-                const val = bgmSlider.value;
-                bgmVal.textContent = `${val}%`;
-                this.sound.setBGMVolume(val / 100);
+        // 3. 메인 메뉴 전용 버튼 (New Game, Continue)
+        const newGameBtn = document.getElementById('new-game-button');
+        if (newGameBtn) {
+            newGameBtn.addEventListener('click', () => {
+                SaveManager.clearProgress();
+                this.handleMenuSelection(STATES.PLAYING);
             });
         }
 
-        if (sfxSlider) {
-            sfxSlider.addEventListener('input', () => {
-                const val = sfxSlider.value;
-                sfxVal.textContent = `${val}%`;
-                this.sound.setSFXVolume(val / 100);
-            });
-        }
-
-        if (weatherSlider) {
-            weatherSlider.addEventListener('input', () => {
-                const val = weatherSlider.value;
-                weatherVal.textContent = `${val}%`;
-                this.sound.setWeatherVolume(val / 100);
-            });
-        }
-
-        // 설정 팝업 닫기 버튼들
-        if (closeSettingsBtn) {
-            closeSettingsBtn.addEventListener('click', () => {
-                this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-                if (settingsPopup) {
-                    settingsPopup.classList.add('hidden');
-                    settingsPopup.style.display = 'none';
+        const continueBtn = document.getElementById('continue-button');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', () => {
+                if (SaveManager.hasProgress()) {
+                    const progress = SaveManager.loadProgress();
+                    this.handleMenuSelection(STATES.PLAYING, progress);
                 }
             });
         }
+    }
 
-        if (settingsOkBtn) {
-            settingsOkBtn.addEventListener('click', () => {
-                this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-                if (settingsPopup) {
-                    settingsPopup.classList.add('hidden');
-                    settingsPopup.style.display = 'none';
-                }
+    bindGeneralUI() {
+        // UI 서브 컴포넌트 초기화 및 내부 리스너 등록
+        this.ui.initSettings(this.sound);
+        this.ui.initNicknameUI(this.ranking, SaveManager);
+        this.ui.initRankingUI(this.ranking);
+        this.ui.initHelpUI();
+
+        // 공용 버튼 (랭킹, 도움말 등) 콜백 연결
+        this.ui.bindGeneralButtons({
+            onShowRankings: () => {
+                if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+                this.ui.showRankings(this.ranking);
+            },
+            onShowHelp: () => {
+                if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+                this.ui.showHelp();
+            }
+        });
+
+        // 설정 버튼 클릭 시 팝업 열기 (메인 메뉴용)
+        const settingsBtn = document.getElementById('settings-button');
+        if (settingsBtn) {
+            this.ui._setupButton(settingsBtn, () => {
+                if (this.sound) this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+                this.ui.showSettings();
             });
         }
+    }
 
-        // 도움말 (Help)
-        const helpPopup = document.getElementById('help-popup');
-        const closeHelpBtn = document.getElementById('close-help-btn');
+    setNicknameStatus(msg, type) {
+        const el = document.getElementById('nickname-status');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = 'status-msg ' + type;
+    }
 
-        document.getElementById('help-button').addEventListener('click', () => {
-            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-            helpPopup.classList.remove('hidden');
-        });
+    async updateRankingUI() {
+        const container = document.getElementById('ranking-list-container');
+        if (!container) return;
 
-        closeHelpBtn.addEventListener('click', () => {
-            this.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-            helpPopup.classList.add('hidden');
-        });
+        container.innerHTML = '<div class="ranking-loading">불러오는 중...</div>';
+        const ranks = await this.ranking.getTopScores();
+
+        if (!ranks || ranks.length === 0) {
+            container.innerHTML = '<div class="ranking-empty">랭킹 정보가 없습니다.</div>';
+            return;
+        }
+
+        container.innerHTML = ranks.map((item, index) => {
+            const rank = index + 1;
+            const isTop3 = rank <= 3;
+            return `
+                <div class="ranking-item ${isTop3 ? 'top-3' : ''}">
+                    <div class="rank-info">
+                        <span class="rank-number">${rank}</span>
+                        <span class="rank-nickname">${this._escapeHTML(item.nickname)}</span>
+                    </div>
+                    <span class="rank-score">${item.score} STAGE</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    _escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
 
     /**

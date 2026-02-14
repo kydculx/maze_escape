@@ -199,6 +199,15 @@ body::after {
 }
 
 /* Settings Specific Styles */
+#settings-ok-btn {
+    width: 40%;
+    max-width: 150px;
+    min-width: 0;
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    margin: 10px auto 0;
+}
+
 .settings-content {
     max-width: 450px;
     width: 90%;
@@ -1481,6 +1490,218 @@ input[type="range"]::-webkit-slider-thumb {
     color: var(--ui-theme-color);
 }
 */
+
+.settings-body {
+    padding: 10px 0;
+}
+
+.settings-divider {
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 20px 0;
+}
+
+.nickname-setting {
+    margin-top: 10px;
+}
+
+.nickname-input-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#nickname-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+#save-nickname-btn {
+    width: 80px;
+    min-width: 0;
+    padding: 6px 0;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+#nickname-input:focus {
+    outline: none;
+    border-color: #ff3333;
+    box-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
+}
+
+.status-msg {
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.status-msg.success {
+    color: #00ff00;
+}
+
+.status-msg.error {
+    color: #ff3333;
+}
+
+/* 랭킹 팝업 스타일 */
+.ranking-content {
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+}
+
+.ranking-body {
+    overflow-y: auto;
+    padding: 20px;
+}
+
+#ranking-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ranking-header,
+.ranking-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+}
+
+.ranking-header {
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ranking-item {
+    background: rgba(0, 0, 0, 0.3);
+    margin-bottom: 5px;
+}
+
+/* 컬럼 영역 명시적 구분 */
+.col-rank {
+    width: 50px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.col-nickname {
+    flex: 1;
+    padding-left: 15px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-stage {
+    width: 70px;
+    text-align: right;
+    color: #00ff00;
+}
+
+.col-time {
+    width: 70px;
+    text-align: right;
+}
+
+.col-turn {
+    width: 60px;
+    text-align: right;
+}
+
+.ranking-item .col-time,
+.ranking-item .col-turn {
+    color: #888;
+}
+
+.ranking-header span {
+    color: #888;
+}
+
+/* 상위 3등 강조 (원하는 경우 추가) */
+.ranking-item.top-1 {
+    border-left: 4px solid gold;
+}
+
+.ranking-item.top-2 {
+    border-left: 4px solid silver;
+}
+
+.ranking-item.top-3 {
+    border-left: 4px solid #cd7f32;
+}
+
+/* 개인 랭킹 섹션 스타일 */
+.my-ranking-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px dashed rgba(255, 0, 0, 0.3);
+}
+
+.my-ranking-section .section-label {
+    font-size: 0.8rem;
+    color: #ff4444;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: block;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 2px;
+}
+
+.my-ranking-section .ranking-item {
+    background: rgba(200, 0, 0, 0.15);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.1);
+}
+
+.rank-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.rank-number {
+    font-weight: bold;
+    color: #ff3333;
+    width: 25px;
+    text-align: center;
+}
+
+.rank-nickname {
+    font-family: 'Gaegu', cursive;
+    font-size: 1.2rem;
+}
+
+.rank-score {
+    font-weight: bold;
+    color: #ddd;
+}
+
+.ranking-loading,
+.ranking-empty {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+    font-style: italic;
+}
+
+.ui-btn.small {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+}
 
 .popup-body {
     padding: 30px;

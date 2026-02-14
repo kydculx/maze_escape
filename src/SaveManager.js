@@ -13,15 +13,17 @@ export class SaveManager {
      * @param {number} bgmVolume - BGM 볼륨 (0~1)
      * @param {number} sfxVolume - SFX 볼륨 (0~1)
      */
-    static saveSettings(bgmVolume, sfxVolume, weatherVolume) {
+    static saveSettings(bgmVolume, sfxVolume, weatherVolume, nickname) {
         try {
+            const currentSettings = this.loadSettings();
             const settings = {
-                bgmVolume: bgmVolume,
-                sfxVolume: sfxVolume,
-                weatherVolume: weatherVolume
+                bgmVolume: bgmVolume !== null ? bgmVolume : currentSettings.bgmVolume,
+                sfxVolume: sfxVolume !== null ? sfxVolume : currentSettings.sfxVolume,
+                weatherVolume: weatherVolume !== null ? weatherVolume : currentSettings.weatherVolume,
+                nickname: nickname !== undefined ? nickname : currentSettings.nickname
             };
             localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-            console.log('[SaveManager] Settings saved to localStorage:', settings);
+            console.log('[SaveManager] Settings saved:', settings);
         } catch (error) {
             console.warn('Failed to save settings:', error);
         }
@@ -45,11 +47,12 @@ export class SaveManager {
         }
 
         // 기본값 반환
-        console.log('[SaveManager] No saved settings found, using defaults');
+        const randomId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         return {
             bgmVolume: 1.0,
             sfxVolume: 1.0,
-            weatherVolume: 1.0
+            weatherVolume: 1.0,
+            nickname: `Guest_${randomId}`
         };
     }
 

@@ -5,7 +5,7 @@ import { ASSETS } from './Assets.js';
  * 게임 내 UI(HUD, 버튼 등)를 관리하는 클래스
  */
 export class UIManager {
-    constructor(player, mazeGen, stageManager) {
+    constructor(player = null, mazeGen = null, stageManager = null) {
         this.player = player;
         this.mazeGen = mazeGen;
         this.stageManager = stageManager;
@@ -21,7 +21,7 @@ export class UIManager {
             c4: document.getElementById('use-c4-btn'),
             teleport: document.getElementById('use-teleport-btn'),
             disguise: document.getElementById('use-disguise-btn'),
-            sensor: document.getElementById('use-sensor-btn'), // Added sensor element
+            sensor: document.getElementById('use-sensor-btn'),
             fullscreen: document.getElementById('fullscreen-btn'),
             prevStage: document.getElementById('prev-stage-btn'),
             nextStage: document.getElementById('next-stage-btn'),
@@ -53,11 +53,66 @@ export class UIManager {
             deathMainMenuBtn: document.getElementById('death-main-menu-btn'),
             // Help elements
             helpPopup: document.getElementById('help-popup'),
-            closeHelpBtn: document.getElementById('close-help-btn')
+            closeHelpBtn: document.getElementById('close-help-btn'),
+            // Ranking elements
+            rankingsBtn: document.getElementById('rankings-button'),
+            rankingPopup: document.getElementById('rankings-popup'),
+            rankingList: document.getElementById('ranking-list-container'),
+            myRankingContainer: document.getElementById('my-ranking-container'),
+            closeRankingBtn: document.getElementById('close-rankings-btn'),
+            // Nickname elements
+            nicknameInput: document.getElementById('nickname-input'),
+            nicknameSaveBtn: document.getElementById('save-nickname-btn'),
+            nicknameStatus: document.getElementById('nickname-status'),
+            // Main menu help
+            helpBtn: document.getElementById('help-button')
         };
 
         this._cleanupFns = [];
         this._lastItemOrder = ""; // Optimization: only reorder on change
+    }
+
+    /**
+     * 플레이어 및 매니저 참조 설정 (게임 시작 시)
+     */
+    setPlayer(player) { this.player = player; }
+    setMazeGen(mazeGen) { this.mazeGen = mazeGen; }
+    setStageManager(sm) { this.stageManager = sm; }
+
+    /**
+     * 시간을 MM:SS 형식으로 변환
+     */
+    _formatTime(seconds) {
+        if (!seconds && seconds !== 0) return "--:--";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * 메인 메뉴 UI 표시
+     */
+    showMainMenu() {
+        this.showInGameHUD(false);
+        const mainMenu = document.getElementById('main-menu-screen');
+        if (mainMenu) {
+            mainMenu.classList.remove('hidden');
+            mainMenu.style.display = 'flex';
+        }
+        // 인게임 메뉴나 사망 화면 숨김
+        if (this.elements.menuPopup) this.elements.menuPopup.classList.add('hidden');
+        if (this.elements.deathScreen) this.elements.deathScreen.classList.add('hidden');
+    }
+
+    /**
+     * 메인 메뉴 UI 숨김
+     */
+    hideMainMenu() {
+        const mainMenu = document.getElementById('main-menu-screen');
+        if (mainMenu) {
+            mainMenu.classList.add('hidden');
+            mainMenu.style.display = 'none';
+        }
     }
 
     /**
@@ -73,15 +128,13 @@ export class UIManager {
      * 상단 정보 및 좌표 표시 갱신
      */
     updateHUD() {
-        // 1. 스테이지 표시
-        // 1. 스테이지 표시 및 버튼 상태
         if (this.elements.stage) this.elements.stage.textContent = this.stageManager.level;
 
         if (this.elements.prevStage) {
             this.elements.prevStage.disabled = this.stageManager.level <= 1;
         }
 
-        // 5. 손전등 배터리 바 업데이트
+        // 손전등 배터리 바 업데이트
         this._updateBatteryBar(
             this.player.inventory.hasFlashlight,
             this.player.isFlashlightOn,
@@ -90,7 +143,7 @@ export class UIManager {
             'use-flashlight-btn'
         );
 
-        // 6. 사운드 센서 배터리 바 업데이트
+        // 사운드 센서 배터리 바 업데이트
         this._updateBatteryBar(
             this.player.inventory.hasSensor,
             this.player.isSensorOn,
@@ -98,7 +151,8 @@ export class UIManager {
             CONFIG.ITEMS.SENSOR.DURATION,
             'use-sensor-btn'
         );
-        // 4. 스테이지 시간 및 이동 수 표시
+
+        // 스테이지 시간 및 이동 수 표시
         const timeEl = document.getElementById('stat-time');
         const movesEl = document.getElementById('stat-moves');
 
@@ -112,39 +166,33 @@ export class UIManager {
             movesEl.textContent = this.stageManager.moveCount;
         }
 
-        // 5. 미니맵 가시성 (기본적으로 표시)
         if (this.elements.minimap) {
             this.elements.minimap.style.display = 'flex';
         }
 
-        // 6. 좀비 위장 오버레이
         if (this.elements.disguiseOverlay) {
             this.elements.disguiseOverlay.classList.toggle('active', this.player.isDisguised);
         }
     }
 
     /**
-     * 메뉴 토글
+     * 인게임 메뉴 토글
      */
     toggleMenu() {
-        if (this.elements.menuPopup) {
-            const isHidden = this.elements.menuPopup.classList.contains('hidden');
-            if (isHidden) this.showMenu();
-            else this.hideMenu();
-        }
-    }
+        if (!this.elements.menuPopup) return;
 
-    /**
-     * 일시정지/재개 콜백 등록
-     */
-    registerPauseCallbacks(onPause, onResume) {
-        this.onPause = onPause;
-        this.onResume = onResume;
+        const isVisible = !this.elements.menuPopup.classList.contains('hidden');
+        if (isVisible) {
+            this.hideMenu();
+        } else {
+            this.showMenu();
+        }
     }
 
     showMenu() {
         if (this.elements.menuPopup) {
             this.elements.menuPopup.classList.remove('hidden');
+            this.elements.menuPopup.style.display = 'flex';
             if (this.onPause) this.onPause();
         }
     }
@@ -152,8 +200,32 @@ export class UIManager {
     hideMenu() {
         if (this.elements.menuPopup) {
             this.elements.menuPopup.classList.add('hidden');
+            this.elements.menuPopup.style.display = 'none';
             if (this.onResume) this.onResume();
         }
+    }
+
+    /**
+     * 인게임 HUD 표시/숨김
+     */
+    showInGameHUD(visible) {
+        const hudElements = [
+            'top-hud', 'item-actions', 'health-bar-container', 'radar-container', 'minimap-container'
+        ];
+        hudElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (visible) {
+                    el.classList.remove('hidden');
+                    // item-actions는 flex, 나머지는 block 혹은 기본값
+                    if (id === 'item-actions') el.style.display = 'flex';
+                    else el.style.display = 'block';
+                } else {
+                    el.classList.add('hidden');
+                    el.style.display = 'none';
+                }
+            }
+        });
     }
 
     /**
@@ -162,7 +234,8 @@ export class UIManager {
     showDeathScreen() {
         if (this.elements.deathScreen) {
             this.elements.deathScreen.classList.remove('hidden');
-            if (this.onPause) this.onPause(); // 게임 일시정지 트리거
+            this.elements.deathScreen.style.display = 'flex';
+            if (this.onPause) this.onPause();
         }
     }
 
@@ -172,8 +245,16 @@ export class UIManager {
     hideDeathScreen() {
         if (this.elements.deathScreen) {
             this.elements.deathScreen.classList.add('hidden');
-            // Resume은 수동으로 제어 (다시하기 등에서)
+            this.elements.deathScreen.style.display = 'none';
         }
+    }
+
+    /**
+     * 일시정지/재개 콜백 등록
+     */
+    registerPauseCallbacks(onPause, onResume) {
+        this.onPause = onPause;
+        this.onResume = onResume;
     }
 
     /**
@@ -194,8 +275,6 @@ export class UIManager {
         this.elements.weatherSlider.value = currentWeather;
         this.elements.weatherVal.textContent = `${currentWeather}%`;
 
-        console.log('[UIManager] Initialized settings UI - BGM:', currentBGM, '% SFX:', currentSFX, '% Weather:', currentWeather, '%');
-
         const updateBGM = () => {
             const val = this.elements.bgmSlider.value;
             this.elements.bgmVal.textContent = `${val}%`;
@@ -211,7 +290,6 @@ export class UIManager {
         const updateWeather = () => {
             const val = this.elements.weatherSlider.value;
             this.elements.weatherVal.textContent = `${val}%`;
-            console.log(`[UIManager] Weather volume changed to: ${val}%`); // Debug log
             soundManager.setWeatherVolume(val / 100);
         };
 
@@ -246,12 +324,10 @@ export class UIManager {
     updateItemButtons(force = false) {
         if (!this.player) return;
 
-        // 아이템-액션 컨테이너 표시 상태 확인
         if (this.elements.itemActions && this.elements.itemActions.style.display === 'none') {
             this.elements.itemActions.style.display = 'flex';
         }
 
-        // 아이템 타입과 엘리먼트 매핑
         const typeToElement = {
             'C4': this.elements.c4,
             'JUMP': this.elements.jump,
@@ -260,17 +336,13 @@ export class UIManager {
             'TELEPORT': this.elements.teleport,
             'ZOMBIE_DISGUISE': this.elements.disguise,
             'SENSOR': this.elements.sensor,
-            'MAP_PIECE': this.elements.map // 기존 맵 버튼 연결 유지 (필요 시)
+            'MAP_PIECE': this.elements.map
         };
 
         const itemOrder = this.player.inventory.itemOrder || [];
         const orderKey = itemOrder.join(',');
 
-        // 최적화: 유의미한 변화가 있을 때만 DOM을 조작합니다. (다만 force=true면 강제로 실행)
         if (force || this._lastItemOrder !== orderKey) {
-            console.log('[UIManager] Updating item HUD order:', orderKey);
-
-            // 1. 현재 획득한 순서대로 DOM 재배치 및 가시성 설정
             itemOrder.forEach(type => {
                 const el = typeToElement[type];
                 if (el) {
@@ -279,7 +351,6 @@ export class UIManager {
                 }
             });
 
-            // 2. 획득하지 않은 아이템은 숨김
             Object.keys(typeToElement).forEach(type => {
                 if (!itemOrder.includes(type)) {
                     const el = typeToElement[type];
@@ -290,23 +361,20 @@ export class UIManager {
             this._lastItemOrder = orderKey;
         }
 
-        // 3. 각 아이템 세부 상태 업데이트 (기존 로직)
-
-        // 점프
+        // 각 아이템 상태 세부 업데이트
         if (this.elements.jump) {
             const count = this.player.inventory.jumpCount;
-            this.elements.jump.querySelector('.count').textContent = count.toString().padStart(2, '0');
+            const countEl = this.elements.jump.querySelector('.count');
+            if (countEl) countEl.textContent = count.toString().padStart(2, '0');
             this.elements.jump.classList.toggle('locked', count <= 0);
         }
 
-        // 손전등
         if (this.elements.flashlight) {
             const canUse = this.player.inventory.hasFlashlight && this.player.flashlightTimer > 0;
             this.elements.flashlight.classList.toggle('locked', !canUse);
             this.elements.flashlight.classList.toggle('active', this.player.isFlashlightOn);
         }
 
-        // 트랩
         if (this.elements.trap) {
             const count = this.player.inventory.trapCount;
             const countEl = this.elements.trap.querySelector('.count');
@@ -314,7 +382,6 @@ export class UIManager {
             this.elements.trap.classList.toggle('locked', count <= 0);
         }
 
-        // 텔레포트
         if (this.elements.teleport) {
             const count = this.player.inventory.teleportCount;
             const countEl = this.elements.teleport.querySelector('.count');
@@ -322,19 +389,15 @@ export class UIManager {
             this.elements.teleport.classList.toggle('locked', count <= 0);
         }
 
-        // 좀비 위장
         if (this.elements.disguise) {
             const count = this.player.inventory.disguiseCount;
             const countEl = this.elements.disguise.querySelector('.count');
             if (countEl) countEl.textContent = count.toString().padStart(2, '0');
-
-            // 사용 중일 때 활성화 상태 표시 (깜빡임 효과 등)
             const isUsing = this.player.isDisguised;
             this.elements.disguise.classList.toggle('active', isUsing);
             this.elements.disguise.classList.toggle('locked', count <= 0 && !isUsing);
         }
 
-        // 사운드 센서 배터리 업데이트
         if (this.elements.sensor) {
             const sensorCfg = CONFIG.ITEMS.SENSOR;
             const progress = (this.player.sensorTimer / sensorCfg.DURATION) * 100;
@@ -344,29 +407,47 @@ export class UIManager {
             this.elements.sensor.classList.toggle('locked', this.player.sensorTimer <= 0);
         }
 
-        // C4 폭탄
         if (this.elements.c4) {
             const count = this.player.inventory.c4Count;
             const countEl = this.elements.c4.querySelector('.count');
             if (countEl) countEl.textContent = count.toString().padStart(2, '0');
             this.elements.c4.classList.toggle('locked', count <= 0);
         }
-
-        // 미니맵 표시 여부 (기본 활성)
-        if (this.elements.minimap) {
-            this.elements.minimap.style.display = 'flex';
-        }
     }
 
     /**
-     * 버튼 이벤트 리스너 바인딩 (터치 대응)
+     * 버튼 이벤트 리스너 바인딩
      */
     /**
-     * 버튼 이벤트 리스너 바인딩 (터치 대응)
+     * 메인 메뉴 및 공용 버튼 이벤트 바인딩
      */
-    bindButtons(callbacks) {
-        console.log("UIManager: Binding buttons...");
-        // Clear previous bindings if any
+    bindGeneralButtons(callbacks) {
+        this._setupButton(this.elements.rankingsBtn, callbacks.onShowRankings);
+        this._setupButton(this.elements.helpBtn, callbacks.onShowHelp);
+        this._setupButton(this.elements.ingameSettingsBtn, () => this.showSettings());
+
+        // 공통 내부 팝업 제어 버튼 바인딩
+        this._bindInternalPopupControls();
+
+        this._setupButton(this.elements.closeRankingBtn, () => {
+            if (this.elements.rankingPopup) {
+                this.elements.rankingPopup.classList.add('hidden');
+                this.elements.rankingPopup.style.display = 'none';
+            }
+        });
+        this._setupButton(this.elements.closeHelpBtn, () => {
+            if (this.elements.helpPopup) {
+                this.elements.helpPopup.classList.add('hidden');
+                this.elements.helpPopup.style.display = 'none';
+            }
+        });
+    }
+
+    /**
+     * 게임 플레이 관련 버튼 이벤트 바인딩
+     */
+    bindGameButtons(callbacks) {
+        // 기존 바인딩 해제 (중복 방지)
         this.unbindButtons();
 
         this._setupButton(this.elements.jump, callbacks.onJump);
@@ -375,95 +456,88 @@ export class UIManager {
         this._setupButton(this.elements.trap, callbacks.onTrap);
         this._setupButton(this.elements.teleport, callbacks.onTeleport);
         this._setupButton(this.elements.disguise, callbacks.onDisguise);
-        this._setupButton(this.elements.sensor, callbacks.onSensor); // Added sensor binding
+        this._setupButton(this.elements.sensor, callbacks.onSensor);
         this._setupButton(this.elements.c4, callbacks.onC4);
 
         const cheatBtn = document.getElementById('cheat-btn');
         this._setupButton(cheatBtn, callbacks.onCheat);
 
         this._setupButton(this.elements.prevStage, callbacks.onPrevStage);
-        this._setupButton(this.elements.nextStage, callbacks.onNextStage); // Fixed duplicate prevStage binding
+        this._setupButton(this.elements.nextStage, callbacks.onNextStage);
+        this._setupButton(this.elements.ingameSettingsBtn, callbacks.onSettings);
 
-        // Menu buttons
-        // Use cached elements from constructor
+        // 공통 내부 팝업 제어 버튼 재바인딩 (unbindButtons 이후 필수)
+        this._bindInternalPopupControls();
+
         this._setupButton(this.elements.restartBtn, () => {
             this.hideMenu();
             if (callbacks.onRestart) callbacks.onRestart();
         });
+
         this._setupButton(this.elements.mainMenuBtn, () => {
-            // hideMenu()를 직접 호출하면 onResume()이 트리거되어 소리가 다시 켜짐
-            // 대신 팝업만 직접 숨기고 콜백 실행
-            if (this.elements.menuPopup) {
-                this.elements.menuPopup.classList.add('hidden');
-            }
+            if (this.elements.menuPopup) this.elements.menuPopup.classList.add('hidden');
             if (callbacks.onMainMenu) callbacks.onMainMenu();
         });
 
-        this._setupButton(this.elements.ingameSettingsBtn, () => {
-            this.showSettings();
-        });
-
-        // Re-bind internal menu events (since unbindButtons clears everything)
         this._setupButton(this.elements.menuBtn, () => this.toggleMenu());
         this._setupButton(this.elements.resumeBtn, () => this.hideMenu());
         this._setupButton(this.elements.fullscreen, () => this.toggleFullscreen());
 
-        // Death screen buttons
         this._setupButton(this.elements.deathRestartBtn, () => {
             this.hideDeathScreen();
             if (callbacks.onRestart) callbacks.onRestart();
         });
+
         this._setupButton(this.elements.deathMainMenuBtn, () => {
-            if (this.elements.deathScreen) {
-                this.elements.deathScreen.classList.add('hidden');
-            }
+            if (this.elements.deathScreen) this.elements.deathScreen.classList.add('hidden');
             if (callbacks.onMainMenu) callbacks.onMainMenu();
         });
 
-        // ESC key support for toggling menu and closing popups
-        const onKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                // If splash or main menu, let main.js handle it
-                if (document.getElementById('splash-screen').offsetParent !== null ||
-                    document.getElementById('main-menu-screen').offsetParent !== null) {
-                    return;
-                }
-
-                const isSettingsOpen = this.elements.settingsPopup && !this.elements.settingsPopup.classList.contains('hidden');
-                const isHelpOpen = this.elements.helpPopup && !this.elements.helpPopup.classList.contains('hidden');
-                const isMenuOpen = this.elements.menuPopup && !this.elements.menuPopup.classList.contains('hidden');
-
-                if (isHelpOpen) {
-                    this.elements.helpPopup.classList.add('hidden');
-                } else if (isSettingsOpen) {
-                    this.elements.settingsPopup.classList.add('hidden');
-                } else {
-                    this.toggleMenu();
-                }
-            }
-        };
-
+        const onKeyDown = (e) => this.handleKeyDown(e);
         window.addEventListener('keydown', onKeyDown);
         this._cleanupFns.push(() => window.removeEventListener('keydown', onKeyDown));
     }
 
     unbindButtons() {
-        if (this._cleanupFns && this._cleanupFns.length > 0) {
-            console.log(`UIManager: Unbinding ${this._cleanupFns.length} listeners...`);
-            this._cleanupFns.forEach(fn => fn());
-            this._cleanupFns = [];
-        }
+        this._cleanupFns.forEach(fn => fn());
+        this._cleanupFns = [];
     }
 
     /**
-     * 마우스와 터치를 모두 지원하는 버튼 바인딩 헬퍼
+     * 설정, 랭킹 등 내부 팝업의 닫기/확인 버튼 콜백을 항상 유지하도록 바인딩
      */
+    _bindInternalPopupControls() {
+        console.log('[UIManager] Binding internal popup controls...', {
+            ok: !!this.elements.settingsOkBtn,
+            close: !!this.elements.closeSettingsBtn
+        });
+        // 설정 팝업 제어
+        this._setupButton(this.elements.settingsOkBtn, () => {
+            console.log('[UIManager] Settings OK clicked');
+            // 저장 로직 (닉네임 등) 포함
+            const nickname = this.elements.nicknameInput.value.trim();
+            if (this._validateNickname(nickname)) {
+                this._saveNickname(nickname);
+            }
+            this.hideSettings();
+        });
+        this._setupButton(this.elements.closeSettingsBtn, () => {
+            console.log('[UIManager] Settings Close clicked');
+            this.hideSettings();
+        });
+
+        // 랭킹 팝업 제어
+        this._setupButton(this.elements.closeRankingBtn, () => this.hideRankings());
+
+        // 도움말 팝업 제어
+        this._setupButton(this.elements.closeHelpBtn, () => this.hideHelp());
+    }
+
     /**
-     * 마우스와 터치를 모두 지원하는 버튼 바인딩 헬퍼
+     * 버튼 바인딩 헬퍼
      */
     _setupButton(element, callback) {
         if (!element) return;
-        if (!this._cleanupFns) this._cleanupFns = [];
 
         const handleAction = (e) => {
             if (callback) callback();
@@ -490,13 +564,11 @@ export class UIManager {
             element.classList.remove('pressed');
         };
 
-        // Add listeners
         element.addEventListener('click', onClick);
         element.addEventListener('touchstart', onTouchStart, { passive: true });
         element.addEventListener('touchend', onTouchEnd, { passive: false });
         element.addEventListener('touchcancel', onTouchCancel);
 
-        // Store cleanup
         this._cleanupFns.push(() => {
             element.removeEventListener('click', onClick);
             element.removeEventListener('touchstart', onTouchStart);
@@ -506,49 +578,35 @@ export class UIManager {
     }
 
     /**
-     * 사운드 방향 지시기 업데이트
-     * @param {Object} dirs { top: boolean, bottom: boolean, left: boolean, right: boolean }
-     */
-    /**
      * 360도 레이더 업데이트
-     * @param {Array} blips Array of { dx, dz, dist, rotation, maxDist }
-     * @param {boolean} isActive 센서 활성화 여부
      */
     updateRadar(blips, isActive) {
         const container = document.getElementById('radar-container');
         if (!container) return;
 
-        // 센서가 꺼져있으면 숨김
         if (!isActive) {
             container.style.display = 'none';
             return;
         }
 
-        // 센서가 켜져있으면 항상 표시
         container.style.display = 'block';
 
-        // 기존 블립 제거 (매 프레임 재생성 방식 - 최적화 필요 시 풀링 사용)
         const oldBlips = container.querySelectorAll('.radar-blip');
         oldBlips.forEach(el => el.remove());
 
-        if (!blips || blips.length === 0) {
-            return;
-        }
+        if (!blips || blips.length === 0) return;
 
-        const radius = 45; // 컨테이너 반지름 (50px) - 여유분
+        const radius = 45;
 
         blips.forEach(blip => {
-            // ... (rotation logic remains same)
             const rot = blip.rotation;
             const rx = blip.dx * Math.cos(rot) - blip.dz * Math.sin(rot);
             const ry = blip.dx * Math.sin(rot) + blip.dz * Math.cos(rot);
 
-            // 거리 비율 고정 (0.9) - 방향만 표시
             const dist = Math.sqrt(rx * rx + ry * ry);
             const normX = rx / dist;
             const normY = ry / dist;
 
-            // 화면상 위치 (Center: 50, 50)
             const screenX = 50 + normX * (0.9 * radius);
             const screenY = 50 + normY * (0.9 * radius);
 
@@ -556,12 +614,6 @@ export class UIManager {
             el.className = 'radar-blip';
             el.style.left = `${screenX}px`;
             el.style.top = `${screenY}px`;
-
-            // 화살표 회전 (중심에서 바깥쪽으로 향하게)
-            // atan2(y, x) -> 각도 (라디안)
-            // 0 (Right) -> 90 deg rotation (Point Right)
-            // -PI/2 (Up) -> 0 deg rotation (Point Up)
-            // Formula: angle * 180 / PI + 90
 
             const angle = Math.atan2(normY, normX);
             const deg = (angle * 180 / Math.PI) + 90;
@@ -573,17 +625,28 @@ export class UIManager {
     }
 
     /**
-     * 좀비에게 물렸을 때 화면 효과 실행
+     * 체력 바 업데이트
+     */
+    updateHealthBar() {
+        if (!this.player || !this.elements.healthFill) return;
+        const healthRatio = this.player.health / CONFIG.PLAYER.HEALTH;
+        const fillWidth = Math.max(0, healthRatio * 100);
+        this.elements.healthFill.style.width = `${fillWidth}%`;
+
+        if (this.elements.healthContainer) {
+            this.elements.healthContainer.classList.toggle('low-health', healthRatio <= 0.25);
+        }
+    }
+
+    /**
+     * 좀비에게 물렸을 때 화면 효과
      */
     showBittenEffect() {
         if (!this.elements.bittenOverlay) return;
-
-        // 기존 애니메이션 클래스 제거 후 다시 추가하여 트리거
         this.elements.bittenOverlay.classList.remove('active');
-        void this.elements.bittenOverlay.offsetWidth; // Reflow 트리거
+        void this.elements.bittenOverlay.offsetWidth;
         this.elements.bittenOverlay.classList.add('active');
 
-        // 0.5초 후 제거 (애니메이션 시간과 일치)
         setTimeout(() => {
             if (this.elements.bittenOverlay) {
                 this.elements.bittenOverlay.classList.remove('active');
@@ -592,30 +655,11 @@ export class UIManager {
     }
 
     /**
-     * 플레이어 체력 바 업데이트
-     */
-    updateHealthBar() {
-        if (!this.player || !this.elements.healthFill) return;
-
-        const healthRatio = this.player.health / this.player.maxHealth;
-        const fillWidth = Math.max(0, Math.min(100, healthRatio * 100));
-
-        this.elements.healthFill.style.width = `${fillWidth}%`;
-
-        // 저체력 경고 (25% 이하)
-        if (this.elements.healthContainer) {
-            this.elements.healthContainer.classList.toggle('low-health', healthRatio <= 0.25);
-        }
-    }
-
-    /**
-     * 대미지 입었을 때 글리치 효과 트리거
+     * 대미지 입었을 때 글리치 효과
      */
     triggerDamageEffect() {
         if (!this.elements.healthContainer) return;
-
         this.elements.healthContainer.classList.add('damaged');
-
         setTimeout(() => {
             if (this.elements.healthContainer) {
                 this.elements.healthContainer.classList.remove('damaged');
@@ -624,17 +668,7 @@ export class UIManager {
     }
 
     /**
-     * 인게임 HUD(체력바 등) 표시 설정
-     * @param {boolean} visible 
-     */
-    showInGameHUD(visible) {
-        if (this.elements.healthContainer) {
-            this.elements.healthContainer.classList.toggle('hidden', !visible);
-        }
-    }
-
-    /**
-     * 아이템 버튼의 배터리 바 업데이트 (공용 헬퍼)
+     * 배터리 바 UI 업데이트 헬퍼
      */
     _updateBatteryBar(hasItem, isOn, currentTimer, maxDuration, btnId) {
         const btn = document.getElementById(btnId);
@@ -642,17 +676,13 @@ export class UIManager {
 
         if (hasItem) {
             btn.classList.remove('locked');
-            if (isOn) btn.classList.add('active');
-            else btn.classList.remove('active');
+            btn.classList.toggle('active', isOn);
 
             const bar = btn.querySelector('.battery-bar-fill');
             if (bar) {
                 const ratio = currentTimer / maxDuration;
-                bar.style.height = `${Math.max(0, Math.min(100, ratio * 100))}%`;
-
-                // 색상 변경 (부족하면 빨강)
-                if (ratio < 0.2) bar.style.backgroundColor = '#ff3333';
-                else bar.style.backgroundColor = '#00ff00';
+                bar.style.height = `${Math.max(0, ratio * 100)}%`;
+                bar.style.backgroundColor = ratio < 0.2 ? '#ff3333' : '#00ff00';
             }
         } else {
             btn.classList.add('locked');
@@ -661,13 +691,225 @@ export class UIManager {
     }
 
     /**
-     * C4 폭탄 사용 (내부 처리)
+     * 전체화면 토글
      */
-    _useC4() {
-        if (this.elements.c4 && this.elements.c4.classList.contains('locked')) return;
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
 
-        // PlayScene의 델리게이트를 통해 처리하도록 이벤트를 발생시켜야 함
-        // 현재는 bindButtons에서 callbacks.onC4로 직접 연결되어 있음
-        // 만약 추가적인 UI 처리가 필요하다면 여기서 수행
+    dispose() {
+        this.unbindButtons();
+        this._cleanupFns = [];
+    }
+
+    handleKeyDown(e) {
+        if (e.key === 'Escape') {
+            const isSettingsOpen = this.elements.settingsPopup && !this.elements.settingsPopup.classList.contains('hidden');
+            const isHelpOpen = this.elements.helpPopup && !this.elements.helpPopup.classList.contains('hidden');
+
+            if (isHelpOpen) {
+                this.elements.helpPopup.classList.add('hidden');
+            } else if (isSettingsOpen) {
+                this.elements.settingsPopup.classList.add('hidden');
+            } else {
+                this.toggleMenu();
+            }
+        }
+    }
+
+    /**
+     * 닉네임 설정 UI 초기화
+     */
+    initNicknameUI(rankingManager, saveManager) {
+        if (!this.elements.nicknameInput || !this.elements.nicknameSaveBtn) return;
+
+        // 저장된 닉네임 로드
+        const settings = saveManager.loadSettings();
+        const savedNickname = settings.nickname;
+        if (savedNickname) {
+            this.elements.nicknameInput.value = savedNickname;
+        }
+
+        const handleSave = async () => {
+            const nickname = this.elements.nicknameInput.value.trim();
+            const status = this.elements.nicknameStatus;
+
+            if (nickname.length === 0) {
+                if (status) {
+                    status.textContent = '닉네임을 입력해주세요.';
+                    status.style.color = '#ff4444';
+                }
+                return;
+            }
+
+            const regex = /^[a-zA-Z0-9가-힣]+$/;
+            if (!regex.test(nickname)) {
+                if (status) {
+                    status.textContent = '한글, 영어, 숫자만 사용 가능합니다.';
+                    status.style.color = '#ff4444';
+                }
+                return;
+            }
+
+            if (nickname.length < 2 || nickname.length > 12) {
+                if (status) {
+                    status.textContent = '2~12자로 입력해주세요.';
+                    status.style.color = '#ff4444';
+                }
+                return;
+            }
+
+            if (status) {
+                status.textContent = '확인 중...';
+                status.style.color = '#ffffff';
+            }
+
+            try {
+                // 기존 닉네임과 동일하면 중복 체크 생략 가능하지만,
+                // Supabase 연결 안정성을 위해 매번 체크하는 것이 좋음
+                const isAvailable = await rankingManager.checkNicknameAvailable(nickname);
+                if (!isAvailable && nickname !== savedNickname) {
+                    if (status) {
+                        status.textContent = '이미 사용 중인 닉네임입니다.';
+                        status.style.color = '#ff4444';
+                    }
+                    return;
+                }
+
+                // 닉네임 저장
+                // Supabase 서버에 저장
+                const success = await rankingManager.updateNickname(nickname);
+
+                if (success) {
+                    // 서버 저장이 성공했을 때만 로컬에도 저장
+                    saveManager.saveSettings(null, null, null, nickname);
+
+                    if (status) {
+                        status.textContent = '저장되었습니다!';
+                        status.style.color = '#44ff44';
+                    }
+                } else {
+                    if (status) {
+                        status.textContent = '서버 저장에 실패했습니다.';
+                        status.style.color = '#ffcc00';
+                    }
+                }
+                if (status) {
+                    setTimeout(() => { if (status) status.textContent = ''; }, 2000);
+                }
+            } catch (error) {
+                console.error('Nickname save error:', error);
+                if (status) {
+                    status.textContent = '연결 오류가 발생했습니다.';
+                    status.style.color = '#ff4444';
+                }
+            }
+        };
+
+        this._setupButton(this.elements.nicknameSaveBtn, handleSave);
+    }
+
+    /**
+     * 글로벌 랭킹 표시
+     */
+    async showRankings(rankingManager) {
+        if (!this.elements.rankingPopup) return;
+
+        this.elements.rankingPopup.classList.remove('hidden');
+        this.elements.rankingPopup.style.display = 'flex';
+
+        if (this.elements.rankingList) {
+            this.elements.rankingList.innerHTML = '<div class="ranking-loading">불러오는 중...</div>';
+            if (this.elements.myRankingContainer) {
+                this.elements.myRankingContainer.classList.add('hidden');
+            }
+
+            try {
+                // 1. 상위 10위 가져오기
+                const rankings = await rankingManager.getTopScores(10);
+
+                if (!rankings || rankings.length === 0) {
+                    this.elements.rankingList.innerHTML = '<div class="ranking-loading">등록된 랭킹이 없습니다.</div>';
+                } else {
+                    const listHtml = rankings.map((row, index) => {
+                        const isTop3 = index < 3 ? `top-${index + 1}` : '';
+                        const timeStr = this._formatTime(row.time);
+                        return `
+                            <div class="ranking-item ${isTop3}">
+                                <span class="col-rank">${index + 1}</span>
+                                <span class="col-nickname">${row.nickname}</span>
+                                <span class="col-stage">${row.score}</span>
+                                <span class="col-time">${timeStr}</span>
+                                <span class="col-turn">${row.moves}</span>
+                            </div>
+                        `;
+                    }).join('');
+                    this.elements.rankingList.innerHTML = listHtml;
+                }
+
+                // 2. 내 랭킹 가져오기
+                if (this.elements.myRankingContainer) {
+                    const myRank = await rankingManager.getUserRank();
+
+                    if (myRank) {
+                        const timeStr = this._formatTime(myRank.time);
+                        this.elements.myRankingContainer.innerHTML = `
+                            <span class="section-label">MY RANKING</span>
+                            <div class="ranking-header" style="background: transparent; border-bottom: none; margin-bottom: 0;">
+                                <span class="col-rank">RANK</span>
+                                <span class="col-nickname">NICKNAME</span>
+                                <span class="col-stage">STAGE</span>
+                                <span class="col-time">TIME</span>
+                                <span class="col-turn">TURN</span>
+                            </div>
+                            <div class="ranking-item my-best-record">
+                                <span class="col-rank">${myRank.rank}</span>
+                                <span class="col-nickname">${myRank.nickname}</span>
+                                <span class="col-stage">${myRank.score}</span>
+                                <span class="col-time">${timeStr}</span>
+                                <span class="col-turn">${myRank.moves}</span>
+                            </div>
+                        `;
+                        this.elements.myRankingContainer.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Ranking fetch error:', error);
+                this.elements.rankingList.innerHTML = '<div class="ranking-error">데이터를 불러오지 못했습니다.</div>';
+            }
+        }
+    }
+
+    initRankingUI(rankingManager) {
+        this._setupButton(this.elements.closeRankingBtn, () => {
+            if (this.elements.rankingPopup) {
+                this.elements.rankingPopup.classList.add('hidden');
+                this.elements.rankingPopup.style.display = 'none';
+            }
+        });
+    }
+
+    showHelp() {
+        if (this.elements.helpPopup) {
+            this.elements.helpPopup.classList.remove('hidden');
+            this.elements.helpPopup.style.display = 'flex';
+        }
+    }
+
+    initHelpUI() {
+        this._setupButton(this.elements.closeHelpBtn, () => {
+            if (this.elements.helpPopup) {
+                this.elements.helpPopup.classList.add('hidden');
+                this.elements.helpPopup.style.display = 'none';
+            }
+        });
     }
 }

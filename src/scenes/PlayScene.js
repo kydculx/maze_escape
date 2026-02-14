@@ -184,7 +184,11 @@ export class PlayScene extends BaseScene {
      * UI 매니저 초기화 및 상태 설정
      */
     _initUI() {
-        this.ui = new UIManager(this.player, this.mazeGen, this.stageManager);
+        this.ui = this.game.ui;
+        this.ui.setPlayer(this.player);
+        this.ui.setMazeGen(this.mazeGen);
+        this.ui.setStageManager(this.stageManager);
+
         this._bindUIEvents();
 
         // 초기 HUD 상태 설정
@@ -194,7 +198,6 @@ export class PlayScene extends BaseScene {
             this._loadSavedItems(this.savedProgress.items);
         }
         this.ui.updateAll(true);
-        this.ui.initSettings(this.game.sound);
 
         // 초기 체크포인트 저장
         if (this.player) this.player.saveCheckpoint();
@@ -216,7 +219,7 @@ export class PlayScene extends BaseScene {
             }
         );
 
-        this.ui.bindButtons({
+        this.ui.bindGameButtons({
             onJump: () => {
                 this.player.startJump(true);
                 this.ui.updateAll();
@@ -259,7 +262,11 @@ export class PlayScene extends BaseScene {
             },
             onNextStage: () => this._onNextStageRequest(),
             onRestart: () => this._onRestart(),
-            onMainMenu: () => this._onMainMenu()
+            onMainMenu: () => this._onMainMenu(),
+            onSettings: () => {
+                if (this.game.sound) this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
+                this.ui.showSettings();
+            }
         });
 
         // 메뉴 토글 로직 확장
@@ -326,8 +333,10 @@ export class PlayScene extends BaseScene {
                 if (this.ui) {
                     this.ui.showDeathScreen();
                 }
+
+                // (사망 시 랭킹 등록은 의미가 없으므로 제거됨)
             }
-        }, 1500); // deathDuration과 일치
+        }, 1500);
     }
 
     /**
@@ -343,8 +352,20 @@ export class PlayScene extends BaseScene {
      * 다음 스테이지 요청 처리
      */
     _onNextStageRequest() {
+        // 랭킹 제출 (현재 스테이지 클리어 기록)
+        if (this.game.ranking) {
+            const currentStage = this.stageManager.level;
+            const time = this.stageManager.stageTime;
+            const moves = this.stageManager.moveCount;
+            console.log(`[PlayScene] Submitting score for stage ${currentStage}: Time=${time.toFixed(2)}, Moves=${moves}`);
+            this.game.ranking.submitScore(currentStage, time, moves).then(success => {
+                if (success) console.log('[PlayScene] Rank submission success');
+            });
+        }
+
         this.stageManager.nextStage();
         SaveManager.saveProgress(this.stageManager.level, this._getCurrentItems());
+
         this.resetMaze();
         if (this.game.sound) {
             this.game.sound.playSFX(ASSETS.AUDIO.SFX.GAME_CLEAR);
@@ -378,13 +399,15 @@ export class PlayScene extends BaseScene {
     _onMainMenu() {
         console.log("Going to Main Menu...");
         this.game.state.resumeGame();
-        if (this.game.sound) {
-            this.game.sound.playSFX(ASSETS.AUDIO.SFX.CLICK);
-            this.game.sound.playBGM(ASSETS.AUDIO.BGM);
-        }
-
+        // 먼저 장면을 전환하여 기존 PlayScene을 dispose 시킵니다.
+        // dispose() 시 ui.unbindButtons()가 호출되어 모든 리스너가 제거됩니다.
         this.game.sceneManager.setScene(STATES.MAIN_MENU);
         this.game.state.set(STATES.MAIN_MENU);
+
+        // 장면 전환(dispose) 후에 공통 UI 버튼들을 다시 바인딩합니다.
+        if (this.game.bindGeneralUI) {
+            this.game.bindGeneralUI();
+        }
 
         this._hideAllGameUI();
 
@@ -1150,6 +1173,15 @@ export class PlayScene extends BaseScene {
 
         // Save checkpoint for this new stage
         if (this.player) this.player.saveCheckpoint();
+
+        // 실제 스테이지 클리어 시점에 랭킹 점수 업데이트 (치트 제외)
+        if (this.game.ranking) {
+            this.game.ranking.submitScore(
+                this.stageManager.level,
+                this.stageManager.totalTime,
+                this.stageManager.totalMoves
+            ).catch(err => console.error('[PlayScene] Legitimate score submission failed:', err));
+        }
 
         setTimeout(() => {
             this._isTransitioning = false;

@@ -9,6 +9,8 @@ export class StageManager {
         this.mazeSize = CONFIG.STAGE.INITIAL_SIZE;
         this.stageTime = 0;
         this.moveCount = 0;
+        this.totalTime = 0; // Cumulative time across all stages
+        this.totalMoves = 0; // Cumulative moves across all stages
     }
 
     /**
@@ -21,6 +23,10 @@ export class StageManager {
             this.mazeSize + CONFIG.STAGE.SIZE_INCREMENT,
             CONFIG.STAGE.MAX_SIZE
         );
+
+        // 현재 스테이지 기록을 누적 기록에 합산
+        this.totalTime += this.stageTime;
+        this.totalMoves += this.moveCount;
 
         this.resetStats();
 
@@ -68,7 +74,17 @@ export class StageManager {
     reset() {
         this.level = CONFIG.STAGE.INITIAL_LEVEL;
         this.mazeSize = CONFIG.STAGE.INITIAL_SIZE;
+        this.totalTime = 0;
+        this.totalMoves = 0;
         this.resetStats();
+    }
+
+    /**
+     * 누적 기록 업데이트 (사망 시 현재 스테이지 기록 합산을 위해)
+     */
+    updateCumulativeStats() {
+        this.totalTime += this.stageTime;
+        this.totalMoves += this.moveCount;
     }
 
     /**
