@@ -26,6 +26,9 @@ class Game {
         this.sound = new SoundManager();
         this.sceneManager = new SceneManager(this);
 
+        // 사전 로딩 시작 (비동기)
+        this.sound.preloadAll(ASSETS.AUDIO);
+
         // 2. 렌더러 설정
         this.renderer = new THREE.WebGLRenderer({
             canvas: document.querySelector('#game-canvas'),

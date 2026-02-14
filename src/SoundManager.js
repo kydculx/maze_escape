@@ -23,23 +23,33 @@ export class SoundManager {
         this.initialized = false;
         this.currentBGMBaseVolume = 1.0; // 현재 재생 중인 BGM의 기본 볼륨 저장
 
-        // Web Audio API Context
-        this.context = null;
         this.buffers = new Map(); // URL -> AudioBuffer
         this.activeLoops = new Set(); // Track all active loop controllers
         this.allAudioElements = new Set(); // Track all HTMLAudioElement instances
         this.isPausedForMenu = false; // 일시정지 유무 (BGM 감쇄용)
+        this._loadingPromises = new Map(); // Track ongoing loading promises
+
+        // 초기 Context 생성 (suspended 상태로 시작)
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                this.context = new AudioContext();
+                console.log('[SoundManager] AudioContext created (suspended)');
+            }
+        } catch (e) {
+            console.error('[SoundManager] AudioContext creation failed:', e);
+        }
     }
 
-    /**
-     * 사용자 상호작용 후 오디오 컨텍스트 등 활성화
-     */
     init() {
         if (this.initialized) return;
 
-        // AudioContext 초기화 (브라우저 호환성)
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        this.context = new AudioContext();
+        // Context Resume (브라우저 정책에 의해 사용자 상호작용 후 호출되어야 함)
+        if (this.context && this.context.state === 'suspended') {
+            this.context.resume().then(() => {
+                console.log('[SoundManager] AudioContext resumed via user interaction!');
+            }).catch(e => console.error('[SoundManager] AudioContext resume failed:', e));
+        }
 
         this.initialized = true;
         console.log('SoundManager initialized (Audio unlocked)');
@@ -65,25 +75,84 @@ export class SoundManager {
         }
     }
 
-    /**
-     * 오디오 파일 로드 (Web Audio API용)
-     * @param {string} url 
-     * @returns {Promise<AudioBuffer>}
-     */
     async loadSound(url) {
+        if (!url) return null;
         if (this.buffers.has(url)) return this.buffers.get(url);
-        console.log(`[SoundManager] Loading sound: ${url}`);
 
-        try {
-            const response = await fetch(url);
-            const arrayBuffer = await response.arrayBuffer();
-            const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-            this.buffers.set(url, audioBuffer);
-            return audioBuffer;
-        } catch (error) {
-            console.error(`Failed to load sound: ${url}`, error);
-            return null;
+        // 중복 로딩 방지 (이미 로딩 중이면 Promise 반환)
+        if (this._loadingPromises && this._loadingPromises.has(url)) {
+            return this._loadingPromises.get(url);
         }
+
+        if (!this._loadingPromises) this._loadingPromises = new Map();
+
+        const loadPromise = (async () => {
+            console.log(`[SoundManager] Loading sound: ${url}`);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const arrayBuffer = await response.arrayBuffer();
+
+                // Context가 없으면 데이터를 ArrayBuffer로라도 받아놓고 종료 (나중에 decode)
+                if (!this.context) {
+                    console.warn(`[SoundManager] No AudioContext for decoding ${url}`);
+                    return null;
+                }
+
+                const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+                this.buffers.set(url, audioBuffer);
+                return audioBuffer;
+            } catch (error) {
+                console.error(`[SoundManager] Failed to load sound: ${url}`, error);
+                return null;
+            } finally {
+                this._loadingPromises.delete(url);
+            }
+        })();
+
+        this._loadingPromises.set(url, loadPromise);
+        return loadPromise;
+    }
+
+    /**
+     * 모든 오디오 에셋 사전 로딩 (BGM 제외, Web Audio API 전용)
+     * @param {Object} audioAssets ASSETS.AUDIO 객체
+     */
+    async preloadAll(audioAssets) {
+        console.log('[SoundManager] Starting audio preloading...');
+        const urls = this._collectUrls(audioAssets);
+        const total = urls.length;
+        let count = 0;
+
+        console.log(`[SoundManager] Found ${total} audio assets to preload.`);
+
+        const promises = urls.map(async (url) => {
+            const buffer = await this.loadSound(url);
+            if (buffer) {
+                count++;
+                // console.log(`[SoundManager] Preloaded (${count}/${total}): ${url}`);
+            }
+            return buffer;
+        });
+
+        await Promise.all(promises);
+        console.log(`[SoundManager] Finished preloading ${count}/${total} audio assets.`);
+    }
+
+    /**
+     * 재귀적으로 URL들을 수집
+     */
+    _collectUrls(obj, list = []) {
+        for (const key in obj) {
+            if (typeof obj[key] === 'string') {
+                // BGM은 스트리밍 방식(Audio element)을 선호하므로 사전 디코딩에서 제외할 수 있음
+                // 하지만 빠른 전환을 원한다면 포함. 여기서는 문자열이면 무조건 포함.
+                list.push(obj[key]);
+            } else if (typeof obj[key] === 'object') {
+                this._collectUrls(obj[key], list);
+            }
+        }
+        return list;
     }
 
     /**

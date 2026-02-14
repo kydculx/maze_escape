@@ -107,6 +107,7 @@ export const MAP_CONFIG = {
     get TEXTURE_URL() { return this.THEMES[this.CURRENT_THEME].WALL; },
     get FLOOR_TEXTURE_URL() { return this.THEMES[this.CURRENT_THEME].FLOOR; },
     get WALL_COLOR() { return this.THEMES[this.CURRENT_THEME].WALL_COLOR; },
+    get FLOOR_COLOR() { return this.THEMES[this.CURRENT_THEME].FLOOR_COLOR; },
     get LIGHTING() { return this.THEMES[this.CURRENT_THEME].LIGHTING; },
     get FOG() { return this.THEMES[this.CURRENT_THEME].FOG; },
     get BG_FLOOR() { return this.THEMES[this.CURRENT_THEME].BG_FLOOR; },
