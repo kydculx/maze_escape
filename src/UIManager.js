@@ -828,6 +828,17 @@ export class UIManager {
 
         if (this.elements.rankingList) {
             this.elements.rankingList.innerHTML = '<div class="ranking-loading">불러오는 중...</div>';
+
+            // 헤더 업데이트 (최초 로드 시 혹은 팝업 열 때)
+            const header = this.elements.rankingPopup.querySelector('.ranking-header');
+            if (header) {
+                header.innerHTML = `
+                    <span class="col-rank">RANK</span>
+                    <span class="col-nickname">NICKNAME</span>
+                    <span class="col-stats">STAGE (TIME, TURN)</span>
+                `;
+            }
+
             if (this.elements.myRankingContainer) {
                 this.elements.myRankingContainer.classList.add('hidden');
             }
@@ -846,9 +857,7 @@ export class UIManager {
                             <div class="ranking-item ${isTop3}">
                                 <span class="col-rank">${index + 1}</span>
                                 <span class="col-nickname">${row.nickname}</span>
-                                <span class="col-stage">${row.score}</span>
-                                <span class="col-time">${timeStr}</span>
-                                <span class="col-turn">${row.moves}</span>
+                                <span class="col-stats">${row.score} (${timeStr}, ${row.moves})</span>
                             </div>
                         `;
                     }).join('');
@@ -866,16 +875,12 @@ export class UIManager {
                             <div class="ranking-header" style="background: transparent; border-bottom: none; margin-bottom: 0;">
                                 <span class="col-rank">RANK</span>
                                 <span class="col-nickname">NICKNAME</span>
-                                <span class="col-stage">STAGE</span>
-                                <span class="col-time">TIME</span>
-                                <span class="col-turn">TURN</span>
+                                <span class="col-stats">STAGE (TIME, TURN)</span>
                             </div>
                             <div class="ranking-item my-best-record">
                                 <span class="col-rank">${myRank.rank}</span>
                                 <span class="col-nickname">${myRank.nickname}</span>
-                                <span class="col-stage">${myRank.score}</span>
-                                <span class="col-time">${timeStr}</span>
-                                <span class="col-turn">${myRank.moves}</span>
+                                <span class="col-stats">${myRank.score} (${timeStr}, ${myRank.moves})</span>
                             </div>
                         `;
                         this.elements.myRankingContainer.classList.remove('hidden');
