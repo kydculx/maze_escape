@@ -145,7 +145,7 @@ export class PlayScene extends BaseScene {
 
         // 몬스터
         this.monsterManager = new MonsterManager(this.scene, this.mazeGen, this.game.sound, (monster) => {
-            this._onPlayerBitten();
+            this._onPlayerBitten(monster);
         });
 
         // 몬스터 스폰
@@ -294,13 +294,15 @@ export class PlayScene extends BaseScene {
     /**
      * 플레이어가 몬스터에게 공격받았을 때 처리 (시각 효과 전용)
      */
-    _onPlayerBitten() {
+    _onPlayerBitten(monster) {
         if (this.ui) {
             this.ui.showBittenEffect();
             this.ui.triggerDamageEffect();
         }
-        if (this.player) {
-            this.player.takeDamage(10);
+        if (this.player && monster) {
+            const config = monster._getConfig();
+            const damage = config.DAMAGE || 10;
+            this.player.takeDamage(damage);
         }
     }
 

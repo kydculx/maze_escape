@@ -629,7 +629,7 @@ export class UIManager {
      */
     updateHealthBar() {
         if (!this.player || !this.elements.healthFill) return;
-        const healthRatio = this.player.health / CONFIG.PLAYER.HEALTH;
+        const healthRatio = this.player.health / CONFIG.PLAYER.MAX_HEALTH;
         const fillWidth = Math.max(0, healthRatio * 100);
         this.elements.healthFill.style.width = `${fillWidth}%`;
 

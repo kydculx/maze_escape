@@ -37,68 +37,18 @@ export class Bomb {
         const group = new THREE.Group();
         group.name = 'c4-bomb';
 
-        // 1. 베이스 플레이트 (검은색 금속판)
-        const baseGeo = new THREE.BoxGeometry(0.18, 0.12, 0.01);
-        const baseMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            metalness: 0.8,
-            roughness: 0.2
-        });
-        const base = new THREE.Mesh(baseGeo, baseMat);
-        group.add(base);
+        // 메인 바디 (직사각형 팩)
+        const bodyGeo = new THREE.BoxGeometry(0.15, 0.1, 0.05);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        group.add(body);
 
-        // 2. C4 폭약 블록 (3개, 약간 베이지색/회색)
-        const packGeo = new THREE.BoxGeometry(0.045, 0.09, 0.03);
-        const packMat = new THREE.MeshStandardMaterial({
-            color: 0xaaaaaa, // 점토 느낌의 회색
-            roughness: 0.9
-        });
-
-        for (let i = 0; i < 3; i++) {
-            const pack = new THREE.Mesh(packGeo, packMat);
-            pack.position.set(-0.06 + i * 0.05, 0, 0.02);
-            group.add(pack);
-        }
-
-        // 3. 타이머 유닛 (중앙 상단 전자 기구)
-        const timerGeo = new THREE.BoxGeometry(0.08, 0.04, 0.02);
-        const timerMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-        const timer = new THREE.Mesh(timerGeo, timerMat);
-        timer.position.set(0, 0, 0.04);
-        group.add(timer);
-
-        // 타이머 스크린 (진한 빨간색 유리 느낌)
-        const screenGeo = new THREE.PlaneGeometry(0.06, 0.02);
-        const screenMat = new THREE.MeshStandardMaterial({
-            color: 0x330000,
-            emissive: 0x220000,
-            emissiveIntensity: 0.5
-        });
-        const screen = new THREE.Mesh(screenGeo, screenMat);
-        screen.position.set(0, 0, 0.011);
-        timer.add(screen);
-
-        // 4. 전선 (빨강, 파랑 - 실린더나 얇은 박스)
-        const wireGeo = new THREE.BoxGeometry(0.005, 0.08, 0.005);
-        const redWireMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const blueWireMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-
-        const wire1 = new THREE.Mesh(wireGeo, redWireMat);
-        wire1.position.set(-0.04, 0, 0.035);
-        wire1.rotation.z = Math.PI / 4;
-        group.add(wire1);
-
-        const wire2 = new THREE.Mesh(wireGeo, blueWireMat);
-        wire2.position.set(0.04, 0, 0.035);
-        wire2.rotation.z = -Math.PI / 4;
-        group.add(wire2);
-
-        // 5. 램프 (깜빡이는 빨간 불)
-        const lampGeo = new THREE.SphereGeometry(0.01, 8, 8);
+        // 램프 (깜빡이는 빨간 불)
+        const lampGeo = new THREE.SphereGeometry(0.015, 8, 8);
         const lampMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
         const lamp = new THREE.Mesh(lampGeo, lampMat);
         lamp.name = 'lamp';
-        lamp.position.set(0.03, 0.01, 0.051); // 타이머 유닛 우측 상단
+        lamp.position.set(0.04, 0.02, 0.026);
         group.add(lamp);
 
         return group;

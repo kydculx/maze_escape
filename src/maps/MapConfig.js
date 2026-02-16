@@ -130,6 +130,11 @@ export const MAP_CONFIG = {
         REGEN_MULTIPLIER: 5.0,    // 안전 지대 내 체력 회복 배율 (기본 회복량의 5배)
         COLOR: 0x00ff88,          // 안전 지대 바닥 표시 색상 (청록색)
         GLOW_INTENSITY: 0.8       // 안전 지대 발광 강도
+    },
+    // 스파이크 함정 설정
+    SPIKE_TRAP: {
+        DAMAGE: 20,               // 함정 대미지
+        TRIGGER_COOLDOWN: 1.8      // 함정 재발동 대기 시간
     }
 };
 

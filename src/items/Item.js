@@ -363,7 +363,7 @@ export class Item {
                     color: 0x00ffff,
                     emissive: 0x000000,
                     transparent: true,
-                    opacity: 1
+                    opacity: 0.8
                 });
                 const screen = new THREE.Mesh(screenGeo, screenMat);
                 screenGroup.add(screen);

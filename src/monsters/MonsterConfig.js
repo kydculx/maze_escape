@@ -38,6 +38,7 @@ export const MONSTER_CONFIG = {
         // 레벨별 난이도 조정
         ATTACK_RANGE: 0.8,                // 공격 사거리 (월드 유닛)
         ATTACK_COOLDOWN: 2.0,             // 공격 쿨다운 (초)
+        DAMAGE: 10,                        // 공격력
         SPAWN_MIN_STAGE: 1                // 스테이지 1 이상에서 등장
     },
     // 울프 좀비 (강화형) 설정
@@ -59,6 +60,7 @@ export const MONSTER_CONFIG = {
         SPAWN_MIN_STAGE: 11,               // 스테이지 11 이상에서만 등장
         // 레벨별 난이도 조정
         ATTACK_RANGE: 0.8,               // 공격 사거리
-        ATTACK_COOLDOWN: 1.5              // 공격 쿨다운 (좀비보다 빠름)
+        ATTACK_COOLDOWN: 1.5,             // 공격 쿨다운 (좀비보다 빠름)
+        DAMAGE: 15                        // 공격력 (강화형)
     }
 };

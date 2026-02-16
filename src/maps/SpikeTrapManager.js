@@ -33,8 +33,10 @@ export class SpikeTrapManager {
         this.group.name = 'spike-traps';
         this.scene.add(this.group);
 
-        // 쿨다운 시간 (초)
-        this.triggerCooldown = 1.8;
+        // 상단에서 가져온 설정을 인스턴스 변수로 보관
+        const trapCfg = CONFIG.MAZE.SPIKE_TRAP;
+        this.triggerCooldown = trapCfg.TRIGGER_COOLDOWN;
+        this.damage = trapCfg.DAMAGE;
 
         this._spawnTraps();
     }
@@ -201,7 +203,7 @@ export class SpikeTrapManager {
             // 3) 바닥 가시 피해 판정
             if (trap.floorState === 'EXTENDING' || trap.floorState === 'HOLDING') {
                 if (playerGridX === trap.tileGridX && playerGridY === trap.tileGridY) {
-                    player.takeDamage(10);
+                    player.takeDamage(this.damage);
                 }
             }
         }
